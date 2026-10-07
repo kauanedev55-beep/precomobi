@@ -1,0 +1,14 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/node_modules": true,
+    "**/.venv": true
+  },
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "typescript.tsdk": "${workspaceFolder}/frontend/node_modules/typescript/lib"
+}

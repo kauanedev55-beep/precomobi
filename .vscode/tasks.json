@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "PreçoMobi: iniciar API",
+      "type": "shell",
+      "command": "../.venv/Scripts/uvicorn.exe main:app --reload",
+      "linux": { "command": "../.venv/bin/uvicorn main:app --reload" },
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "problemMatcher": []
+    },
+    {
+      "label": "PreçoMobi: iniciar front-end",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "problemMatcher": []
+    }
+  ]
+}
