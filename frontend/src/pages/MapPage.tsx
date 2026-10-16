@@ -113,6 +113,12 @@ export function MapPage() {
     );
   }
 
+  // veio do botao "Ver no mapa" na comparacao: ja tenta localizar sozinho
+  useEffect(() => {
+    if (selectedId) locate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function routeUrl(market: Market): string {
     const dest = `${market.latitude},${market.longitude}`;
     if (position) {

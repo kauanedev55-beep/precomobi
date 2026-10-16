@@ -67,6 +67,7 @@ export function ComparisonPage() {
                 <strong>{result.total !== null ? formatPrice(result.total) : "Total indisponível"}</strong>
               </div>
             </header>
+            <Link className="map-link" to={"/mapa?mercado=" + result.market_id}>📍 Ver no mapa e traçar rota</Link>
             <div className="table-wrap">
               <table>
                 <thead><tr><th>Produto</th><th>Qtd.</th><th>Preço un.</th><th>Subtotal</th><th>Origem</th></tr></thead>

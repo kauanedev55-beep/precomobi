@@ -347,3 +347,6 @@ tr.missing-row td { color: var(--muted); background: #fbf6ee; }
 .confirm-button:hover:not(:disabled) { border-color: var(--forest); background: var(--forest-soft); }
 .confirm-count { color: var(--muted); font-size: .68rem; white-space: nowrap; }
 .confirm-count.confirmed { color: var(--forest-deep); font-weight: 650; }
+
+.map-link { display: inline-flex; align-items: center; gap: .3rem; margin: -.3rem 0 .6rem; color: var(--forest-deep); font-size: .74rem; font-weight: 650; text-decoration: none; }
+.map-link:hover { text-decoration: underline; }
