@@ -42,15 +42,21 @@ def market_id(client, name: str) -> int:
     return next(market["id"] for market in markets if market["name"] == name)
 
 
+def demo_auth(client):
+    r = client.post("/api/auth/login", json={"email": "demo@precomobi.local", "password": "precomobi123"})
+    assert r.status_code == 200
+    return {"Authorization": "Bearer " + r.json()["access_token"]}
+
+
 def create_list(client, items, name: str = "Lista de teste") -> dict:
     payload = {"name": name, "items": [{"product_id": pid, "quantity": qty} for pid, qty in items]}
-    response = client.post("/api/shopping-lists", json=payload)
+    response = client.post("/api/shopping-lists", json=payload, headers=demo_auth(client))
     assert response.status_code == 201, response.text
     return response.json()
 
 
 def compare(client, list_id: int) -> dict:
-    response = client.get(f"/api/comparisons/{list_id}")
+    response = client.get(f"/api/comparisons/{list_id}", headers=demo_auth(client))
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -121,7 +127,7 @@ def test_create_shopping_list(client):
 
 def test_create_shopping_list_with_unknown_product_returns_404(client):
     response = client.post(
-        "/api/shopping-lists",
+        "/api/shopping-lists", headers=demo_auth(client),
         json={"name": "Lista inválida", "items": [{"product_id": 999999, "quantity": 1}]},
     )
     assert response.status_code == 404
@@ -130,22 +136,22 @@ def test_create_shopping_list_with_unknown_product_returns_404(client):
 def test_create_shopping_list_rejects_invalid_payload(client):
     arroz = product_id(client, ARROZ)
     zero_quantity = client.post(
-        "/api/shopping-lists", json={"name": "Lista", "items": [{"product_id": arroz, "quantity": 0}]}
+        "/api/shopping-lists", headers=demo_auth(client), json={"name": "Lista", "items": [{"product_id": arroz, "quantity": 0}]}
     )
-    empty_name = client.post("/api/shopping-lists", json={"name": "", "items": []})
+    empty_name = client.post("/api/shopping-lists", headers=demo_auth(client), json={"name": "", "items": []})
     assert zero_quantity.status_code == 422
     assert empty_name.status_code == 422
 
 
 def test_get_shopping_list_by_id(client):
     created = create_list(client, [(product_id(client, LEITE), 3)])
-    response = client.get(f"/api/shopping-lists/{created['id']}")
+    response = client.get(f"/api/shopping-lists/{created['id']}", headers=demo_auth(client))
     assert response.status_code == 200
     assert response.json()["id"] == created["id"]
 
 
 def test_get_unknown_shopping_list_returns_404(client):
-    assert client.get("/api/shopping-lists/999999").status_code == 404
+    assert client.get("/api/shopping-lists/999999", headers=demo_auth(client)).status_code == 404
 
 
 # ---------- comparação ----------
@@ -189,7 +195,7 @@ def test_comparison_partial_market_has_no_total_and_comes_last(client):
 
 
 def test_comparison_of_unknown_list_returns_404(client):
-    assert client.get("/api/comparisons/999999").status_code == 404
+    assert client.get("/api/comparisons/999999", headers=demo_auth(client)).status_code == 404
 
 
 def test_comparison_items_expose_source_type(client):
@@ -221,7 +227,7 @@ def test_register_duplicate_email_returns_409(client):
 
 def test_login_with_correct_password(client):
     email = "login-teste@teste.local"
-    client.post("/api/auth/register", json={"name": "Teste Login", "email": email, "password": "minhasenha123"})
+    register_user(client, name="Teste Login", email=email, password="minhasenha123")
     response = client.post("/api/auth/login", json={"email": email, "password": "minhasenha123"})
     assert response.status_code == 200
     assert response.json()["user"]["email"] == email
@@ -470,17 +476,16 @@ def test_cannot_compare_list_of_another_user(client):
 
 # ---------- e-mail de boas-vindas ----------
 
-def test_send_welcome_email_is_noop_without_smtp_configured():
+def test_send_welcome_email_is_noop_without_brevo_configured():
     from app.core.email import send_welcome_email
 
     assert send_welcome_email("alguem@teste.local", "Alguém") is False
 
 
-def test_register_still_works_without_smtp_configured(client):
-    """O cadastro não pode depender do envio de e-mail: sem SMTP configurado, continua 201."""
-    headers, user = register_user(client, name="Sem Email Configurado")
-    assert headers["Authorization"].startswith("Bearer ")
-    assert user["name"] == "Sem Email Configurado"
+def test_register_unavailable_without_email(client, monkeypatch):
+    monkeypatch.setattr("app.api.auth.configured", lambda: False)
+    response = client.post("/api/auth/register", json={"name": "Teste", "email": "no-smtp@teste.local", "password": "senha12345"})
+    assert response.status_code == 503
 
 
 def test_markets_have_real_coordinates(client):

@@ -1,0 +1,1 @@
+HTTP smoke: 5 rotas SPA, API 404, sessão demo, pesquisa, lista, comparação e persistência: APROVADO

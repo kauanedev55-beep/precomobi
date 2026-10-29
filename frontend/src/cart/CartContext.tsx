@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
+import { useAuth } from "../auth/AuthContext";
 import type { Product } from "../services/api";
 
 // A "lista em edição" mora no navegador (localStorage) até o usuário salvá-la; só então vai para a API.
@@ -18,21 +19,22 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function load(): CartItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as CartItem[]) : [];
-  } catch {
-    return [];
-  }
+export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  return <AccountCart key={user?.id ?? "guest"}>{children}</AccountCart>;
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(load);
+function AccountCart({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const key = `${STORAGE_KEY}_${user?.id ?? "guest"}`;
+  const [items, setItems] = useState<CartItem[]>(() => {
+    try { const value = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(value) ? value.filter(i => i?.product?.id && Number.isFinite(i.quantity) && i.quantity > 0) : []; }
+    catch { return []; }
+  });
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    try { localStorage.setItem(key, JSON.stringify(items)); } catch { /* Navegação continua sem persistência local. */ }
+  }, [items, key]);
 
   const value = useMemo<CartContextValue>(
     () => ({

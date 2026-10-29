@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.deps import get_current_user, get_current_user_optional
+from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models import Product, ShoppingList, ShoppingListItem, User
 from app.schemas.mvp import ShoppingListCreate, ShoppingListRead
@@ -14,10 +14,10 @@ router = APIRouter(prefix="/shopping-lists", tags=["shopping-lists"])
 def create_shopping_list(
     payload: ShoppingListCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_optional),
+    current_user: User = Depends(get_current_user),
 ) -> ShoppingList:
     product_ids = [item.product_id for item in payload.items]
-    products = list(db.scalars(select(Product).where(Product.id.in_(product_ids)))) if product_ids else []
+    products = list(db.scalars(select(Product).where(Product.id.in_(product_ids), Product.is_active.is_(True)))) if product_ids else []
     products_by_id = {product.id: product for product in products}
     missing_ids = sorted(set(product_ids) - set(products_by_id))
     if missing_ids:
@@ -41,7 +41,7 @@ def create_shopping_list(
 @router.get("", response_model=list[ShoppingListRead])
 def list_shopping_lists(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_optional),
+    current_user: User = Depends(get_current_user),
 ) -> list[ShoppingList]:
     return list(
         db.scalars(
@@ -57,7 +57,7 @@ def list_shopping_lists(
 def get_shopping_list(
     shopping_list_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_optional),
+    current_user: User = Depends(get_current_user),
 ) -> ShoppingList:
     shopping_list = db.scalar(
         select(ShoppingList)

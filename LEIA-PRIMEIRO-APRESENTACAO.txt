@@ -1,0 +1,15 @@
+PRECOMOBI — CANDIDATO PARA APRESENTACAO
+========================================
+
+1. Extraia em uma pasta SEPARADA. Nao substitua o projeto que esta funcionando.
+2. Arquivos .env NAO estao no ZIP. O script PREPARAR-CONFIG-LOCAL.ps1 copia os .env da instalacao anterior conhecida sem expor credenciais.
+3. No PowerShell, dentro desta pasta:
+   Terminal 1: powershell -ExecutionPolicy Bypass -File .\INICIAR-BACKEND.ps1
+   Terminal 2: powershell -ExecutionPolicy Bypass -File .\INICIAR-FRONTEND.ps1
+   Terminal 3: powershell -ExecutionPolicy Bypass -File .\TESTAR-APRESENTACAO.ps1
+4. Abra http://127.0.0.1:5173
+5. Teste login, lista, comparacao e mapa antes de qualquer push.
+6. Nao execute git reset --hard, git clean -fd, nem altere as variaveis do Render.
+
+PENDENCIAS: camera automatica; cotacoes reais; testes completos; persistencia em producao.
+Os precos de desenvolvimento sao identificados como simulacao.

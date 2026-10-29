@@ -1,0 +1,16 @@
+PREÇOMOBI - TESTE LOCAL SEM CONFIGURAÇÃO MANUAL
+
+1. Extraia este pacote em C:\PrecoMobi-Teste (mantendo a pasta precomobi-completo).
+2. Não substitua a pasta original em C:\Users\DELL\Downloads\precomobi-completo.
+3. Abra dois terminais PowerShell na pasta extraída:
+   powershell -ExecutionPolicy Bypass -File .\INICIAR-BACKEND.ps1
+   powershell -ExecutionPolicy Bypass -File .\INICIAR-FRONTEND.ps1
+4. Acesse http://127.0.0.1:5173
+
+Os scripts reaproveitam automaticamente backend/.env e frontend/.env da pasta original
+C:\Users\DELL\Downloads\precomobi-completo. Não copiam o banco de dados.
+Se um arquivo .env não existir nessa pasta, a inicialização informa qual falta,
+sem preencher chaves falsas ou alterar as configurações do Render.
+
+O pacote não inclui credenciais privadas. Não coloque .env no GitHub.
+Esta versão é apenas para testes; não foi publicado nenhum deploy.

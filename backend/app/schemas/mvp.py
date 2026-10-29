@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProductRead(BaseModel):
@@ -39,7 +39,21 @@ class ShoppingListItemCreate(BaseModel):
 
 class ShoppingListCreate(BaseModel):
     name: str = Field(min_length=1, max_length=160)
-    items: list[ShoppingListItemCreate] = Field(default_factory=list)
+    items: list[ShoppingListItemCreate] = Field(min_length=1, max_length=200)
+
+    @field_validator("name")
+    @classmethod
+    def valid_name(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Informe o nome da lista")
+        return value.strip()
+
+    @field_validator("items")
+    @classmethod
+    def unique_products(cls, value):
+        if len({item.product_id for item in value}) != len(value):
+            raise ValueError("Produtos repetidos; ajuste a quantidade")
+        return value
 
 
 class ShoppingListItemRead(BaseModel):

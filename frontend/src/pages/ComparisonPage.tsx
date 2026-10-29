@@ -31,6 +31,7 @@ export function ComparisonPage() {
   if (loading) return <Loading text="Comparando os mercados..." />;
   if (error || !comparison) return <ErrorBox message={error || "Comparação indisponível."} onRetry={load} />;
 
+  const hasDemoPrices = comparison.results.some((market) => market.items.some((item) => item.source_type === "development"));
   const complete = comparison.results.filter((result) => result.complete && result.total !== null);
   let saving: { amount: number; best: string; worst: string } | null = null;
   if (complete.length >= 2) {
@@ -40,26 +41,35 @@ export function ComparisonPage() {
     saving = { amount: Number(worst.total) - Number(best.total), best: best.market_name, worst: worst.market_name };
   }
   const anyMissing = comparison.results.some((result) => !result.complete);
+  const bestId = complete.length ? [...complete].sort((a, b) => Number(a.total) - Number(b.total))[0].market_id : null;
 
   return (
     <section>
       <p className="breadcrumb"><Link to="/lista">← Lista de compras</Link></p>
       <h1>Comparação: {comparison.list_name}</h1>
 
+      {hasDemoPrices && (
+        <div className="notice" role="status">
+          <strong>Modo demonstração:</strong> esta comparação contém preços de exemplo criados para apresentar o funcionamento do PreçoMobi.
+          Não são cotações atuais dos supermercados.
+        </div>
+      )}
+
       {saving && (
         <div className="notice good">
-          Entre os mercados com a lista completa, <strong>{saving.best}</strong> é o mais barato:{" "}
+          Entre os mercados com a lista completa, <strong>{saving.best}</strong> tem o menor total {hasDemoPrices ? "nesta simulação" : "registrado"}:{" "}
           {saving.amount > 0 ? <>economia de <strong>{formatPrice(saving.amount)}</strong> em relação a {saving.worst}.</> : <>o mesmo total dos demais.</>}
         </div>
       )}
       {complete.length === 0 && <div className="notice">Nenhum mercado tem preço para todos os itens da lista, então não há total completo para comparar. Veja abaixo o que falta.</div>}
 
       <div className="market-columns">
-        {comparison.results.map((result, index) => (
-          <article className={`market-card ${index === 0 && result.complete ? "winner" : ""}`} key={result.market_id}>
+        {comparison.results.map((result) => (
+          <article className={`market-card ${result.market_id === bestId ? "winner" : ""}`} key={result.market_id}>
             <header>
               <div>
                 <h3>{result.market_name}</h3>
+                {result.market_id === bestId && <span className="best-choice-label">✓ Menor total da lista completa</span>}
                 <span className={`status-pill ${result.complete ? "" : "partial"}`}>{result.complete ? "Lista completa" : "Compra parcial"}</span>
               </div>
               <div className="market-total">
@@ -67,7 +77,6 @@ export function ComparisonPage() {
                 <strong>{result.total !== null ? formatPrice(result.total) : "Total indisponível"}</strong>
               </div>
             </header>
-            <Link className="map-link" to={"/mapa?mercado=" + result.market_id}>📍 Ver no mapa e traçar rota</Link>
             <div className="table-wrap">
               <table>
                 <thead><tr><th>Produto</th><th>Qtd.</th><th>Preço un.</th><th>Subtotal</th><th>Origem</th></tr></thead>
@@ -84,6 +93,7 @@ export function ComparisonPage() {
                 </tbody>
               </table>
             </div>
+            <Link className="primary-button market-route-action" to={`/mapa?mercado=${result.market_id}&rota=1`}>⌖ Ver distância e rota →</Link>
             {!result.complete && <p className="form-hint">Este mercado não tem preço para todos os itens; o total não é somado para não comparar valores incompletos.</p>}
           </article>
         ))}

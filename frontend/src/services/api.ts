@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
+const API_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
 // ---------- tipos (espelham os schemas do backend) ----------
 export type Product = {
@@ -119,7 +119,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   try {
     response = await fetch(`${API_URL}${path}`, { ...options, headers });
   } catch {
-    throw new Error("Não foi possível conectar à API. Verifique se o backend está rodando em http://localhost:8000.");
+    throw new Error("Não foi possível conectar à API. Tente novamente em instantes.");
   }
 
   if (!response.ok) {
@@ -173,7 +173,14 @@ type AuthApiResponse = { access_token: string; user: AuthUser };
 const toAuthResult = (result: AuthApiResponse): AuthResult => ({ token: result.access_token, user: result.user });
 
 export const registerUser = (payload: { name: string; email: string; password: string }) =>
-  request<AuthApiResponse>("/auth/register", { method: "POST", body: JSON.stringify(payload) }).then(toAuthResult);
+  request<{ message: string }>("/auth/register", { method: "POST", body: JSON.stringify(payload) });
 export const loginUser = (payload: { email: string; password: string }) =>
   request<AuthApiResponse>("/auth/login", { method: "POST", body: JSON.stringify(payload) }).then(toAuthResult);
 export const getMe = () => request<AuthUser>("/auth/me");
+export const exchangeSupabaseSession = (access_token: string) => request<AuthApiResponse>("/auth/supabase-session", { method: "POST", body: JSON.stringify({access_token}) }).then(toAuthResult);
+
+export const verifyEmail = (token: string) => request<{message: string}>("/auth/verify", { method: "POST", body: JSON.stringify({token}) });
+export const resendVerification = (email: string) => request<{message: string}>("/auth/resend-verification", { method: "POST", body: JSON.stringify({email}) });
+
+export const getFeatures = () => request<{demo_mode: boolean; region: string | null}>("/features");
+export const startDemoSession = () => request<AuthApiResponse>("/auth/demo-session", {method: "POST"}).then(toAuthResult);
