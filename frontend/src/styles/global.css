@@ -547,3 +547,30 @@ tr.missing-row td { color: var(--muted); background: #fbf6ee; }
 .manual-origin label { flex:1; min-width:200px; }
 .manual-origin input { width:100%; }
 @media(max-width:550px) { .market-columns { grid-template-columns:minmax(0,1fr); } .pm-private .search-bar { display:flex; flex-wrap:wrap; } .search-bar input { width:100%; flex-basis:100%; min-width:0; } .pm-landing-copy h1 { font-size:2.65rem; } }
+
+/* Shopping decisions stay readable on narrow screens. */
+.comparison-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.comparison-heading h1 { margin:0; }
+.market-address { font-size:.83rem; color:var(--muted); overflow-wrap:anywhere; }
+.purchase-decision { border:1px solid #bfdaca; border-radius:18px; background:#f3faf5; padding:clamp(16px,3vw,28px); margin:20px 0; }
+.purchase-decision h2 { margin-top:0; }
+.purchase-decision .field { max-width:600px; margin:14px 0; }
+.purchase-decision select,.purchase-decision input { width:100%; min-width:0; }
+.trip-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:18px 0; }
+.trip-options > div { padding:15px; border-radius:12px; background:#fff; border:1px solid var(--line); }
+.trip-options p { font-size:.86rem; }
+.trip-options a { color:var(--forest); font-weight:650; }
+.list-card,.market-card,.purchase-decision { overflow-wrap:anywhere; }
+.scanner-box { max-height:calc(100dvh - 32px); overflow-y:auto; }
+.scanner-manual input { width:100%; min-width:0; }
+.market-route-action { text-align:center; }
+@media(max-width:600px) {
+  .trip-options { grid-template-columns:minmax(0,1fr); gap:8px; }
+  .card-actions { display:flex; flex-wrap:wrap; width:100%; }
+  .card-actions > a,.card-actions > button { flex:1 1 140px; text-align:center; min-height:44px; }
+  .market-card .table-wrap { max-width:100%; }
+  .market-card table { min-width:480px; }
+  .field input,.field select { font-size:16px; }
+  .pm-route-panel { flex-wrap:wrap; }
+  .pm-route-panel > div { min-width:0; }
+}

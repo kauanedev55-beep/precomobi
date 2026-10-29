@@ -2,7 +2,7 @@ from collections.abc import Generator
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_settings
@@ -26,6 +26,20 @@ engine = create_engine(
     pool_pre_ping=True,
     connect_args=connect_args,
 )
+
+if not is_sqlite and settings.app_db_schema:
+    @event.listens_for(engine, "connect")
+    def use_app_schema(connection, _record):
+        # Dedicated schema keeps app tables out of Supabase's public Data API.
+        # The name is validated by Settings; no credentials enter SQL output.
+        previous = connection.autocommit
+        connection.autocommit = True
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(f'SET search_path TO "{settings.app_db_schema}"')
+        finally:
+            connection.autocommit = previous
+
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 

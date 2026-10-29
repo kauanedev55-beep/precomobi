@@ -89,10 +89,18 @@ class ComparisonItemRead(BaseModel):
 class MarketComparisonRead(BaseModel):
     market_id: int
     market_name: str
+    address: str
+    neighborhood: str | None
+    city: str
+    state: str
+    latitude: Decimal | None
+    longitude: Decimal | None
     complete: bool
     found_items: int
     total_items: int
     total: Decimal | None
+    available_total: Decimal
+    comparable_total: Decimal | None
     items: list[ComparisonItemRead]
 
 
@@ -100,3 +108,6 @@ class ComparisonRead(BaseModel):
     shopping_list_id: int
     list_name: str
     results: list[MarketComparisonRead]
+    common_product_ids: list[int]
+    common_items_count: int
+    priced_markets_count: int

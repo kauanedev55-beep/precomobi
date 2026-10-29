@@ -68,6 +68,12 @@ def init_db() -> None:
         for column, definition in migrations.items():
             if column not in columns:
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {column} {definition}"))
+    # Older catalogs may predate product images. Add only the optional field;
+    # never recreate tables or rewrite existing catalog records.
+    product_columns = {c["name"] for c in inspect(engine).get_columns("products")}
+    if "image_url" not in product_columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE products ADD COLUMN image_url VARCHAR(500)"))
     if not get_settings().demo_mode:
         return
     with Session(engine) as db:

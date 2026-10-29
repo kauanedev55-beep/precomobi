@@ -1,5 +1,4 @@
 from app.core.config import get_settings
-from collections import defaultdict
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -42,11 +41,22 @@ def compare_shopping_list(
     for report in reports:
         latest.setdefault((report.market_id, report.product_id), report)
 
+    # A partial basket can only be compared on identical products/quantities.
+    # Markets with no observation are still displayed but do not erase the
+    # intersection of the markets that have prices.
+    priced_sets = [
+        {pid for pid in product_ids if (market.id, pid) in latest}
+        for market in markets
+    ]
+    priced_sets = [ids for ids in priced_sets if ids]
+    common_ids = set.intersection(*priced_sets) if len(priced_sets) >= 2 else set()
+
     results = []
     for market in markets:
         comparison_items = []
         total = Decimal("0")
         found_items = 0
+        comparable_total = Decimal("0")
         for list_item in shopping_list.items:
             report = latest.get((market.id, list_item.product_id))
             unit_price = report.price if report else None
@@ -54,6 +64,8 @@ def compare_shopping_list(
             if subtotal is not None:
                 total += subtotal
                 found_items += 1
+                if list_item.product_id in common_ids:
+                    comparable_total += subtotal
             comparison_items.append({
                 "product_id": list_item.product_id,
                 "product_name": list_item.product.name,
@@ -66,12 +78,26 @@ def compare_shopping_list(
         results.append({
             "market_id": market.id,
             "market_name": market.name,
+            "address": market.address,
+            "neighborhood": market.neighborhood,
+            "city": market.city,
+            "state": market.state,
+            "latitude": market.latitude,
+            "longitude": market.longitude,
             "complete": bool(shopping_list.items) and found_items == len(shopping_list.items),
             "found_items": found_items,
             "total_items": len(shopping_list.items),
             "total": total if shopping_list.items and found_items == len(shopping_list.items) else None,
+            "available_total": total,
+            "comparable_total": comparable_total if common_ids and common_ids <= {i["product_id"] for i in comparison_items if i["unit_price"] is not None} else None,
             "items": comparison_items,
         })
 
     results.sort(key=lambda result: (not result["complete"], result["total"] is None, result["total"] if result["total"] is not None else Decimal("Infinity")))
-    return {"shopping_list_id": shopping_list.id, "list_name": shopping_list.name, "results": results[:3]}
+    return {
+        "shopping_list_id": shopping_list.id, "list_name": shopping_list.name,
+        "results": results,
+        "common_product_ids": sorted(common_ids),
+        "common_items_count": len(common_ids),
+        "priced_markets_count": len(priced_sets),
+    }
