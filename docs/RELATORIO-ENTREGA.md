@@ -30,15 +30,15 @@ Build Vite/TypeScript aprovado. Bundle principal ~284 KB; maior chunk de tela ~4
 
 Inicialização uvicorn executada com sucesso em banco exclusivo de demonstração. O navegador disponível não alcançou esse servidor local: o localhost dele respondeu por outro serviço. Por isso a inspeção visual, console, viewport desktop/mobile e jornada E2E real **não foram validados**. Não há aprovação visual de aparelhos físicos.
 
-A URL pública existente foi aberta no navegador e apresentou a interface anterior à revisão; isso não valida este build nem comprova saúde do backend publicado. A consulta pública a /api/health/database retornou Not Found.
+A URL pública existente foi aberta no navegador e apresentou a interface anterior à revisão; isso não valida este build nem comprova saúde do backend publicado. A consulta a /api/health/database no domínio estático retornou Not Found. Após identificar os serviços separados, a API real precomobi.onrender.com respondeu status ok e database connected. O tipo do banco ainda não foi confirmado; não há PostgreSQL no inventário Render, mas pode haver banco externo.
 
 Smoke HTTP em processo uvicorn real aprovado: cinco rotas SPA com HTML, 404 para API inexistente, sessão demonstrativa, pesquisa, criação de lista, comparação de três mercados e consulta da lista persistida. Log incluído em docs/evidencias.
 
-Foi adicionada validação automatizada no GitHub Actions. A execução remota do workflow precisa ser conferida após o push.
+GitHub Actions: os dois workflows (push e pull_request) do commit corrigido 2835050 foram concluídos com sucesso. O primeiro envio apresentou erro no scanner por divergência de sincronização; o commit seguinte corrigiu a fonte e os checks passaram.
 
 ## Bloqueios e pendências
 
-- Render sem sessão disponível: deploy não realizado; a URL existente não representa esta revisão.
+- Render conectado e serviços auditados; deploy não realizado. A leitura das configurações atuais exige o painel, e a revisão automática bloqueou a continuação de GitHub para Google. A URL existente não representa esta revisão.
 - Credenciais reais Supabase/Brevo não vieram no ZIP: cadastro e e-mails reais não foram testados.
 - Câmera experimental sem validação física; EAN manual preservado.
 - Busca por nome ainda local; preços reais dependem de contribuições e não de Open Food Facts.
@@ -49,3 +49,7 @@ Foi adicionada validação automatizada no GitHub Actions. A execução remota d
 - Antes de produção geral: validar limitação de tentativas, política de sessão e auditoria de dependências.
 
 Esta é uma revisão compilável e validada por testes de API, com publicação e validação visual pendentes; não é certificação de aplicação pronta em produção.
+
+## Versionamento
+
+Branch entrega/refinamento-2026-10-29, PR https://github.com/kauanedev55-beep/precomobi/pull/1 em rascunho. Revisão de código enviada e validada remotamente; main preservada. O ZIP usa a árvore dessa branch, sem .env, bancos, ambientes virtuais ou node_modules.

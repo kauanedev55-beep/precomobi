@@ -1,26 +1,34 @@
 # Publicação no serviço existente
 
-Não foi feito deploy: o Render apresentou a tela de login, sem sessão disponível. Não foram lidas ou alteradas suas variáveis e o banco de produção. Nenhum recurso pago foi criado.
+## Configuração confirmada no Render
 
-## Configuração proposta para revisão no Render
+Workspace Preço Mobi, repositório kauanedev55-beep/precomobi. Ambos os serviços acompanham main com deploy automático por commit.
 
-Manter o repositório existente e o serviço/domínio já utilizado. Conferir primeiro a branch atualmente publicada e salvar as configurações antes de alterar.
+| Serviço | Tipo e plano | Raiz | Build | Execução / publicação |
+| --- | --- | --- | --- | --- |
+| precomobi-1 | Static site | frontend | npm install && npm run build | dist, https://precomobi-1.onrender.com |
+| precomobi | Web service Python, free | backend | pip install -r requirements.txt | uvicorn main:app --host 0.0.0.0 --port $PORT, https://precomobi.onrender.com |
 
-- Diretório raiz: raiz do repositório.
-- Build: `bash scripts/build-render.sh`.
-- Start: `bash scripts/start-render.sh`.
-- Health: `/api/health/database`.
-- APP_ENV=production, SECRET_KEY própria longa, DATABASE_URL PostgreSQL persistente, FRONTEND_URL=https://precomobi-1.onrender.com, CORS_ORIGINS com a origem real.
-- VITE_API_URL=/api; VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no build.
-- SUPABASE_URL, SUPABASE_ANON_KEY e BREVO_API_KEY e EMAIL_FROM existentes no runtime.
-- DEMO_MODE=true somente em ambiente de apresentação explicitamente identificado; false para dados reais.
+Preservar essa divisão e as URLs existentes. Os scripts unificados adicionados são uma alternativa para execução local ou outro arranjo futuro; não é necessário mudar a raiz dos serviços atuais.
 
-Não habilite APP_ENV=production no serviço atual antes de confirmar PostgreSQL e a chave existentes: a nova validação recusa configurações inseguras. Não crie um banco pago. Se nenhum PostgreSQL gratuito já estiver disponível, a publicação persistente fica bloqueada até uma escolha do responsável.
+Frontend: VITE_API_URL=https://precomobi.onrender.com/api; VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY devem corresponder à conta existente. Backend: CORS_ORIGINS deve incluir https://precomobi-1.onrender.com; FRONTEND_URL com essa mesma origem; SUPABASE_URL, SUPABASE_ANON_KEY, BREVO_API_KEY e EMAIL_FROM existentes. Não foi possível inspecionar os valores atuais.
+
+## Estado da revisão
+
+Código na branch entrega/refinamento-2026-10-29, PR #1 em rascunho. Os dois checks do GitHub Actions do commit corrigido 2835050 passaram: build, testes de API e smoke HTTP. Main não foi alterada. Nenhum deploy ou atualização de variáveis de produção foi executado.
+
+A API pública respondeu {"status":"ok","database":"connected"} após sair da suspensão. Essa resposta não informa qual banco está configurado. Nenhum PostgreSQL apareceu no inventário do Render; um PostgreSQL externo ainda é possível.
+
+## Bloqueio para publicar
+
+A integração Render instalada lê serviços e permite mesclar variáveis, mas não oferece leitura dos valores atuais. A conferência no painel exigiu autenticação: a escolha do usuário avançou Render → GitHub → Google, e a revisão automática bloqueou a continuação desse fluxo. Não houve tentativa de contorno.
+
+Antes de publicar, confirmar com acesso autorizado: tipo e URL do banco sem divulgar credenciais, backup restaurável, configuração Supabase/Brevo, chave de assinatura e redirects. Não habilitar APP_ENV=production antes de confirmar PostgreSQL persistente e SECRET_KEY longa; essa opção rejeita SQLite e a chave padrão.
 
 ## Banco e migração
 
-Faça backup pelo método do banco atual e teste a restauração em ambiente separado. Inventarie tabelas/contagens e identifique SQLite versus PostgreSQL. A passagem SQLite → PostgreSQL exige exportação/importação validada de IDs, relacionamentos, valores Decimal e datas. Não execute migração direta no banco real sem esse ensaio. Esta revisão fornece a compatibilidade de conexão, sem alegar uma migração executada.
+Não migrar um banco real sem backup e ensaio em ambiente separado. Inventariar tabelas e contagens, preservar IDs/relacionamentos/Decimal/datas e validar login e listas após o ensaio. Não criar recursos pagos sem autorização. Não foi criado PostgreSQL nem alterado o banco atual.
 
-## Após a publicação
+## Depois da liberação
 
-Acesse /api/health e /api/health/database, abra a raiz e recarregue /login e /lista. Confirme um cadastro real de teste no Supabase; confira boas-vindas, login/logout e isolamento entre duas contas. Execute lista → comparação → mapa em desktop e celular. Se falhar, volte à branch/commit anterior preservando o banco. Registre resultados antes de apresentar o link como entrega publicada.
+Publicar o código validado preservando as raízes atuais, acompanhar os dois deploys automáticos e testar os endpoints de saúde na API real. No frontend, validar cadastro confirmado, e-mail, login/logout, isolamento entre contas e lista → comparação → mapa em desktop e celular. O rollback de código deve preservar o banco.
