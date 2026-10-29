@@ -37,6 +37,7 @@ export function ProductDetail() {
   if (error || !product) return <ErrorBox message={error || "Produto não encontrado."} onRetry={load} />;
 
   const withPrice = product.prices.filter((price) => price.price !== null);
+  const hasDemoPrices = product.prices.some((price) => price.source_type === "development");
   const cheapest = withPrice.length ? Math.min(...withPrice.map((price) => Number(price.price))) : null;
 
   return (
@@ -70,6 +71,9 @@ export function ProductDetail() {
       </dl>
 
       <h2>Preços por mercado</h2>
+      {hasDemoPrices && <div className="notice" role="status"><strong>Preços de demonstração:</strong> valores ilustrativos do projeto acadêmico. Não representam cotações atuais.</div>}
+      <details className="pm-price-details">
+        <summary>Ver preços, fontes e confirmações dos mercados</summary>
       <div className="table-wrap">
         <table>
           <thead><tr><th>Mercado</th><th>Preço</th><th>Data</th><th>Origem</th><th>Confirmação</th></tr></thead>
@@ -103,6 +107,7 @@ export function ProductDetail() {
           </tbody>
         </table>
       </div>
+      </details>
       <p className="form-hint">Vale o preço mais recente registrado em cada mercado. ★ = menor preço entre os mercados com preço informado.</p>
     </section>
   );

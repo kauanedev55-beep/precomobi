@@ -1,164 +1,45 @@
 # PreçoMobi
 
-Projeto web para comparação colaborativa de preços de supermercados.
+Monte sua lista, compare os preços cadastrados de até três mercados e abra a rota para o escolhido. Projeto de Análise e Desenvolvimento de Sistemas de Rafael Baldi Serpa e Kauane Silva Almeida dos Santos.
 
-## Estrutura organizada
+## Demonstração rápida no Windows
 
-Cada parte do sistema possui sua própria pasta. A raiz não contém arquivos de código misturados.
+Requisitos: Python 3.12 e Node.js 22 LTS com npm.
 
-```text
-precomobi/
-├── backend/                 # Aplicação Python/FastAPI
-│   ├── app/                 # Pacote Python e módulos da API
-│   │   ├── api/             # Rotas HTTP
-│   │   ├── core/            # Configurações
-│   │   ├── db/              # Sessão, base e inicialização do banco
-│   │   ├── models/          # Entidades SQLAlchemy
-│   │   ├── schemas/         # Schemas Pydantic
-│   │   └── services/        # Serviços de negócio
-│   ├── .venv/               # Ambiente virtual Python local
-│   ├── .env.example         # Configuração da API
-│   ├── main.py              # Entrada da API
-│   └── requirements.txt
-├── frontend/                # Aplicação React/Vite
-│   ├── src/                 # Componentes, serviços e estilos
-│   ├── public/
-│   ├── .env.example
-│   ├── package.json
-│   └── vite.config.ts
-├── tests/                   # Testes automatizados
-├── data/                    # Banco SQLite local
-│   └── precomobi.db
-├── docs/                    # Documentação técnica e guias
-├── scripts/                 # Scripts auxiliares
-├── .vscode/                 # Tarefas e depuração
-├── .gitignore
-└── README.md
+Na pasta extraída, execute `./INICIAR-DEMONSTRACAO.ps1` pelo PowerShell. Abra http://127.0.0.1:8000/login e escolha **Explorar demonstração**. Cada visitante recebe uma conta separada. Os preços de exemplo são identificados em todas as páginas internas; não representam ofertas atuais.
+
+Esse modo funciona sem Supabase/Brevo para apresentar listas e comparação. O cadastro e login normais continuam usando Supabase e exigem a configuração das contas existentes.
+
+## Desenvolvimento
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r backend/requirements-dev.txt
+npm --prefix frontend ci
+# Terminal 1, dentro de backend:
+DEMO_MODE=true ../.venv/bin/python -m uvicorn main:app --reload
+# Terminal 2, na raiz:
+npm --prefix frontend run dev
 ```
 
-A raiz contém apenas arquivos de organização. O código Python fica em `backend` e o código React fica em `frontend`.
+Abra http://localhost:5173. No Windows use `.venv\Scripts\python.exe` e `$env:DEMO_MODE='true'`. Variáveis existentes não são alteradas pelos comandos acima, salvo a opção de demonstração indicada. Não envie seus arquivos .env ao GitHub.
 
-## Iniciar o back-end
+## Validação
 
-Abra o terminal na raiz do projeto e execute:
-
-```powershell
-cd backend
-copy .env.example .env
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python -m uvicorn main:app --reload
+```bash
+.venv/bin/python -m pytest tests -q
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
 ```
 
-Em instalações futuras, se o ambiente já existir, use apenas:
+Os testes usam exclusivamente um banco temporário, mensagens capturadas e respostas externas simuladas para validar contratos. Não enviam e-mails reais.
 
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-python -m uvicorn main:app --reload
-```
+## Documentação da entrega
 
-A API ficará em:
+- [Instalação e configurações](docs/INSTALACAO-ENTREGA.md)
+- [Arquitetura e tecnologias](docs/ARQUITETURA-ENTREGA.md)
+- [Roteiro de cinco minutos](docs/ROTEIRO-APRESENTACAO.md)
+- [Testes e limitações](docs/RELATORIO-ENTREGA.md)
+- [Publicação segura](docs/DEPLOY-ENTREGA.md)
 
-```text
-http://localhost:8000
-```
-
-Swagger:
-
-```text
-http://localhost:8000/docs
-```
-
-Health check:
-
-```text
-http://localhost:8000/api/health
-```
-
-Health do banco:
-
-```text
-http://localhost:8000/api/health/database
-```
-
-## Iniciar o front-end
-
-Abra um segundo terminal na raiz:
-
-```powershell
-cd frontend
-copy .env.example .env
-npm install
-npm run dev
-```
-
-A interface ficará em:
-
-```text
-http://localhost:5173
-```
-
-## Banco de dados
-
-O SQLite é criado automaticamente em:
-
-```text
-data/precomobi.db
-```
-
-A configuração padrão está em `backend/.env.example`:
-
-```env
-DATABASE_URL=sqlite:///../data/precomobi.db
-```
-
-Esse caminho funciona porque o comando da API é executado dentro de `backend`.
-
-Para reiniciar os dados de demonstração:
-
-```powershell
-# com a API parada, a partir da raiz
-Remove-Item .\data\precomobi.db
-```
-
-Depois inicie a API novamente.
-
-## Verificar imports
-
-Com o terminal dentro de `backend` e o ambiente virtual ativado:
-
-```powershell
-python -c "import app; print(app)"
-python -c "from app.api.catalog import router; print('catalog OK')"
-python -c "from app.api.comparisons import router; print('comparisons OK')"
-python -c "from app.api.health import router; print('health OK')"
-python -c "from app.api.shopping_lists import router; print('shopping_lists OK')"
-python -c "from app.core.config import get_settings; print('config OK')"
-python -c "from app.db.init_db import init_db; print('database OK')"
-```
-
-## VS Code
-
-Abra a pasta raiz `precomobi` no VS Code.
-
-Use **Terminal > Run Task** para executar:
-
-- `PreçoMobi: iniciar API`;
-- `PreçoMobi: iniciar front-end`.
-
-A configuração da API em `.vscode/launch.json` usa:
-
-```text
-cwd: backend
-module: uvicorn
-args: main:app --reload
-```
-
-## Documentação
-
-- [Guia de teste do zero](docs/guia-teste-do-zero.md)
-- [Teste do MVP](docs/teste-mvp.md)
-- [Arquitetura](docs/arquitetura.md)
-- [Banco de dados](docs/banco-de-dados.md)
+As notas anteriores em docs são histórico. Os documentos com sufixo ENTREGA e o roteiro acima descrevem esta revisão. **Publicação no Render e testes visuais em navegador ainda dependem da validação descrita no relatório.**

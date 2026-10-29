@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { getMe, loginUser, registerUser, setAuthToken, setUnauthorizedHandler, type AuthResult, type AuthUser } from "../services/api";
+import { exchangeSupabaseSession, startDemoSession, getMe, setAuthToken, setUnauthorizedHandler, type AuthResult, type AuthUser } from "../services/api";
+import { supabaseLogin, supabaseRegister } from "../services/supabase";
 
 const STORAGE_KEY = "precomobi_auth";
 
@@ -12,6 +13,8 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  demoLogin: () => Promise<void>;
+  completeSupabaseLogin: (accessToken: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -73,8 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       checking,
       sessionExpired,
-      login: async (email, password) => startSession(await loginUser({ email, password })),
-      register: async (name, email, password) => startSession(await registerUser({ name, email, password })),
+      login: async (email, password) => { const tokens = await supabaseLogin(email, password); startSession(await exchangeSupabaseSession(tokens.access_token)); },
+      demoLogin: async () => startSession(await startDemoSession()),
+      register: async (name, email, password) => { await supabaseRegister(name, email, password); },
+      completeSupabaseLogin: async (accessToken) => startSession(await exchangeSupabaseSession(accessToken)),
       logout: () => {
         clearSession();
         setSessionExpired(false);

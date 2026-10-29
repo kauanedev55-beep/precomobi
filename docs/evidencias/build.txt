@@ -1,0 +1,35 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> precomobi-frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v6.4.5 building for production...
+transforming...
+✓ 301 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                               0.84 kB │ gzip:   0.45 kB
+dist/assets/Login-EGAOsjvE.css                4.46 kB │ gzip:   1.51 kB
+dist/assets/MapPage-CIGW-MKW.css             15.61 kB │ gzip:   6.46 kB
+dist/assets/index-CKhsbTxt.css               41.48 kB │ gzip:   9.05 kB
+dist/assets/SourceBadge-DwBScAvJ.js           0.27 kB │ gzip:   0.22 kB
+dist/assets/format-DAS_7nlS.js                0.88 kB │ gzip:   0.52 kB
+dist/assets/ConfirmPriceButton-D3MkBVek.js    1.01 kB │ gzip:   0.56 kB
+dist/assets/ResetPassword-C3kbYyPL.js         1.24 kB │ gzip:   0.72 kB
+dist/assets/Profile-BrIJrJ39.js               1.31 kB │ gzip:   0.60 kB
+dist/assets/Markets-CAZmM6mN.js               1.33 kB │ gzip:   0.71 kB
+dist/assets/VerifyEmail-CDOC04M7.js           1.44 kB │ gzip:   0.80 kB
+dist/assets/MyContributions-B9VipvkI.js       1.50 kB │ gzip:   0.73 kB
+dist/assets/ProductArt-CLM5pnQ2.js            1.74 kB │ gzip:   0.78 kB
+dist/assets/Dashboard-B-mJ65vO.js             2.04 kB │ gzip:   0.86 kB
+dist/assets/Register-CwmPzm9t.js              2.11 kB │ gzip:   0.93 kB
+dist/assets/Contribute-DYqlC_Ao.js            3.37 kB │ gzip:   1.46 kB
+dist/assets/History-BZhA4l8U.js               3.82 kB │ gzip:   1.66 kB
+dist/assets/ProductDetail-ChnbnKxR.js         3.92 kB │ gzip:   1.62 kB
+dist/assets/ComparisonPage-q7Gdu0_9.js        4.32 kB │ gzip:   1.80 kB
+dist/assets/Login-CBrv8lHF.js                 4.37 kB │ gzip:   1.63 kB
+dist/assets/ShoppingListPage-BlrycVED.js      4.47 kB │ gzip:   1.74 kB
+dist/assets/MapPage-CT_23i6V.js             157.44 kB │ gzip:  46.59 kB
+dist/assets/index-CONo_QD-.js               283.77 kB │ gzip:  90.03 kB
+dist/assets/Products-Cdh9tkgX.js            418.20 kB │ gzip: 110.28 kB
+✓ built in 2.83s

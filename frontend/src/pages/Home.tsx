@@ -1,62 +1,7 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
-
-import { useAuth } from "../auth/AuthContext";
-import { ProductArt } from "../components/ProductArt";
-
-export function Home() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [query, setQuery] = useState("");
-
-  function search(event: FormEvent) {
-    event.preventDefault();
-    navigate(query.trim() ? `/produtos?q=${encodeURIComponent(query.trim())}` : "/produtos");
-  }
-
-  return (
-    <>
-      <section className="hero-section">
-        <div className="hero-copy">
-          <span className="eyebrow">COMPRAR BEM COMEÇA ANTES DE SAIR</span>
-          <h1>O preço certo, <br />no mercado certo.</h1>
-          <p>Monte sua lista, compare entre os mercados de Serra/ES e veja na hora onde sai mais barato.</p>
-          <form className="hero-search" onSubmit={search} role="search">
-            <input aria-label="Buscar produto por nome ou código de barras (EAN)" placeholder="Arroz, café, leite..." value={query} onChange={(event) => setQuery(event.target.value)} />
-            <button className="primary-button" type="submit">Buscar</button>
-          </form>
-          <div className="hero-actions">
-            <Link className="primary-button" to="/lista">Montar minha lista <span>→</span></Link>
-            {user ? (
-              <Link className="text-button" to="/perfil">Meu perfil <span>↗</span></Link>
-            ) : (
-              <Link className="text-button" to="/cadastro">Criar conta <span>↗</span></Link>
-            )}
-          </div>
-        </div>
-
-        <div className="hero-spotlight" aria-hidden="true">
-          <div className="spotlight-blob" />
-          <ProductArt category="Grãos" name="" size={150} />
-          <div className="spotlight-price">
-            <span>a partir de</span>
-            <strong>R$ 23<sup>,90</sup></strong>
-            <small>arroz 5&nbsp;kg em Extrabom Colina de Laranjeiras</small>
-          </div>
-        </div>
-      </section>
-
-      <section className="trust-row" aria-label="Sobre os dados">
-        <span className="check-icon">✓</span>
-        <span>Preços marcados com “Dados de desenvolvimento” são de teste — ainda não são valores reais coletados nos mercados.</span>
-      </section>
-
-      <section className="quick-grid" aria-label="Acesso rápido">
-        <Link className="quick-card" to="/produtos"><strong>Produtos</strong><span>Pesquise por nome ou aponte a câmera para o código de barras.</span></Link>
-        <Link className="quick-card" to="/lista"><strong>Lista de compras</strong><span>Monte sua lista e compare os mercados.</span></Link>
-        <Link className="quick-card" to="/mapa"><strong>Mapa</strong><span>Carone, Extrabom e Supermercados BH, em Laranjeiras.</span></Link>
-        <Link className="quick-card" to={user ? "/contribuir" : "/login"}><strong>Contribuir com preço</strong><span>Viu um preço no mercado? Registre e ajude a comunidade.</span></Link>
-      </section>
-    </>
-  );
-}
+import { Link } from "react-router-dom";
+export function Home() { return <>
+  <section className="pm-landing-hero"><div className="pm-landing-copy"><span className="pm-kicker">ECONOMIZE TEMPO E DINHEIRO</span><h1>Sua lista de compras, <em>pelo melhor preço.</em></h1><p>Monte sua lista, compare os preços cadastrados dos mercados e descubra como chegar à melhor opção. Tudo de um jeito simples.</p><div className="pm-landing-buttons"><Link className="primary-button" to="/cadastro">Começar agora <span>→</span></Link><a className="outline-button" href="#como-funciona">Como funciona ↗</a></div><div className="pm-landing-trust"><span>✓ Lista organizada</span><span>✓ Compare mercados</span><span>✓ Rotas em um clique</span></div></div><div className="pm-landing-visual" aria-label="Prévia ilustrativa de uma lista de compras"><div className="pm-visual-circle"/><div className="pm-visual-card"><div className="pm-visual-heading"><span>Minha lista</span><b>•••</b></div><p>Compras da semana</p>{["Arroz 5 kg","Feijão 1 kg","Leite 1 L","Banana 1 kg"].map((name,i)=><div className="pm-visual-item" key={name}><span className="pm-visual-item-icon">{["▤","◈","▯","◉"][i]}</span><span>{name}</span><span>✓</span></div>)}<div className="pm-visual-btn">Comparar preços →</div></div><div className="pm-visual-floating"><small>MELHOR OPÇÃO</small><strong>Compare e economize</strong><span>Escolha seu mercado ↗</span></div></div></section>
+  <section id="como-funciona" className="pm-landing-section"><span className="pm-kicker">COMO FUNCIONA</span><h2>Simples, do início ao fim.</h2><p>Da sua lista até a escolha do mercado, sem complicação.</p><div className="pm-feature-steps"><article><span>01</span><h3>Monte sua lista</h3><p>Escolha os produtos e organize sua próxima compra.</p></article><article><span>02</span><h3>Compare os preços</h3><p>Veja os preços disponíveis nos mercados cadastrados da região.</p></article><article><span>03</span><h3>Escolha o mercado</h3><p>Confira onde sua compra fica mais em conta.</p></article><article><span>04</span><h3>Veja como chegar</h3><p>Consulte a distância e abra a navegação até o destino.</p></article></div></section>
+  <section id="beneficios" className="pm-landing-section pm-benefits"><span className="pm-kicker">POR QUE USAR O PREÇOMOBI?</span><h2>Mais controle, menos esforço.</h2><div className="pm-benefit-grid"><article><span>↘</span><div><h3>Compare com clareza</h3><p>Entenda a diferença dos valores antes de sair de casa.</p></div></article><article><span>⌖</span><div><h3>Encontre seu caminho</h3><p>Veja o mercado no mapa e inicie a rota quando desejar.</p></div></article><article><span>☷</span><div><h3>Suas listas salvas</h3><p>Guarde e reutilize suas listas na sua conta.</p></div></article></div></section>
+  <section className="pm-last-cta"><h2>Suas compras podem ser mais simples.</h2><p>Crie sua conta e comece a organizar sua próxima lista.</p><Link className="primary-button" to="/cadastro">Criar minha conta →</Link></section>
+</>; }
