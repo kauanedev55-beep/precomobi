@@ -1,6 +1,7 @@
 from decimal import Decimal
+from app.core.config import get_settings
 
-from sqlalchemy import select
+from sqlalchemy import inspect, select, text
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
@@ -55,48 +56,46 @@ PRICES = [
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    # Novos campos em bancos publicados: contas antigas continuam confirmadas.
+    columns = {c["name"] for c in inspect(engine).get_columns("users")}
+    migrations = {
+        "email_verified": "BOOLEAN NOT NULL DEFAULT TRUE",
+        "verification_token_hash": "VARCHAR(64)",
+        "verification_expires_at": "TIMESTAMP",
+        "verification_sent_at": "TIMESTAMP",
+    }
+    with engine.begin() as conn:
+        for column, definition in migrations.items():
+            if column not in columns:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {column} {definition}"))
+    if not get_settings().demo_mode:
+        return
     with Session(engine) as db:
         user = db.scalar(select(User).where(User.email == "demo@precomobi.local"))
         if not user:
-            user = User(name="Usuário de demonstração", email="demo@precomobi.local", password_hash=hash_password(DEMO_PASSWORD))
+            user = User(name="Demonstração", email="demo@precomobi.local", password_hash=hash_password(DEMO_PASSWORD), email_verified=True)
             db.add(user)
             db.flush()
-        elif not is_bcrypt_hash(user.password_hash):
-            # banco criado antes da autenticação existir: troca o placeholder por um hash de verdade
-            user.password_hash = hash_password(DEMO_PASSWORD)
-
-        products = list(db.scalars(select(Product).order_by(Product.id)))
-        if not products:
-            products = [
-                Product(ean=ean, name=name, brand=brand, category=category, quantity_value=quantity, quantity_unit=unit)
-                for ean, name, brand, category, quantity, unit in PRODUCTS
-            ]
-            db.add_all(products)
-            db.flush()
-
-        markets = list(db.scalars(select(Market).order_by(Market.id)))
-        if not markets:
-            markets = [Market(name=name, address=address, neighborhood=neighborhood, city="Serra", state="ES") for name, address, neighborhood in MARKETS]
-            for market in markets:
-                if market.name in MARKET_COORDINATES:
-                    market.latitude, market.longitude = MARKET_COORDINATES[market.name]
-            db.add_all(markets)
-            db.flush()
-        else:
-            for market in markets:
-                if market.name in MARKET_RENAMES:
-                    new_name, new_address, new_neighborhood = MARKET_RENAMES[market.name]
-                    market.name, market.address, market.neighborhood = new_name, new_address, new_neighborhood
-            for market in markets:
-                if market.name in MARKET_COORDINATES:
-                    market.latitude, market.longitude = MARKET_COORDINATES[market.name]
-            db.add_all(markets)
-            db.flush()
-
-        if not db.scalar(select(PriceReport).limit(1)):
-            db.add_all([
-                PriceReport(product_id=products[product_index].id, market_id=markets[market_index].id, user_id=user.id, price=price, source_type="development")
-                for product_index, market_index, price in PRICES
-            ])
-
+        products = []
+        for ean, name, brand, category, quantity, unit in PRODUCTS:
+            product = db.scalar(select(Product).where(Product.ean == ean))
+            if not product:
+                product = Product(ean=ean, name=name, brand=brand, category=category, quantity_value=quantity, quantity_unit=unit)
+                db.add(product)
+                db.flush()
+            products.append(product)
+        markets = []
+        for name, address, neighborhood in MARKETS:
+            market = db.scalar(select(Market).where(Market.name == name))
+            if not market:
+                market = Market(name=name, address=address, neighborhood=neighborhood, city="Serra", state="ES")
+                # Coordenadas herdadas da base de apresentação; não verificadas nesta revisão.
+                market.latitude, market.longitude = MARKET_COORDINATES[name]
+                db.add(market)
+                db.flush()
+            markets.append(market)
+        for product_index, market_index, price in PRICES:
+            pid, mid = products[product_index].id, markets[market_index].id
+            if not db.scalar(select(PriceReport).where(PriceReport.product_id == pid, PriceReport.market_id == mid)):
+                db.add(PriceReport(product_id=pid, market_id=mid, user_id=user.id, price=price, source_type="development"))
         db.commit()

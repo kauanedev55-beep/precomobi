@@ -16,6 +16,10 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    verification_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    verification_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    verification_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     price_reports: Mapped[list["PriceReport"]] = relationship(back_populates="reporter")
@@ -35,6 +39,10 @@ class Product(Base):
     quantity_unit: Mapped[Optional[str]] = mapped_column(String(20))
     image_url: Mapped[Optional[str]] = mapped_column(String(500))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    verification_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    verification_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    verification_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     price_reports: Mapped[list["PriceReport"]] = relationship(back_populates="product")
@@ -53,6 +61,10 @@ class Market(Base):
     latitude: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
     longitude: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    verification_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    verification_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    verification_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     price_reports: Mapped[list["PriceReport"]] = relationship(back_populates="market")
@@ -73,6 +85,10 @@ class PriceReport(Base):
     source_type: Mapped[str] = mapped_column(String(30), default="development")
     notes: Mapped[Optional[str]] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    verification_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    verification_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    verification_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     product: Mapped[Product] = relationship(back_populates="price_reports")
     market: Mapped[Market] = relationship(back_populates="price_reports")

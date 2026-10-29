@@ -1,3 +1,4 @@
+from app.core.config import get_settings
 from collections import defaultdict
 from decimal import Decimal
 
@@ -5,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.deps import get_current_user_optional
+from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models import Market, PriceReport, ShoppingList, ShoppingListItem, User
 from app.schemas.mvp import ComparisonRead
@@ -17,7 +18,7 @@ router = APIRouter(prefix="/comparisons", tags=["comparisons"])
 def compare_shopping_list(
     shopping_list_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_optional),
+    current_user: User = Depends(get_current_user),
 ) -> dict:
     shopping_list = db.scalar(
         select(ShoppingList)
@@ -32,7 +33,7 @@ def compare_shopping_list(
     reports = list(
         db.scalars(
             select(PriceReport)
-            .where(PriceReport.product_id.in_(product_ids), PriceReport.is_active.is_(True))
+            .where(PriceReport.product_id.in_(product_ids), PriceReport.is_active.is_(True), True if get_settings().demo_mode else PriceReport.source_type != "development")
             .order_by(PriceReport.reported_at.desc(), PriceReport.id.desc())
         )
     ) if product_ids else []
@@ -65,12 +66,12 @@ def compare_shopping_list(
         results.append({
             "market_id": market.id,
             "market_name": market.name,
-            "complete": found_items == len(shopping_list.items),
+            "complete": bool(shopping_list.items) and found_items == len(shopping_list.items),
             "found_items": found_items,
             "total_items": len(shopping_list.items),
-            "total": total if found_items == len(shopping_list.items) else None,
+            "total": total if shopping_list.items and found_items == len(shopping_list.items) else None,
             "items": comparison_items,
         })
 
-    results.sort(key=lambda result: (not result["complete"], result["total"] is None, result["total"] or Decimal("999999")))
-    return {"shopping_list_id": shopping_list.id, "list_name": shopping_list.name, "results": results}
+    results.sort(key=lambda result: (not result["complete"], result["total"] is None, result["total"] if result["total"] is not None else Decimal("Infinity")))
+    return {"shopping_list_id": shopping_list.id, "list_name": shopping_list.name, "results": results[:3]}

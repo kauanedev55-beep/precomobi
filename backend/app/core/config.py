@@ -1,15 +1,22 @@
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     app_name: str = "PrecoMobi API"
     app_env: str = "development"
+    demo_mode: bool = False
     api_prefix: str = "/api"
     database_url: str = "sqlite:///../data/precomobi.db"
     cors_origins: str = "http://localhost:5173"
     secret_key: str = "precomobi-dev-secret-troque-em-producao"
+
+    frontend_url: str = "http://localhost:5173"
+    brevo_api_key: str = ""
+    supabase_url: str = ""
+    supabase_anon_key: str = ""
 
     # E-mail de boas-vindas (opcional). Enquanto smtp_host estiver vazio, o envio
     # é simplesmente pulado — cadastro continua funcionando normalmente sem e-mail.
@@ -24,6 +31,21 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def production_settings(self):
+        if self.database_url.startswith("postgres://"):
+            self.database_url = self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif self.database_url.startswith("postgresql://"):
+            self.database_url = self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        if self.app_env.lower() == "production":
+            if len(self.secret_key) < 32 or self.secret_key.startswith("precomobi-dev-"):
+                raise ValueError("Produção exige SECRET_KEY própria com pelo menos 32 caracteres")
+            if self.database_url.startswith("sqlite"):
+                raise ValueError("Produção exige PostgreSQL persistente; faça backup antes de migrar")
+            if not self.frontend_url.startswith("https://"):
+                raise ValueError("Produção exige FRONTEND_URL HTTPS")
+        return self
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -1,3 +1,4 @@
+from app.core.config import get_settings
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -17,7 +18,7 @@ def _base_query():
     return (
         select(PriceReport)
         .options(joinedload(PriceReport.product), joinedload(PriceReport.market))
-        .where(PriceReport.is_active.is_(True))
+        .where(PriceReport.is_active.is_(True), True if get_settings().demo_mode else PriceReport.source_type != "development")
     )
 
 
@@ -141,7 +142,7 @@ def my_price_reports(
         ).unique()
     )
     counts = _confirmation_counts(db, [report.id for report in reports])
-    confirmed = _confirmed_report_ids(db, [report.id for report in reports], current_user.id)
+    confirmed = _confirmed_report_ids(db, [report.id for report in reports], current_user.id) if current_user else set()
     return [_to_read(report, counts, confirmed) for report in reports]
 
 
@@ -161,5 +162,5 @@ def price_history(
         query = query.where(PriceReport.market_id == market_id)
     reports = list(db.scalars(query.order_by(PriceReport.reported_at.desc(), PriceReport.id.desc()).limit(limit)).unique())
     counts = _confirmation_counts(db, [report.id for report in reports])
-    confirmed = _confirmed_report_ids(db, [report.id for report in reports], current_user.id)
+    confirmed = _confirmed_report_ids(db, [report.id for report in reports], current_user.id) if current_user else set()
     return [_to_read(report, counts, confirmed) for report in reports]
