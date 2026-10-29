@@ -1,5 +1,6 @@
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import type { IScannerControls } from "@zxing/browser";
+import { productCode } from "../lib/scannedCode";
 import { BarcodeFormat, DecodeHintType } from "@zxing/library";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
@@ -13,9 +14,8 @@ type CameraCapabilities = MediaTrackCapabilities & {
   focusMode?: string[];
 };
 
-const EAN_PATTERN = /^(?:\d{8}|\d{12}|\d{13}|\d{14})$/;
-const normalizeEan = (text: string) => text.replace(/\s/g, "").trim();
 const allowedFormats = [
+  BarcodeFormat.QR_CODE,
   BarcodeFormat.EAN_13,
   BarcodeFormat.EAN_8,
   BarcodeFormat.UPC_A,
@@ -56,8 +56,13 @@ export function BarcodeScanner({
     const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
 
     const deliver = (raw: string) => {
-      const code = normalizeEan(raw);
-      if (cancelled || delivered || !EAN_PATTERN.test(code)) return;
+      if (cancelled || delivered) return;
+      const code = productCode(raw);
+      if (!code) {
+        setError("Este código não identifica um produto por EAN. QR de nota fiscal não fornece preços automaticamente; informe o produto e o valor observado.");
+        return;
+      }
+      setError("");
       delivered = true;
       if (nativeTimer !== undefined) clearInterval(nativeTimer);
       controlsRef.current?.stop();
@@ -97,13 +102,13 @@ export function BarcodeScanner({
       const Detector = (window as Window & { BarcodeDetector?: NativeDetectorCtor }).BarcodeDetector;
       if (Detector) {
         try {
-          const detector = new Detector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] });
+          const detector = new Detector({ formats: ["qr_code", "ean_13", "ean_8", "upc_a", "upc_e", "code_128"] });
           nativeTimer = setInterval(() => {
             if (nativeBusy || cancelled || delivered || videoElement.readyState < 2) return;
             nativeBusy = true;
             void detector.detect(videoElement)
               .then((codes) => {
-                const found = codes.find((item) => EAN_PATTERN.test(normalizeEan(item.rawValue)));
+                const found = codes.find((item) => productCode(item.rawValue)) ?? codes[0];
                 if (found) deliver(found.rawValue);
               })
               .catch(() => undefined)
@@ -144,9 +149,9 @@ export function BarcodeScanner({
 
   function submitManual(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const code = normalizeEan(manualCode);
-    if (!EAN_PATTERN.test(code)) {
-      setManualError("Digite 8, 12, 13 ou 14 números do código de barras.");
+    const code = productCode(manualCode);
+    if (!code) {
+      setManualError("Informe um EAN de 8, 12, 13 ou 14 números, ou um QR de produto com EAN.");
       return;
     }
     controlsRef.current?.stop();
@@ -156,20 +161,20 @@ export function BarcodeScanner({
 
   return (
     <div className="scanner-overlay" role="presentation" onClick={onClose}>
-      <div className="scanner-box" role="dialog" aria-modal="true" aria-label="Ler código de barras" onClick={(event) => event.stopPropagation()}>
+      <div className="scanner-box" role="dialog" aria-modal="true" aria-label="Ler código de barras ou QR Code" onClick={(event) => event.stopPropagation()}>
         <button className="auth-close" type="button" aria-label="Fechar" onClick={onClose}>×</button>
-        <h2>Ler código de barras</h2>
+        <h2>Ler código de barras ou QR Code</h2>
         <video ref={videoRef} className="scanner-video" muted playsInline autoPlay aria-label="Imagem da câmera" />
         {error ? <p className="error-message" role="alert">{error}</p> : (
-          <p className="form-hint">Enquadre todas as barras, sem reflexos, e mantenha a embalagem parada. {cameraDetails}</p>
+          <p className="form-hint">Enquadre o código de barras ou QR do produto, sem reflexos, e mantenha a embalagem parada. {cameraDetails}</p>
         )}
         <form className="scanner-manual" onSubmit={submitManual}>
           <label htmlFor="ean-manual">Ou digite o código</label>
           <input
             id="ean-manual"
-            inputMode="numeric"
+            inputMode="text"
             autoComplete="off"
-            placeholder="Ex.: 3017620422003"
+            placeholder="EAN ou conteúdo do QR do produto"
             value={manualCode}
             onChange={(event) => { setManualCode(event.target.value); setManualError(""); }}
           />

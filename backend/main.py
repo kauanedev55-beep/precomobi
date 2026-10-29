@@ -37,6 +37,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Live catalogs and authenticated responses must not be cached across devices.
+@app.middleware("http")
+async def fresh_api_responses(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith(settings.api_prefix + "/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 app.include_router(health_router, prefix=settings.api_prefix)
 app.include_router(auth_router, prefix=settings.api_prefix)
 app.include_router(supabase_auth_router, prefix=settings.api_prefix)

@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
+import { BarcodeScanner } from "../components/BarcodeScanner";
 import { ErrorBox, Loading } from "../components/StateViews";
 import { formatPrice } from "../lib/format";
-import { createPriceReport, getMarkets, getProducts, type Market, type PriceReport, type Product } from "../services/api";
+import { createPriceReport, getProductByEan, getMarkets, getProducts, type Market, type PriceReport, type Product } from "../services/api";
 
 function todayIso(): string {
   const now = new Date();
@@ -11,6 +12,7 @@ function todayIso(): string {
 }
 
 export function Contribute() {
+  const [scanning, setScanning] = useState(false);
   const [params] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -34,6 +36,16 @@ export function Contribute() {
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Não foi possível carregar os dados."))
       .finally(() => setLoading(false));
   }, []);
+
+  async function scanProduct(code: string) {
+    setScanning(false); setError("");
+    try {
+      const [product] = await getProductByEan(code);
+      if (!product) throw new Error("Produto não encontrado.");
+      setProducts(rows => rows.some(p => p.id === product.id) ? rows : [...rows, product]);
+      setProductId(String(product.id)); setCreated(null);
+    } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível consultar o produto."); }
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -77,6 +89,9 @@ export function Contribute() {
           <Link to="/minhas-contribuicoes">Ver minhas contribuições</Link> · <Link to={`/produtos/${created.product_id}`}>Ver produto</Link>
         </div>
       )}
+      {scanning && <BarcodeScanner onDetected={code => void scanProduct(code)} onClose={() => setScanning(false)} />}
+      <button className="outline-button" type="button" onClick={() => setScanning(true)}>Ler código de barras ou QR do produto</button>
+      {markets.length === 0 && <p className="notice">Não há mercados nesta base. O preço só pode ser salvo após os cadastros reais estarem disponíveis no servidor.</p>}
       <form className="form-card" onSubmit={submit} noValidate>
         <label className="field"><span>Produto</span>
           <select value={productId} onChange={(event) => setProductId(event.target.value)}>
@@ -94,7 +109,7 @@ export function Contribute() {
         <label className="field"><span>Data da observação (opcional — padrão: agora)</span><input type="date" max={todayIso()} value={date} onChange={(event) => setDate(event.target.value)} /></label>
         <label className="field"><span>Observação (opcional)</span><input maxLength={500} placeholder="Ex.: preço na prateleira" value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
         {error && <p className="error-message" role="alert">{error}</p>}
-        <button className="primary-button" type="submit" disabled={saving}>{saving ? "Enviando..." : "Registrar preço"}</button>
+        <button className="primary-button" type="submit" disabled={saving || markets.length === 0}>{saving ? "Enviando..." : "Registrar preço"}</button>
       </form>
     </section>
   );

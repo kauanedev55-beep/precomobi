@@ -51,10 +51,18 @@ export type ComparisonItem = {
 export type MarketResult = {
   market_id: number;
   market_name: string;
+  address: string;
+  neighborhood: string | null;
+  city: string;
+  state: string;
+  latitude: string | null;
+  longitude: string | null;
   complete: boolean;
   found_items: number;
   total_items: number;
   total: string | null;
+  available_total: string;
+  comparable_total: string | null;
   items: ComparisonItem[];
 };
 
@@ -62,6 +70,9 @@ export type Comparison = {
   shopping_list_id: number;
   list_name: string;
   results: MarketResult[];
+  common_product_ids: number[];
+  common_items_count: number;
+  priced_markets_count: number;
 };
 
 export type ShoppingListItem = {
@@ -117,7 +128,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   let response: Response;
   try {
-    response = await fetch(`${API_URL}${path}`, { ...options, headers });
+    response = await fetch(`${API_URL}${path}`, { ...options, cache: "no-store", headers });
   } catch {
     throw new Error("Não foi possível conectar à API. Tente novamente em instantes.");
   }
@@ -132,6 +143,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (response.status === 204) return undefined as T;
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw new Error("O servidor da aplicação não retornou os dados. Verifique a configuração da API.");
+  }
   return response.json() as Promise<T>;
 }
 

@@ -31,3 +31,6 @@ data/*
 # Coverage
 .coverage
 htmlcov/
+
+# Compiled test helpers
+.test-build/

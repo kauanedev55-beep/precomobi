@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { PurchaseDecision } from "../components/PurchaseDecision";
+import { fullAddress, googleMapsUrl } from "../lib/navigation";
 import { SourceBadge } from "../components/SourceBadge";
 import { ErrorBox, Loading } from "../components/StateViews";
 import { formatDate, formatPrice } from "../lib/format";
@@ -26,9 +28,13 @@ export function ComparisonPage() {
 
   useEffect(() => {
     void load();
+    const refresh = () => { if (document.visibilityState === "visible") void load(); };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
   }, [load]);
 
-  if (loading) return <Loading text="Comparando os mercados..." />;
+  if (loading && (!comparison || comparison.shopping_list_id !== Number(id))) return <Loading text="Comparando os mercados..." />;
   if (error || !comparison) return <ErrorBox message={error || "Comparação indisponível."} onRetry={load} />;
 
   const hasDemoPrices = comparison.results.some((market) => market.items.some((item) => item.source_type === "development"));
@@ -40,13 +46,19 @@ export function ComparisonPage() {
     const worst = sorted[sorted.length - 1];
     saving = { amount: Number(worst.total) - Number(best.total), best: best.market_name, worst: worst.market_name };
   }
+  const shared = comparison.results.filter(r => r.comparable_total !== null);
+  const partialDecision = complete.length < 2;
+  const decisionMarkets = partialDecision ? shared : complete;
   const anyMissing = comparison.results.some((result) => !result.complete);
   const bestId = complete.length ? [...complete].sort((a, b) => Number(a.total) - Number(b.total))[0].market_id : null;
 
   return (
     <section>
       <p className="breadcrumb"><Link to="/lista">← Lista de compras</Link></p>
-      <h1>Comparação: {comparison.list_name}</h1>
+      <div className="comparison-heading"><h1>Comparação: {comparison.list_name}</h1><button type="button" className="outline-button" disabled={loading} onClick={() => void load()}>{loading ? "Atualizando..." : "Atualizar preços"}</button></div>
+      {comparison.results.length === 0 && <div className="notice">A base consultada ainda não tem mercados ativos. Os cadastros do computador precisam estar na mesma base do aplicativo publicado.</div>}
+      {decisionMarkets.length >= 2 && <PurchaseDecision markets={decisionMarkets} partial={partialDecision} commonCount={comparison.common_items_count} />}
+      {complete.length === 1 && <p className="notice">Só um mercado tem a lista completa. Não há outro total completo para medir a economia.</p>}
 
       {hasDemoPrices && (
         <div className="notice" role="status">
@@ -69,7 +81,8 @@ export function ComparisonPage() {
             <header>
               <div>
                 <h3>{result.market_name}</h3>
-                {result.market_id === bestId && <span className="best-choice-label">✓ Menor total da lista completa</span>}
+                <p className="market-address">{fullAddress({ ...result, name: result.market_name })}</p>
+                {result.market_id === bestId && <span className="best-choice-label">✓ Menor total completo disponível</span>}
                 <span className={`status-pill ${result.complete ? "" : "partial"}`}>{result.complete ? "Lista completa" : "Compra parcial"}</span>
               </div>
               <div className="market-total">
@@ -77,6 +90,8 @@ export function ComparisonPage() {
                 <strong>{result.total !== null ? formatPrice(result.total) : "Total indisponível"}</strong>
               </div>
             </header>
+            {!result.complete && <p>Subtotal dos {result.found_items} itens disponíveis: <strong>{formatPrice(result.available_total)}</strong>. Faltam {result.total_items - result.found_items} itens.</p>}
+            {result.comparable_total !== null && !result.complete && <p className="form-hint">Itens em comum entre mercados: {formatPrice(result.comparable_total)} ({comparison.common_items_count} produtos).</p>}
             <div className="table-wrap">
               <table>
                 <thead><tr><th>Produto</th><th>Qtd.</th><th>Preço un.</th><th>Subtotal</th><th>Origem</th></tr></thead>
@@ -93,8 +108,9 @@ export function ComparisonPage() {
                 </tbody>
               </table>
             </div>
-            <Link className="primary-button market-route-action" to={`/mapa?mercado=${result.market_id}&rota=1`}>⌖ Ver distância e rota →</Link>
-            {!result.complete && <p className="form-hint">Este mercado não tem preço para todos os itens; o total não é somado para não comparar valores incompletos.</p>}
+            <a className="primary-button market-route-action" target="_blank" rel="noreferrer" href={googleMapsUrl({ ...result, name: result.market_name })}>Abrir no Google Maps ↗</a>
+            <Link className="outline-button market-route-action" to={`/mapa?mercado=${result.market_id}&rota=1`}>⌖ Ver distância e rota →</Link>
+            {!result.complete && <p className="form-hint">Subtotal parcial não representa o custo da lista completa. A economia parcial considera apenas os mesmos produtos nos mercados comparáveis.</p>}
           </article>
         ))}
       </div>

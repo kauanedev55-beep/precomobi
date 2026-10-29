@@ -1,4 +1,5 @@
 from functools import lru_cache
+import re
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,6 +10,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     demo_mode: bool = False
     api_prefix: str = "/api"
+    app_db_schema: str = ""
     database_url: str = "sqlite:///../data/precomobi.db"
     cors_origins: str = "http://localhost:5173"
     secret_key: str = "precomobi-dev-secret-troque-em-producao"
@@ -34,6 +36,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def production_settings(self):
+        if self.app_db_schema and (not re.fullmatch(r"[a-z][a-z0-9_]{0,62}", self.app_db_schema) or self.app_db_schema in {"public", "auth", "storage", "information_schema"} or self.app_db_schema.startswith("pg_")):
+            raise ValueError("APP_DB_SCHEMA deve ser um schema privado próprio, como precomobi")
         if self.database_url.startswith("postgres://"):
             self.database_url = self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
         elif self.database_url.startswith("postgresql://"):

@@ -72,7 +72,7 @@ export function Products() {
       <form className="search-bar" onSubmit={submit} role="search">
         <input aria-label="Buscar produto" placeholder="Nome, marca, categoria ou EAN" value={input} onChange={(event) => setInput(event.target.value)} />
         <button className="primary-button" type="submit">Buscar</button>
-        <button className="outline-button" type="button" onClick={() => setScanning(true)}>📷 Câmera (experimental)</button>
+        <button className="outline-button" type="button" onClick={() => setScanning(true)}>📷 Ler barras ou QR</button>
       </form>
       <p className="form-hint">Busque por nome na base cadastrada ou digite o EAN completo para consultar também o Open Food Facts.</p>
       {scanError && <p className="error-message" role="alert">{scanError}</p>}
