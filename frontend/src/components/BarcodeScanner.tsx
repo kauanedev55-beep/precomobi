@@ -116,7 +116,7 @@ export function BarcodeScanner({
 
       // Estratégia 2: ZXing, sem depender do suporte nativo.
       try {
-        const controls = await reader.decodeFromStream(stream, video, (result, _err, ctrl) => {
+        const controls = await reader.decodeFromStream(stream, videoElement, (result, _err, ctrl) => {
           if (result) {
             controlsRef.current = ctrl;
             deliver(result.getText());

@@ -538,3 +538,12 @@ tr.missing-row td { color: var(--muted); background: #fbf6ee; }
 .pm-price-details { margin-top: 1rem; }
 .pm-price-details > summary { cursor: pointer; font-weight: 600; padding: 0.85rem 1rem; border: 1px solid #d4dfd6; border-radius: 0.7rem; }
 .pm-price-details[open] > summary { margin-bottom: 0.75rem; }
+
+.demo-banner { display:flex; flex-wrap:wrap; gap:8px 18px; padding:14px 18px; margin-bottom:28px; border:1px solid #e5cc8c; border-radius:14px; background:#fff8e6; color:#664b16; font-size:.8rem; line-height:1.55; }
+.demo-banner span { flex:1; min-width:180px; }
+.market-card { min-width:0; }
+.market-columns { grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); }
+.manual-origin { display:flex; flex-wrap:wrap; align-items:end; gap:12px; margin:18px 0; }
+.manual-origin label { flex:1; min-width:200px; }
+.manual-origin input { width:100%; }
+@media(max-width:550px) { .market-columns { grid-template-columns:minmax(0,1fr); } .pm-private .search-bar { display:flex; flex-wrap:wrap; } .search-bar input { width:100%; flex-basis:100%; min-width:0; } .pm-landing-copy h1 { font-size:2.65rem; } }
