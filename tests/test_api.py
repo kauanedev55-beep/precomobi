@@ -326,7 +326,8 @@ def test_search_products_by_name(client):
     assert names and all("arroz" in name.lower() for name in names)
 
 
-def test_search_products_by_name_without_results_returns_empty_list(client):
+def test_search_products_by_name_without_results_returns_empty_list(client, monkeypatch):
+    monkeypatch.setattr('app.api.catalog._search_external_products', lambda term: [])
     response = client.get("/api/products", params={"q": "produto-que-nao-existe-xyz"})
     assert response.status_code == 200
     assert response.json() == []

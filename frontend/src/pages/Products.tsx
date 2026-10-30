@@ -74,7 +74,7 @@ export function Products() {
         <button className="primary-button" type="submit">Buscar</button>
         <button className="outline-button" type="button" onClick={() => setScanning(true)}>📷 Ler barras ou QR</button>
       </form>
-      <p className="form-hint">Busque por nome na base cadastrada ou digite o EAN completo para consultar também o Open Food Facts.</p>
+      <p className="form-hint">Busque por nome ou código de barras. Se o nome não estiver no catálogo, consultamos o Open Food Facts (mínimo 3 letras). Os preços são informados por mercado.</p>
       {scanError && <p className="error-message" role="alert">{scanError}</p>}
       {scanning && <BarcodeScanner onDetected={onBarcodeDetected} onClose={() => setScanning(false)} />}
 

@@ -2,6 +2,10 @@ from app.core.config import get_settings
 
 import json
 import logging
+from collections import deque
+from threading import Lock
+from time import monotonic
+from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -19,6 +23,77 @@ from app.schemas.prices import ProductDetailRead
 
 router = APIRouter(tags=["catalog"])
 logger = logging.getLogger(__name__)
+_search_lock = Lock()
+_search_cache: dict[str, tuple[float, list[dict]]] = {}
+_search_requests: deque[float] = deque()
+
+
+def _search_external_products(term: str) -> list[dict]:
+    # OFF permits 10 searches/minute/IP. Cache repeated queries and serialize
+    # access so concurrent visitors cannot exceed this process's budget.
+    key = term.casefold()
+    with _search_lock:
+        now = monotonic()
+        cached = _search_cache.get(key)
+        if cached and now - cached[0] < 300:
+            return cached[1]
+        while _search_requests and now - _search_requests[0] >= 60:
+            _search_requests.popleft()
+        if len(_search_requests) >= 8:
+            raise HTTPException(429, "Muitas buscas externas. Aguarde um minuto ou use o código de barras.")
+        _search_requests.append(now)
+        params = urlencode({
+            "q": term, "langs": "pt,en", "page_size": 10,
+            "fields": "code,product_name,product_name_pt,brands,categories,image_front_url",
+        })
+        request = Request("https://search.openfoodfacts.org/search?" + params,
+                          headers={"User-Agent": "PrecoMobi/0.3 (https://precomobi-1.onrender.com/)",
+                                   "Accept": "application/json"})
+        try:
+            with urlopen(request, timeout=5) as response:
+                data = json.load(response)
+            items = data.get("hits") if isinstance(data, dict) else None
+            if not isinstance(items, list):
+                raise ValueError("Invalid search response")
+        except (TimeoutError, HTTPError, URLError, ValueError, OSError) as exc:
+            logger.warning("Busca Open Food Facts indisponivel: %s", type(exc).__name__)
+            raise HTTPException(503, "A busca externa está indisponível. Tente novamente ou use o código de barras.") from exc
+        items = [item for item in items[:10] if isinstance(item, dict)]
+        if len(_search_cache) >= 128:
+            _search_cache.pop(next(iter(_search_cache)))
+        _search_cache[key] = (now, items)
+        return items
+
+
+def _save_external_product(db: Session, ean: str, item: dict) -> Product | None:
+    def value(key: str) -> str:
+        raw = item.get(key)
+        if isinstance(raw, list):
+            raw = ",".join(part for part in raw if isinstance(part, str))
+        return raw.strip() if isinstance(raw, str) else ""
+
+    name = value("product_name_pt") or value("product_name")
+    if not name:
+        return None
+    # Reuse existing records without overwriting names, prices or inactive flags.
+    existing = db.scalar(select(Product).where(Product.ean == ean))
+    if existing is not None:
+        return existing if existing.is_active else None
+    brand = value("brands").split(",")[0].strip()
+    category = value("categories").split(",")[0].strip()
+    image = value("image_front_url")
+    product = Product(ean=ean, name=name[:180], brand=brand[:120] or None,
+                      category=category[:100] or None,
+                      image_url=image[:500] if image.startswith("https://") else None,
+                      is_active=True)
+    try:
+        db.add(product)
+        db.commit()
+        db.refresh(product)
+    except IntegrityError:
+        db.rollback()
+        product = db.scalar(select(Product).where(Product.ean == ean))
+    return product if product is not None and product.is_active else None
 
 
 def _import_product_by_ean(db: Session, ean: str) -> Product | None:
@@ -65,51 +140,7 @@ def _import_product_by_ean(db: Session, ean: str) -> Product | None:
     if not isinstance(item, dict):
         return None
 
-    name = (
-        item.get("product_name_pt")
-        or item.get("product_name")
-        or ""
-    ).strip()
-
-    if not name:
-        return None
-
-    brand = (
-        (item.get("brands") or "").split(",")[0].strip()
-        or None
-    )
-
-    category = (
-        (item.get("categories") or "").split(",")[0].strip()
-        or None
-    )
-
-    image = item.get("image_front_url")
-
-    if not isinstance(image, str) or not image.startswith("https://"):
-        image = None
-
-    product = Product(
-        ean=ean,
-        name=name[:180],
-        brand=brand[:120] if brand else None,
-        category=category[:100] if category else None,
-        image_url=image[:500] if image else None,
-        is_active=True,
-    )
-
-    try:
-        db.add(product)
-        db.commit()
-        db.refresh(product)
-    except IntegrityError:
-        db.rollback()
-
-        return db.scalar(
-            select(Product).where(Product.ean == ean)
-        )
-
-    return product
+    return _save_external_product(db, ean, item)
 
 
 def _cheapest_price_by_product(
@@ -165,6 +196,7 @@ def list_products(
     ean: str | None = Query(default=None),
     q: str | None = Query(
         default=None,
+        max_length=100,
         description="Busca por nome, marca ou categoria",
     ),
     db: Session = Depends(get_db),
@@ -214,6 +246,16 @@ def list_products(
                 query.order_by(Product.name)
             )
         )
+        if not products and q and len(q.strip()) >= 3:
+            by_id = {}
+            for item in _search_external_products(q.strip()):
+                code = item.get("code")
+                if not isinstance(code, str) or not code.isascii() or not code.isdecimal() or len(code) not in (8, 12, 13, 14):
+                    continue
+                product = _save_external_product(db, code, item)
+                if product is not None:
+                    by_id[product.id] = product
+            products = list(by_id.values())
 
     cheapest = _cheapest_price_by_product(
         db,
