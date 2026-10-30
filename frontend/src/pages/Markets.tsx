@@ -43,7 +43,7 @@ export function Markets() {
                 <small>{hasCoords ? `Localização: ${Number(market.latitude).toFixed(5)}, ${Number(market.longitude).toFixed(5)}` : "Localização (latitude/longitude) ainda não cadastrada"}</small>
               </div>
               <div className="card-actions">
-                <Link className="outline-button" to={`/historico?mercado=${market.id}`}>Preços registrados</Link>
+                <Link className="outline-button" to={`/comunidade?mercado=${market.id}`}>Preços registrados</Link>
                 <a className="primary-button small" href={googleMapsUrl(market)} target="_blank" rel="noreferrer">Google Maps ↗</a>
                 {hasCoords && <Link className="primary-button small" to={`/mapa?mercado=${market.id}`}>Ver no mapa</Link>}
               </div>

@@ -26,6 +26,7 @@ class PriceReportRead(BaseModel):
     notes: str | None
     confirmations_count: int = 0
     confirmed_by_me: bool = False
+    is_mine: bool = False
 
 
 class PriceConfirmationCreate(BaseModel):
@@ -43,6 +44,7 @@ class ProductPriceRead(BaseModel):
     source_type: str | None
     confirmations_count: int = 0
     confirmed_by_me: bool = False
+    is_mine: bool = False
 
 
 class ProductDetailRead(ProductRead):

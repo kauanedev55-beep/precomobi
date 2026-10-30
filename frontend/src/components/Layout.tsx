@@ -9,7 +9,7 @@ const links = [
   { to: "/painel", label: "Visão geral", icon: "⌂" },
   { to: "/lista", label: "Minha lista", icon: "☷" },
   { to: "/produtos", label: "Encontrar produtos", icon: "⌕" },
-  { to: "/historico", label: "Minhas compras", icon: "◷" },
+  { to: "/comunidade", label: "Comunidade", icon: "◷" },
 ];
 export function Layout() {
   const { user, logout, checking, sessionExpired } = useAuth();

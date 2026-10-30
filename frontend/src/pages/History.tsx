@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { ConfirmPriceButton } from "../components/ConfirmPriceButton";
 import { SourceBadge } from "../components/SourceBadge";
@@ -79,7 +79,13 @@ export function History() {
 
   return (
     <section>
-      <h1>Histórico de preços</h1>
+      <h1>Comunidade</h1>
+      <p>Preços compartilhados por quem visitou os mercados. Confirme somente os valores que você também verificou.</p>
+      <p className="form-hint">Este é o histórico de preços da comunidade. Suas listas salvas ficam em <Link to="/lista#listas-salvas">Minha lista</Link>.</p>
+      <div className="button-row">
+        <Link className="primary-button" to="/contribuir">Informar preço</Link>
+        <Link className="outline-button" to="/minhas-contribuicoes">Minhas contribuições</Link>
+      </div>
       <div className="filters">
         <label className="field"><span>Produto</span>
           <select value={productId} onChange={setFilter("produto")}>
@@ -118,6 +124,7 @@ export function History() {
                       reportId={report.id}
                       count={report.confirmations_count}
                       confirmedByMe={report.confirmed_by_me}
+                      isMine={report.is_mine}
                       onConfirmed={(updated) =>
                         setReports((current) => current.map((item) => (item.id === report.id ? { ...item, ...updated } : item)))
                       }

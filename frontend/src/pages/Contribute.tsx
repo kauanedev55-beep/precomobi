@@ -82,7 +82,7 @@ export function Contribute() {
   return (
     <section className="form-page">
       <h1>Contribuir com preço</h1>
-      <p className="form-hint">Informe um preço que você viu no mercado. Ele entra como uma nova observação “Informado pela comunidade” — os preços anteriores continuam no histórico.</p>
+      <p className="form-hint">Compartilhe um preço que você viu no mercado. O produto, mercado, valor, data e observação ficam visíveis na comunidade. Isso não registra uma compra nem compartilha suas listas.</p>
       {created && (
         <div className="notice good" role="status">
           Preço de {formatPrice(created.price)} registrado para {created.product_name} em {created.market_name}.{" "}
@@ -107,7 +107,7 @@ export function Contribute() {
         </label>
         <label className="field"><span>Preço (R$)</span><input inputMode="decimal" placeholder="24,90" value={price} onChange={(event) => setPrice(event.target.value)} /></label>
         <label className="field"><span>Data da observação (opcional — padrão: agora)</span><input type="date" max={todayIso()} value={date} onChange={(event) => setDate(event.target.value)} /></label>
-        <label className="field"><span>Observação (opcional)</span><input maxLength={500} placeholder="Ex.: preço na prateleira" value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
+        <label className="field"><span>Observação pública (opcional)</span><input maxLength={500} placeholder="Ex.: preço na prateleira, válido sem clube" value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
         {error && <p className="error-message" role="alert">{error}</p>}
         <button className="primary-button" type="submit" disabled={saving || markets.length === 0}>{saving ? "Enviando..." : "Registrar preço"}</button>
       </form>

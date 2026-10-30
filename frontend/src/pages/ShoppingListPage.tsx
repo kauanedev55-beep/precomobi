@@ -107,7 +107,8 @@ export function ShoppingListPage() {
         </>
       )}
 
-      <h2>Minhas listas salvas</h2>
+      <h2 id="listas-salvas">Minhas listas salvas</h2>
+      <p className="form-hint">Só você tem acesso às suas listas. Informar um preço na comunidade não compartilha sua lista de compras.</p>
       {!user && <Empty title="Entre para ver suas listas"><Link to="/login" state={{ from: "/lista" }}>Fazer login</Link> ou <Link to="/cadastro" state={{ from: "/lista" }}>criar conta</Link>. Cada pessoa vê somente as próprias listas.</Empty>}
       {user && listsLoading && <Loading text="Carregando suas listas..." />}
       {user && listsError && <ErrorBox message={listsError} onRetry={loadLists} />}

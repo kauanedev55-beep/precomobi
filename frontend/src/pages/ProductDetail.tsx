@@ -60,7 +60,7 @@ export function ProductDetail() {
       <div className="button-row">
         <button className="primary-button" type="button" onClick={() => { cart.add(product); setAdded(true); }}>{added ? "Adicionado à lista ✓" : "Adicionar à lista"}</button>
         <Link className="outline-button" to={`/contribuir?produto=${product.id}`}>Contribuir com preço</Link>
-        <Link className="outline-button" to={`/historico?produto=${product.id}`}>Ver histórico</Link>
+        <Link className="outline-button" to={`/comunidade?produto=${product.id}`}>Preços da comunidade</Link>
         {added && <Link className="text-button" to="/lista">Ir para a lista →</Link>}
       </div>
 
@@ -90,6 +90,7 @@ export function ProductDetail() {
                       reportId={price.report_id}
                       count={price.confirmations_count}
                       confirmedByMe={price.confirmed_by_me}
+                      isMine={price.is_mine}
                       onConfirmed={(updated) =>
                         setProduct((current) =>
                           current

@@ -30,13 +30,15 @@ export function MyContributions() {
   return (
     <section>
       <h1>Minhas contribuições</h1>
+      <p>Aqui aparecem somente os preços que você informou. Eles também ficam disponíveis na comunidade para ajudar outras pessoas a comparar mercados.</p>
+      <div className="button-row"><Link className="primary-button" to="/contribuir">Informar preço</Link><Link className="outline-button" to="/comunidade">Ver comunidade</Link></div>
       {loading && <Loading />}
       {error && <ErrorBox message={error} onRetry={load} />}
       {!loading && !error && reports.length === 0 && <Empty title="Você ainda não informou nenhum preço"><Link to="/contribuir">Contribuir com o primeiro preço</Link></Empty>}
       {!loading && reports.length > 0 && (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Produto</th><th>Mercado</th><th>Preço</th><th>Data</th><th>Origem</th><th>Observação</th></tr></thead>
+            <thead><tr><th>Produto</th><th>Mercado</th><th>Preço</th><th>Data</th><th>Origem</th><th>Confirmações</th><th>Observação</th></tr></thead>
             <tbody>
               {reports.map((report) => (
                 <tr key={report.id}>
@@ -45,6 +47,7 @@ export function MyContributions() {
                   <td className="num">{formatPrice(report.price)}</td>
                   <td>{formatDateTime(report.reported_at)}</td>
                   <td><SourceBadge sourceType={report.source_type} /></td>
+                  <td>{report.confirmations_count} {report.confirmations_count === 1 ? "pessoa confirmou" : "pessoas confirmaram"}</td>
                   <td>{report.notes ?? "—"}</td>
                 </tr>
               ))}

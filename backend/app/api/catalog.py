@@ -358,6 +358,7 @@ def get_product(
                 latest[market.id].id in confirmed
                 if market.id in latest else False
             ),
+            "is_mine": bool(current_user and market.id in latest and latest[market.id].user_id == current_user.id),
         }
         for market in markets
     ]

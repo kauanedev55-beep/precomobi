@@ -12,11 +12,13 @@ export function ConfirmPriceButton({
   reportId,
   count,
   confirmedByMe,
+  isMine = false,
   onConfirmed,
 }: {
   reportId: number;
   count: number;
   confirmedByMe: boolean;
+  isMine?: boolean;
   onConfirmed: (updated: { confirmations_count: number; confirmed_by_me: boolean }) => void;
 }) {
   const { user } = useAuth();
@@ -42,6 +44,10 @@ export function ConfirmPriceButton({
 
   if (confirmedByMe) {
     return <small className="confirm-count confirmed">Você confirmou{count > 1 ? ` · +${count - 1} pessoa(s)` : ""}</small>;
+  }
+
+  if (isMine) {
+    return <small className="confirm-count">Você informou · {count} {count === 1 ? "confirmação" : "confirmações"}</small>;
   }
 
   return (

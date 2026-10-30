@@ -44,7 +44,7 @@ def _confirmed_report_ids(db: Session, report_ids: list[int], user_id: int) -> s
     return set(rows.all())
 
 
-def _to_read(report: PriceReport, counts: dict[int, int] | None = None, confirmed_ids: set[int] | None = None) -> dict:
+def _to_read(report: PriceReport, counts: dict[int, int] | None = None, confirmed_ids: set[int] | None = None, viewer_id: int | None = None) -> dict:
     return {
         "id": report.id,
         "product_id": report.product_id,
@@ -57,6 +57,7 @@ def _to_read(report: PriceReport, counts: dict[int, int] | None = None, confirme
         "notes": report.notes,
         "confirmations_count": (counts or {}).get(report.id, 0),
         "confirmed_by_me": report.id in (confirmed_ids or set()),
+        "is_mine": viewer_id is not None and report.user_id == viewer_id,
     }
 
 
@@ -95,7 +96,7 @@ def create_price_report(
     db.add(report)
     db.commit()
     report = db.scalar(_base_query().where(PriceReport.id == report.id))
-    return _to_read(report)
+    return _to_read(report, viewer_id=current_user.id)
 
 
 @router.post("/{report_id}/confirm", response_model=PriceReportRead, status_code=201)
@@ -126,7 +127,7 @@ def confirm_price_report(
         raise HTTPException(status_code=409, detail="Você já confirmou este preço.")
 
     counts = _confirmation_counts(db, [report.id])
-    return _to_read(report, counts, {report.id})
+    return _to_read(report, counts, {report.id}, current_user.id)
 
 
 @router.get("/mine", response_model=list[PriceReportRead])
@@ -143,7 +144,7 @@ def my_price_reports(
     )
     counts = _confirmation_counts(db, [report.id for report in reports])
     confirmed = _confirmed_report_ids(db, [report.id for report in reports], current_user.id) if current_user else set()
-    return [_to_read(report, counts, confirmed) for report in reports]
+    return [_to_read(report, counts, confirmed, current_user.id) for report in reports]
 
 
 @router.get("", response_model=list[PriceReportRead])
@@ -163,4 +164,4 @@ def price_history(
     reports = list(db.scalars(query.order_by(PriceReport.reported_at.desc(), PriceReport.id.desc()).limit(limit)).unique())
     counts = _confirmation_counts(db, [report.id for report in reports])
     confirmed = _confirmed_report_ids(db, [report.id for report in reports], current_user.id) if current_user else set()
-    return [_to_read(report, counts, confirmed) for report in reports]
+    return [_to_read(report, counts, confirmed, current_user.id if current_user else None) for report in reports]

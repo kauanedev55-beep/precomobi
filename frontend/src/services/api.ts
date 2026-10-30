@@ -23,6 +23,7 @@ export type ProductPrice = {
   source_type: string | null;
   confirmations_count: number;
   confirmed_by_me: boolean;
+  is_mine: boolean;
 };
 
 export type ProductDetail = Product & { prices: ProductPrice[] };
@@ -103,6 +104,7 @@ export type PriceReport = {
   notes: string | null;
   confirmations_count: number;
   confirmed_by_me: boolean;
+  is_mine: boolean;
 };
 
 export type AuthUser = { id: number; name: string; email: string };

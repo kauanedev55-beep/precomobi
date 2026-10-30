@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { AuthProvider } from "./auth/AuthContext";
 import { CartProvider } from "./cart/CartContext";
@@ -23,6 +23,11 @@ const VerifyEmail = lazy(() => import("./pages/VerifyEmail").then(m => ({ defaul
 const ResetPassword = lazy(() => import("./pages/ResetPassword").then(m => ({ default: m.ResetPassword })));
 const ShoppingListPage = lazy(() => import("./pages/ShoppingListPage").then(m => ({ default: m.ShoppingListPage })));
 
+function LegacyHistoryRedirect() {
+  const { search, hash } = useLocation();
+  return <Navigate replace to={`/comunidade${search}${hash}`} />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -43,7 +48,8 @@ export default function App() {
               <Route path="contribuir" element={<RequireAuth><Contribute /></RequireAuth>} />
               <Route path="minhas-contribuicoes" element={<RequireAuth><MyContributions /></RequireAuth>} />
               <Route path="perfil" element={<RequireAuth><Profile /></RequireAuth>} />
-              <Route path="historico" element={<RequireAuth><History /></RequireAuth>} />
+              <Route path="comunidade" element={<RequireAuth><History /></RequireAuth>} />
+              <Route path="historico" element={<RequireAuth><LegacyHistoryRedirect /></RequireAuth>} />
               <Route path="mercados" element={<RequireAuth><Markets /></RequireAuth>} />
               <Route path="mapa" element={<RequireAuth><MapPage /></RequireAuth>} />
               <Route path="*" element={<NotFound />} />
