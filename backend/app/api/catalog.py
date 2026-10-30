@@ -10,16 +10,17 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from app.api.deps import get_current_user_optional
+from app.api.deps import get_admin_user, get_current_user_optional
 from app.api.prices import _confirmation_counts, _confirmed_report_ids
 from app.db.session import get_db
 from app.models import Market, PriceReport, Product, User
 from app.schemas.mvp import MarketRead, ProductRead
 from app.schemas.prices import ProductDetailRead
+from app.schemas.markets import MarketCreate
 
 router = APIRouter(tags=["catalog"])
 logger = logging.getLogger(__name__)
@@ -387,3 +388,23 @@ def list_markets(
             .order_by(Market.name)
         )
     )
+
+
+@router.post("/markets", response_model=MarketRead, status_code=201)
+def create_market(payload: MarketCreate, db: Session = Depends(get_db), admin: User = Depends(get_admin_user)) -> Market:
+    # Serialize rare administrative creates in PostgreSQL to avoid duplicate units.
+    if db.get_bind().dialect.name == "postgresql":
+        db.execute(text("SELECT pg_advisory_xact_lock(73110427)"))
+    duplicate = db.scalar(select(Market).where(
+        func.lower(Market.name) == payload.name.lower(),
+        func.lower(Market.address) == payload.address.lower(),
+        func.lower(Market.city) == payload.city.lower(), Market.state == payload.state,
+    ))
+    if duplicate:
+        raise HTTPException(409, "Esta unidade já está cadastrada. Nenhum registro foi alterado.")
+    market = Market(**payload.model_dump(), is_active=True)
+    db.add(market)
+    db.commit()
+    db.refresh(market)
+    logger.info("Mercado %s cadastrado pelo administrador %s", market.id, admin.id)
+    return market

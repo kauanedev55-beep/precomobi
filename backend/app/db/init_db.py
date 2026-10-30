@@ -75,6 +75,8 @@ def init_db() -> None:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE products ADD COLUMN image_url VARCHAR(500)"))
     if not get_settings().demo_mode:
+        from app.db.requested_markets import add_requested_markets
+        add_requested_markets(engine)
         return
     with Session(engine) as db:
         user = db.scalar(select(User).where(User.email == "demo@precomobi.local"))

@@ -24,6 +24,7 @@ export function Profile() {
       <dl className="info-grid">
         <div><dt>Nome</dt><dd>{user.name}</dd></div>
         <div><dt>E-mail</dt><dd>{user.email}</dd></div>
+        <div><dt>Perfil de acesso</dt><dd>{user.is_admin ? "Administradora (master)" : "Comunidade"}</dd></div>
         <div><dt>Listas salvas</dt><dd>{counts ? counts.lists : "…"}</dd></div>
         <div><dt>Contribuições de preço</dt><dd>{counts ? counts.reports : "…"}</dd></div>
       </dl>
@@ -31,6 +32,7 @@ export function Profile() {
       <div className="button-row">
         <Link className="outline-button" to="/lista">Minhas listas</Link>
         <Link className="outline-button" to="/minhas-contribuicoes">Minhas contribuições</Link>
+        {user.is_admin && <Link className="outline-button" to="/mercados">Cadastrar mercados</Link>}
         <button className="primary-button" type="button" onClick={() => { logout(); navigate("/"); }}>Sair</button>
       </div>
     </section>

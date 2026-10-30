@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     brevo_api_key: str = ""
     supabase_url: str = ""
     supabase_anon_key: str = ""
+    # Server-controlled allowlist; never read administrative roles from user metadata.
+    admin_emails: str = ""
 
     # E-mail de boas-vindas (opcional). Enquanto smtp_host estiver vazio, o envio
     # é simplesmente pulado — cadastro continua funcionando normalmente sem e-mail.
@@ -54,6 +56,10 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def admin_emails_set(self) -> set[str]:
+        return {email.strip().casefold() for email in self.admin_emails.split(",") if email.strip()}
 
 
 @lru_cache

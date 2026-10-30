@@ -107,7 +107,7 @@ export type PriceReport = {
   is_mine: boolean;
 };
 
-export type AuthUser = { id: number; name: string; email: string };
+export type AuthUser = { id: number; name: string; email: string; is_admin: boolean };
 export type AuthResult = { token: string; user: AuthUser };
 
 // ---------- sessão ----------
@@ -160,6 +160,11 @@ export const getProducts = (q?: string) =>
 export const getProductByEan = (ean: string) => request<Product[]>(`/products?ean=${encodeURIComponent(ean)}`);
 export const getProduct = (id: number) => request<ProductDetail>(`/products/${id}`);
 export const getMarkets = () => request<Market[]>("/markets");
+export type MarketCreate = {
+  name: string; address: string; neighborhood?: string; city: string; state: string;
+  latitude?: number; longitude?: number;
+};
+export const createMarket = (payload: MarketCreate) => request<Market>("/markets", { method: "POST", body: JSON.stringify(payload) });
 
 export const createShoppingList = (payload: { name: string; items: { product_id: number; quantity: number }[] }) =>
   request<ShoppingList>("/shopping-lists", { method: "POST", body: JSON.stringify(payload) });

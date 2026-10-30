@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
+import { MarketForm } from "../components/MarketForm";
 
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { fullAddress, googleMapsUrl, hasCoordinates } from "../lib/navigation";
 import { getMarkets, type Market } from "../services/api";
 
 export function Markets() {
+  const { user } = useAuth();
+  const [creating, setCreating] = useState(false);
+  const [notice, setNotice] = useState("");
   const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,6 +34,8 @@ export function Markets() {
   return (
     <section>
       <div className="comparison-heading"><h1>Mercados cadastrados</h1><button className="outline-button" type="button" onClick={() => void load()}>Atualizar mercados</button></div>
+      {user?.is_admin && <><p className="form-hint">Você é a administradora. Pode cadastrar novas unidades para toda a comunidade.</p>{!creating && <button className="primary-button" type="button" onClick={() => { setCreating(true); setNotice(""); }}>Cadastrar mercado</button>}{creating && <MarketForm onCancel={() => setCreating(false)} onCreated={market => { setMarkets(current => [...current, market].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))); setCreating(false); setNotice(`${market.name} cadastrado. Agora já é possível informar preços nesta unidade.`); }} />}</>}
+      {notice && <p className="notice good" role="status">{notice}</p>}
       {loading && <Loading />}
       {error && <ErrorBox message={error} onRetry={load} />}
       {!loading && !error && markets.length === 0 && <Empty title="Nenhum mercado encontrado nesta base">Os mercados são carregados do servidor. Cadastros existentes somente no computador precisam ser transferidos para a base publicada.</Empty>}

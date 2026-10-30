@@ -22,6 +22,11 @@ class User(Base):
     verification_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    @property
+    def is_admin(self) -> bool:
+        from app.core.config import get_settings
+        return bool(self.is_active and self.email_verified and self.email.casefold() in get_settings().admin_emails_set)
+
     price_reports: Mapped[list["PriceReport"]] = relationship(back_populates="reporter")
     shopping_lists: Mapped[list["ShoppingList"]] = relationship(back_populates="owner")
     confirmations: Mapped[list["PriceConfirmation"]] = relationship(back_populates="user")

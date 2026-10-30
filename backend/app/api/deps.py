@@ -49,3 +49,9 @@ def get_current_user_optional(
     if credentials:
         raise HTTPException(status_code=401, detail="Sua sessão expirou. Entre novamente.")
     return None
+
+
+def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Somente a administradora pode cadastrar mercados.")
+    return current_user
