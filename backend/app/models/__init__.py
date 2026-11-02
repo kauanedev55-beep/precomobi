@@ -7,6 +7,7 @@ from app.models.entities import (
     ShoppingListItem,
     User,
 )
+from app.models.offers import Offer, OfferCheck
 
 __all__ = [
     "Market",
@@ -16,4 +17,6 @@ __all__ = [
     "ShoppingList",
     "ShoppingListItem",
     "User",
+    "Offer",
+    "OfferCheck",
 ]

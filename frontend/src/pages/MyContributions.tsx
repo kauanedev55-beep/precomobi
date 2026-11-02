@@ -31,7 +31,7 @@ export function MyContributions() {
     <section>
       <h1>Minhas contribuições</h1>
       <p>Aqui aparecem somente os preços que você informou. Eles também ficam disponíveis na comunidade para ajudar outras pessoas a comparar mercados.</p>
-      <div className="button-row"><Link className="primary-button" to="/contribuir">Informar preço</Link><Link className="outline-button" to="/comunidade">Ver comunidade</Link></div>
+      <div className="button-row"><Link className="primary-button" to="/contribuir">Informar preço</Link><Link className="outline-button" to="/ofertas?minhas=1">Minhas ofertas</Link><Link className="outline-button" to="/comunidade">Ver comunidade</Link></div>
       {loading && <Loading />}
       {error && <ErrorBox message={error} onRetry={load} />}
       {!loading && !error && reports.length === 0 && <Empty title="Você ainda não informou nenhum preço"><Link to="/contribuir">Contribuir com o primeiro preço</Link></Empty>}

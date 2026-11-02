@@ -3,10 +3,12 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 
 import { AuthProvider } from "./auth/AuthContext";
 import { CartProvider } from "./cart/CartContext";
+import { OffersProvider } from "./offers/OffersContext";
 import { Layout } from "./components/Layout";
 import { RequireAuth } from "./components/RequireAuth";
 const ComparisonPage = lazy(() => import("./pages/ComparisonPage").then(m => ({ default: m.ComparisonPage })));
 const Contribute = lazy(() => import("./pages/Contribute").then(m => ({ default: m.Contribute })));
+const Offers = lazy(() => import("./pages/Offers").then(m => ({ default: m.Offers })));
 const History = lazy(() => import("./pages/History").then(m => ({ default: m.History })));
 import { Home } from "./pages/Home";
 const Dashboard = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })));
@@ -33,6 +35,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
+          <OffersProvider>
           <Suspense fallback={<div className="pm-session-loading" role="status">Carregando...</div>}><Routes>
             <Route element={<Layout />}>
               <Route index element={<Home />} />
@@ -46,6 +49,8 @@ export default function App() {
               <Route path="lista" element={<RequireAuth><ShoppingListPage /></RequireAuth>} />
               <Route path="comparacao/:id" element={<RequireAuth><ComparisonPage /></RequireAuth>} />
               <Route path="contribuir" element={<RequireAuth><Contribute /></RequireAuth>} />
+              <Route path="ofertas" element={<RequireAuth><Offers /></RequireAuth>} />
+              <Route path="avisos" element={<RequireAuth><Offers alertsOnly /></RequireAuth>} />
               <Route path="minhas-contribuicoes" element={<RequireAuth><MyContributions /></RequireAuth>} />
               <Route path="perfil" element={<RequireAuth><Profile /></RequireAuth>} />
               <Route path="comunidade" element={<RequireAuth><History /></RequireAuth>} />
@@ -55,6 +60,7 @@ export default function App() {
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes></Suspense>
+          </OffersProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

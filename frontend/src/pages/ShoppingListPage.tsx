@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
 import { useCart } from "../cart/CartContext";
+import { useOffers } from "../offers/OffersContext";
+import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { formatDate, productSubtitle } from "../lib/format";
 import { createShoppingList, deleteShoppingList, getShoppingLists, type ShoppingList } from "../services/api";
@@ -10,6 +12,8 @@ import { createShoppingList, deleteShoppingList, getShoppingLists, type Shopping
 export function ShoppingListPage() {
   const { user } = useAuth();
   const cart = useCart();
+  const alerts = useOffers();
+  const listOffers = alerts.offers.filter(o => cart.items.some(i => i.product.id===o.product_id));
   const navigate = useNavigate();
   const [name, setName] = useState("Minha compra");
   const [saving, setSaving] = useState(false);
@@ -47,6 +51,7 @@ export function ShoppingListPage() {
         name: name.trim() || "Minha compra",
         items: cart.items.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
       });
+      alerts.refresh();
       navigate(`/comparacao/${created.id}`);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Não foi possível salvar a lista.");
@@ -59,6 +64,7 @@ export function ShoppingListPage() {
     if (!window.confirm(`Excluir a lista “${list.name}”?`)) return;
     try {
       await deleteShoppingList(list.id);
+      alerts.refresh();
       setLists((current) => current.filter((item) => item.id !== list.id));
     } catch (err) {
       setListsError(err instanceof Error ? err.message : "Não foi possível excluir a lista.");
@@ -70,6 +76,7 @@ export function ShoppingListPage() {
       <h1>Lista de compras</h1>
 
       <h2>Lista em edição</h2>
+      {listOffers.length>0 && <div className="list-offer-notice"><span className="notice-icon"><Icon name="tag"/></span><div><p><strong>{listOffers.length} {listOffers.length===1 ? "oferta encontrada" : "ofertas encontradas"}</strong> para produtos desta lista.</p><Link to="/avisos">Conferir condições e validade →</Link></div></div>}
       {cart.items.length === 0 ? (
         <Empty title="Sua lista está vazia">
           Adicione produtos pela página de <Link to="/produtos">Produtos</Link> ou pelo detalhe de cada produto.

@@ -160,6 +160,22 @@ export const getProducts = (q?: string) =>
 export const getProductByEan = (ean: string) => request<Product[]>(`/products?ean=${encodeURIComponent(ean)}`);
 export const getProduct = (id: number) => request<ProductDetail>(`/products/${id}`);
 export const getMarkets = () => request<Market[]>("/markets");
+export type Offer = {
+  id: number; product_id: number; product_name: string; image_url: string | null;
+  market: Market; price: string; conditions: string; observed_at: string; expires_at: string;
+  state: "active" | "expired" | "ended"; confirmations: number; changed_reports: number;
+  ended_reports: number; my_check: "confirmed" | "changed" | "ended" | null; is_mine: boolean;
+};
+export const getOffers = (options: { forMyLists?: boolean; productIds?: number[]; mine?: boolean } = {}) => {
+  const query = new URLSearchParams();
+  if (options.forMyLists) query.set("for_my_lists", "true");
+  if (options.mine) query.set("mine", "true");
+  if (options.productIds?.length) query.set("product_ids", [...new Set(options.productIds)].slice(0,200).join(","));
+  return request<Offer[]>(`/offers?${query}`);
+};
+export const createOffer = (payload: { product_id: number; market_id: number; price: string; conditions: string; expires_at: string; observed_at?: string }) => request<Offer>("/offers", { method: "POST", body: JSON.stringify(payload) });
+export const checkOffer = (id: number, status: "confirmed" | "changed" | "ended", observed_price?: string) => request<Offer>(`/offers/${id}/check`, { method: "POST", body: JSON.stringify({status, observed_price}) });
+export const endOffer = (id: number) => request<Offer>(`/offers/${id}/end`, { method: "POST" });
 export type MarketCreate = {
   name: string; address: string; neighborhood?: string; city: string; state: string;
   latitude?: number; longitude?: number;
