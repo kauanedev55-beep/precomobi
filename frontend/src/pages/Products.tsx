@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, useRef, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { BarcodeScanner } from "../components/BarcodeScanner";
 import { ProductArt } from "../components/ProductArt";
+import { useRegion } from "../region/RegionContext";
 import { useCart } from "../cart/CartContext";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { formatPrice, productSubtitle } from "../lib/format";
@@ -19,28 +20,31 @@ export function Products() {
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState("");
   const cart = useCart();
+  const {city} = useRegion();
+  const sequence = useRef(0);
   const navigate = useNavigate();
 
   const load = useCallback(async () => {
+    const request = ++sequence.current;
     setLoading(true);
     setError("");
     try {
       const looksLikeEan = /^\d{8,14}$/.test(q.trim());
       if (looksLikeEan) {
         try {
-          setProducts(await getProductByEan(q.trim()));
+          const data=await getProductByEan(q.trim(),city || "__none__"); if(request===sequence.current) setProducts(data);
         } catch (err) {
           throw err;
         }
       } else {
-        setProducts(await getProducts(q));
+        const data=await getProducts(q,city || "__none__"); if(request===sequence.current) setProducts(data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível carregar os produtos.");
+      if(request===sequence.current) setError(err instanceof Error ? err.message : "Não foi possível carregar os produtos.");
     } finally {
-      setLoading(false);
+      if(request===sequence.current) setLoading(false);
     }
-  }, [q]);
+  }, [q,city]);
 
   useEffect(() => {
     void load();
@@ -74,7 +78,7 @@ export function Products() {
         <button className="primary-button" type="submit">Buscar</button>
         <button className="outline-button" type="button" onClick={() => setScanning(true)}>📷 Ler barras ou QR</button>
       </form>
-      <p className="form-hint">Busque por nome ou código de barras. Se o nome não estiver no catálogo, consultamos o Open Food Facts (mínimo 3 letras). Os preços são informados por mercado.</p>
+      <p className="form-hint">Busque por nome ou código de barras. Se o nome não estiver no catálogo, consultamos o Open Food Facts (mínimo 3 letras). {city ? "Os preços exibidos respeitam a cidade escolhida." : "Escolha a cidade acima para consultar os preços. Você já pode adicionar produtos à lista."}</p>
       {scanError && <p className="error-message" role="alert">{scanError}</p>}
       {scanning && <BarcodeScanner onDetected={onBarcodeDetected} onClose={() => setScanning(false)} />}
 

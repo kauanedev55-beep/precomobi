@@ -3,6 +3,7 @@ import "leaflet/dist/leaflet.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
+import { useRegion, inCity } from "../region/RegionContext";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { fetchRoadRoute, fullAddress, googleMapsUrl, hasCoordinates } from "../lib/navigation";
 import { distanceKm } from "../lib/format";
@@ -16,6 +17,7 @@ type Position = { lat: number; lon: number };
 
 export function MapPage() {
   const [params] = useSearchParams();
+  const {city} = useRegion();
   const selectedId = Number(params.get("mercado")) || null;
   const routeRequested = params.get("rota") === "1";
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -49,17 +51,18 @@ export function MapPage() {
     void load();
   }, [load]);
 
+  const visibleMarkets = useMemo(() => markets.filter(m => inCity(m,city) || m.id===selectedId), [markets,city,selectedId]);
   const located = useMemo(
-    () => markets.filter(hasCoordinates),
-    [markets],
+    () => visibleMarkets.filter(hasCoordinates),
+    [visibleMarkets],
   );
   const withDistance = useMemo(() => {
-    const rows = markets.map((market) => ({
+    const rows = visibleMarkets.map((market) => ({
       market,
       km: position && hasCoordinates(market) ? distanceKm(position.lat, position.lon, Number(market.latitude), Number(market.longitude)) : null,
     }));
     return position ? rows.sort((a, b) => (a.km ?? Infinity) - (b.km ?? Infinity)) : rows;
-  }, [markets, position]);
+  }, [visibleMarkets, position]);
 
   const selectedMarket = markets.find((item) => item.id === selected) ?? null;
 
@@ -161,7 +164,7 @@ export function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeRequested, selectedId]);
 
-  useEffect(() => { setSelected(selectedId); }, [selectedId]);
+  useEffect(() => { setSelected(selectedId); }, [selectedId,city]);
   function navigationUrl(market: Market): string {
     return googleMapsUrl(market, position ?? manualOrigin);
   }
@@ -170,6 +173,7 @@ export function MapPage() {
     <section>
       <p className="form-hint">Mercados carregados da base compartilhada do aplicativo. A rota abre no Google Maps pelo endereço ou pelas coordenadas cadastradas.</p>
       <h1>{selectedMarket ? `Como chegar: ${selectedMarket.name}` : "Mapa dos mercados"}</h1>
+      {selectedMarket && !inCity(selectedMarket,city) && <p className="notice">O link abriu uma unidade específica em {selectedMarket.city}, fora do filtro atual.</p>}
       {routeRequested && !position && <div className="notice">Para mostrar a distância e o trajeto a partir de onde você está, toque em <strong>Usar minha localização</strong>. A permissão é opcional.</div>}
       {selectedMarket && <div className="pm-route-panel"><div><strong>{selectedMarket.name}</strong><small>{fullAddress(selectedMarket)}</small>{roadRoute && <p><b>{roadRoute.km.toFixed(1).replace(".", ",")} km por ruas</b> · aproximadamente {Math.round(roadRoute.minutes)} min de carro</p>}{routeLoading && <p>Calculando caminho pelas ruas...</p>}{routeError && <p role="status">{routeError}</p>}{!position && <p>Ative sua localização para calcular a distância.</p>}{!hasCoordinates(selectedMarket) && <p>Sem coordenadas cadastradas. O Google Maps buscará o endereço; confira a loja antes de iniciar a rota.</p>}</div><a className="primary-button" target="_blank" rel="noreferrer" href={navigationUrl(selectedMarket)}>Abrir no Google Maps ↗</a></div>}
       <div className="button-row">
@@ -186,7 +190,7 @@ export function MapPage() {
       {loading && <Loading text="Carregando mercados..." />}
       {error && <ErrorBox message={error} onRetry={load} />}
       {!loading && !error && located.length === 0 && (
-        <Empty title="Nenhum mercado tem localização cadastrada">
+        <Empty title="Nenhum marcador disponível neste filtro">
           Os marcadores dependem de coordenadas cadastradas. As lojas com endereço continuam listadas abaixo e podem ser abertas no Google Maps. <Link to="/mercados">Ver todos os mercados</Link>.
         </Empty>
       )}

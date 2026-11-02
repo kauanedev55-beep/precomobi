@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { ConfirmPriceButton } from "../components/ConfirmPriceButton";
+import { useRegion, inCity } from "../region/RegionContext";
 import { CommunityNav } from "../components/CommunityNav";
 import { SourceBadge } from "../components/SourceBadge";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
@@ -35,11 +36,13 @@ function PriceChart({ reports }: { reports: PriceReport[] }) {
 }
 
 export function History() {
+  const {city} = useRegion();
   const [params, setParams] = useSearchParams();
   const productId = params.get("produto") ?? "";
   const marketId = params.get("mercado") ?? "";
   const [products, setProducts] = useState<Product[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
+  const sequence = useRef(0);
   const [reports, setReports] = useState<PriceReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -54,16 +57,19 @@ export function History() {
   }, []);
 
   const load = useCallback(async () => {
+    const request = ++sequence.current;
+    if (!city) {setReports([]);setLoading(false);setError("");return;}
     setLoading(true);
     setError("");
     try {
-      setReports(await getPriceHistory({ product_id: productId ? Number(productId) : undefined, market_id: marketId ? Number(marketId) : undefined }));
+      const data = await getPriceHistory({ city, product_id: productId ? Number(productId) : undefined, market_id: marketId ? Number(marketId) : undefined });
+      if(request===sequence.current) setReports(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível carregar o histórico.");
+      if(request===sequence.current) setError(err instanceof Error ? err.message : "Não foi possível carregar o histórico.");
     } finally {
-      setLoading(false);
+      if(request===sequence.current) setLoading(false);
     }
-  }, [productId, marketId]);
+  }, [productId, marketId, city]);
 
   useEffect(() => {
     void load();
@@ -75,6 +81,12 @@ export function History() {
     else next.delete(key);
     setParams(next);
   };
+
+  useEffect(() => {
+    if (city && marketId && markets.length && !markets.some(m => m.id===Number(marketId) && inCity(m,city))) {
+      const next = new URLSearchParams(params); next.delete("mercado"); setParams(next,{replace:true});
+    }
+  }, [city,marketId,markets,params,setParams]);
 
   const canChart = Boolean(productId && marketId) && reports.length >= 2;
 
@@ -98,7 +110,7 @@ export function History() {
         <label className="field"><span>Mercado</span>
           <select value={marketId} onChange={setFilter("mercado")}>
             <option value="">Todos</option>
-            {markets.map((market) => <option key={market.id} value={market.id}>{market.name}</option>)}
+            {markets.filter(m => inCity(m,city)).map((market) => <option key={market.id} value={market.id}>{market.name}</option>)}
           </select>
         </label>
       </div>

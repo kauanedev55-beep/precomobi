@@ -154,11 +154,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 // ---------- endpoints ----------
 export const getApiHealth = () => request<{ status: string; service: string }>("/health");
 
-export const getProducts = (q?: string) =>
-  request<Product[]>(q && q.trim() ? `/products?q=${encodeURIComponent(q.trim())}` : "/products");
-
-export const getProductByEan = (ean: string) => request<Product[]>(`/products?ean=${encodeURIComponent(ean)}`);
-export const getProduct = (id: number) => request<ProductDetail>(`/products/${id}`);
+export const getProducts = (q?: string, city?: string) => {
+  const query=new URLSearchParams();
+  if(q?.trim()) query.set("q",q.trim());
+  if(city) query.set("city",city);
+  return request<Product[]>(`/products?${query}`);
+};
+export const getProductByEan = (ean: string, city?: string) => request<Product[]>(`/products?ean=${encodeURIComponent(ean)}${city ? `&city=${encodeURIComponent(city)}` : ""}`);
+export const getProduct = (id: number, city?: string) => request<ProductDetail>(`/products/${id}${city ? `?city=${encodeURIComponent(city)}` : ""}`);
 export const getMarkets = () => request<Market[]>("/markets");
 export type Offer = {
   id: number; product_id: number; product_name: string; image_url: string | null;
@@ -166,10 +169,11 @@ export type Offer = {
   state: "active" | "expired" | "ended"; confirmations: number; changed_reports: number;
   ended_reports: number; my_check: "confirmed" | "changed" | "ended" | null; is_mine: boolean;
 };
-export const getOffers = (options: { forMyLists?: boolean; productIds?: number[]; mine?: boolean } = {}) => {
+export const getOffers = (options: { forMyLists?: boolean; productIds?: number[]; mine?: boolean; city?: string } = {}) => {
   const query = new URLSearchParams();
   if (options.forMyLists) query.set("for_my_lists", "true");
   if (options.mine) query.set("mine", "true");
+  if (options.city) query.set("city", options.city);
   if (options.productIds?.length) query.set("product_ids", [...new Set(options.productIds)].slice(0,200).join(","));
   return request<Offer[]>(`/offers?${query}`);
 };
@@ -186,12 +190,13 @@ export const createShoppingList = (payload: { name: string; items: { product_id:
   request<ShoppingList>("/shopping-lists", { method: "POST", body: JSON.stringify(payload) });
 export const getShoppingLists = () => request<ShoppingList[]>("/shopping-lists");
 export const deleteShoppingList = (id: number) => request<void>(`/shopping-lists/${id}`, { method: "DELETE" });
-export const compareShoppingList = (listId: number) => request<Comparison>(`/comparisons/${listId}`);
+export const compareShoppingList = (listId: number, city?: string) => request<Comparison>(`/comparisons/${listId}${city ? `?city=${encodeURIComponent(city)}` : ""}`);
 
-export const getPriceHistory = (params: { product_id?: number; market_id?: number }) => {
+export const getPriceHistory = (params: { product_id?: number; market_id?: number; city?: string }) => {
   const query = new URLSearchParams();
   if (params.product_id) query.set("product_id", String(params.product_id));
   if (params.market_id) query.set("market_id", String(params.market_id));
+  if (params.city) query.set("city", params.city);
   const suffix = query.toString();
   return request<PriceReport[]>(`/price-reports${suffix ? `?${suffix}` : ""}`);
 };

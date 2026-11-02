@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
 import { useCart } from "../cart/CartContext";
+import { useRegion } from "../region/RegionContext";
 import { useOffers } from "../offers/OffersContext";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
@@ -12,6 +13,7 @@ import { createShoppingList, deleteShoppingList, getShoppingLists, type Shopping
 export function ShoppingListPage() {
   const { user } = useAuth();
   const cart = useCart();
+  const {city} = useRegion();
   const alerts = useOffers();
   const listOffers = alerts.offers.filter(o => cart.items.some(i => i.product.id===o.product_id));
   const navigate = useNavigate();
@@ -40,6 +42,7 @@ export function ShoppingListPage() {
   }, [loadLists]);
 
   async function saveAndCompare() {
+    if (!city) {setSaveError("Escolha onde você quer comprar no seletor de cidade acima."); return;}
     if (!user) {
       navigate("/login", { state: { from: "/lista", reason: "Faça login para salvar sua lista e compará-la." } });
       return;
@@ -105,11 +108,11 @@ export function ShoppingListPage() {
           <div className="form-card inline">
             <label className="field"><span>Nome da lista</span><input value={name} onChange={(event) => setName(event.target.value)} maxLength={160} /></label>
             <div className="button-row">
-              <button className="primary-button" type="button" onClick={saveAndCompare} disabled={saving}>{saving ? "Salvando..." : user ? "Salvar e comparar mercados" : "Entrar para salvar e comparar"}</button>
+              <button className="primary-button" type="button" onClick={saveAndCompare} disabled={saving || !city}>{saving ? "Salvando..." : user ? "Salvar e comparar mercados" : "Entrar para salvar e comparar"}</button>
               <button className="outline-button" type="button" onClick={cart.clear}>Limpar lista</button>
             </div>
             {saveError && <p className="error-message" role="alert">{saveError}</p>}
-            <p className="form-hint">O total de cada mercado é calculado na comparação, com os preços mais recentes disponíveis.</p>
+            <p className="form-hint">{!city ? "Escolha a cidade acima para comparar." : `A comparação usa os preços mais recentes dos mercados ${city === "*" ? "nas cidades escolhidas" : `em ${city}`}.`}</p>
           </div>
         </>
       )}

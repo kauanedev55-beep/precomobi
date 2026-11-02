@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { useRegion } from "../region/RegionContext";
 import { useCart } from "../cart/CartContext";
 import { ConfirmPriceButton } from "../components/ConfirmPriceButton";
 import { ProductArt } from "../components/ProductArt";
@@ -12,22 +13,25 @@ import { getProduct, type ProductDetail as ProductDetailData } from "../services
 export function ProductDetail() {
   const { id } = useParams();
   const cart = useCart();
+  const {city} = useRegion();
+  const sequence = useRef(0);
   const [product, setProduct] = useState<ProductDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [added, setAdded] = useState(false);
 
   const load = useCallback(async () => {
+    const request = ++sequence.current;
     setLoading(true);
     setError("");
     try {
-      setProduct(await getProduct(Number(id)));
+      const data=await getProduct(Number(id),city || "__none__"); if(request===sequence.current) setProduct(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível carregar o produto.");
+      if(request===sequence.current) setError(err instanceof Error ? err.message : "Não foi possível carregar o produto.");
     } finally {
-      setLoading(false);
+      if(request===sequence.current) setLoading(false);
     }
-  }, [id]);
+  }, [id,city]);
 
   useEffect(() => {
     void load();

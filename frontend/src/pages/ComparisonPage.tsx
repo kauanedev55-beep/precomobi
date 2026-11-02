@@ -1,30 +1,39 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { useRegion } from "../region/RegionContext";
 import { PurchaseDecision } from "../components/PurchaseDecision";
 import { fullAddress, googleMapsUrl } from "../lib/navigation";
 import { SourceBadge } from "../components/SourceBadge";
-import { ErrorBox, Loading } from "../components/StateViews";
+import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { formatDate, formatPrice } from "../lib/format";
 import { compareShoppingList, type Comparison } from "../services/api";
 
 export function ComparisonPage() {
   const { id } = useParams();
+  const {city} = useRegion();
+  const sequence = useRef(0);
+  const [loadedCity,setLoadedCity] = useState<string | null>(null);
+  const [showAll,setShowAll] = useState(false);
+  useEffect(() => {setShowAll(false);}, [city,id]);
   const [comparison, setComparison] = useState<Comparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
+    const request = ++sequence.current;
+    if (!city) {setComparison(null);setLoading(false);setError("");return;}
     setLoading(true);
     setError("");
     try {
-      setComparison(await compareShoppingList(Number(id)));
+      const data = await compareShoppingList(Number(id),city);
+      if(request === sequence.current) {setComparison(data);setLoadedCity(city);}
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível comparar a lista.");
+      if(request === sequence.current) setError(err instanceof Error ? err.message : "Não foi possível comparar a lista.");
     } finally {
-      setLoading(false);
+      if(request === sequence.current) setLoading(false);
     }
-  }, [id]);
+  }, [id,city]);
 
   useEffect(() => {
     void load();
@@ -34,9 +43,13 @@ export function ComparisonPage() {
     return () => { window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
   }, [load]);
 
-  if (loading && (!comparison || comparison.shopping_list_id !== Number(id))) return <Loading text="Comparando os mercados..." />;
+  if (!city) return <Empty title="Onde você quer comparar sua lista?">Escolha Serra, Vitória ou Vila Velha no seletor acima. Sua lista está salva.</Empty>;
+  if (!error && (!comparison || loadedCity !== city || comparison.shopping_list_id !== Number(id))) return <Loading text="Comparando os mercados..." />;
   if (error || !comparison) return <ErrorBox message={error || "Comparação indisponível."} onRetry={load} />;
 
+  const priced = comparison.results.filter(r => r.found_items > 0);
+  const withoutPrices = comparison.results.filter(r => r.found_items === 0);
+  const displayed = showAll ? priced : priced.slice(0,3);
   const hasDemoPrices = comparison.results.some((market) => market.items.some((item) => item.source_type === "development"));
   const complete = comparison.results.filter((result) => result.complete && result.total !== null);
   let saving: { amount: number; best: string; worst: string } | null = null;
@@ -56,7 +69,8 @@ export function ComparisonPage() {
     <section>
       <p className="breadcrumb"><Link to="/lista">← Lista de compras</Link></p>
       <div className="comparison-heading"><h1>Comparação: {comparison.list_name}</h1><button type="button" className="outline-button" disabled={loading} onClick={() => void load()}>{loading ? "Atualizando..." : "Atualizar preços"}</button></div>
-      {comparison.results.length === 0 && <div className="notice">A base consultada ainda não tem mercados ativos. Os cadastros do computador precisam estar na mesma base do aplicativo publicado.</div>}
+      {comparison.results.length === 0 && <div className="notice">Não há mercados cadastrados na cidade escolhida. Você pode mudar a cidade acima.</div>}
+      <p className="form-hint">Comparando {comparison.results.length} mercados {city === "*" ? "nas cidades cadastradas no ES" : `em ${city}`}. Mostramos primeiro os que têm preços para sua lista.</p>
       {decisionMarkets.length >= 2 && <PurchaseDecision markets={decisionMarkets} partial={partialDecision} commonCount={comparison.common_items_count} />}
       {complete.length === 1 && <p className="notice">Só um mercado tem a lista completa. Não há outro total completo para medir a economia.</p>}
 
@@ -76,7 +90,7 @@ export function ComparisonPage() {
       {complete.length === 0 && <div className="notice">Nenhum mercado tem preço para todos os itens da lista, então não há total completo para comparar. Veja abaixo o que falta.</div>}
 
       <div className="market-columns">
-        {comparison.results.map((result) => (
+        {displayed.map((result) => (
           <article className={`market-card ${result.market_id === bestId ? "winner" : ""}`} key={result.market_id}>
             <header>
               <div>
@@ -115,6 +129,8 @@ export function ComparisonPage() {
         ))}
       </div>
 
+      {priced.length > 3 && <button className="outline-button" type="button" onClick={() => setShowAll(!showAll)}>{showAll ? "Mostrar apenas os 3 primeiros" : `Ver mais ${priced.length - 3} mercados com preços`}</button>}
+      {withoutPrices.length > 0 && <details className="unpriced-markets"><summary>{withoutPrices.length} {withoutPrices.length === 1 ? "mercado ainda sem preço" : "mercados ainda sem preços"} para estes produtos</summary><p>Sem preços cadastrados, não é possível calcular o total. Isso não significa que o produto esteja em falta.</p><ul>{withoutPrices.map(m => <li key={m.market_id}><span>{m.market_name}</span><Link to="/contribuir">Informar preço</Link></li>)}</ul></details>}
       {anyMissing && <p className="form-hint">Viu algum desses preços? <Link to="/contribuir">Contribua informando o valor</Link> (é preciso estar logado).</p>}
       <p className="form-hint">Vale o preço mais recente de cada produto em cada mercado. <Link to="/mercados">Ver mercados</Link> · <Link to="/mapa">Ver no mapa</Link></p>
     </section>

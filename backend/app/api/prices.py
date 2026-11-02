@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user, get_current_user_optional
 from app.db.session import get_db
+from app.core.region import region_market_ids
 from app.models import Market, PriceConfirmation, PriceReport, Product, User
 from app.schemas.prices import PriceConfirmationCreate, PriceReportCreate, PriceReportRead
 
@@ -152,6 +153,7 @@ def price_history(
     product_id: int | None = Query(default=None),
     market_id: int | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=500),
+    city: str | None = Query(default=None, min_length=1, max_length=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_optional),
 ) -> list[dict]:
@@ -161,6 +163,8 @@ def price_history(
         query = query.where(PriceReport.product_id == product_id)
     if market_id is not None:
         query = query.where(PriceReport.market_id == market_id)
+    if city is not None:
+        query = query.where(PriceReport.market_id.in_(region_market_ids(db, city)))
     reports = list(db.scalars(query.order_by(PriceReport.reported_at.desc(), PriceReport.id.desc()).limit(limit)).unique())
     counts = _confirmation_counts(db, [report.id for report in reports])
     confirmed = _confirmed_report_ids(db, [report.id for report in reports], current_user.id) if current_user else set()

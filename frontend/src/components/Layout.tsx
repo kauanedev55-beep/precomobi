@@ -4,6 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useCart } from "../cart/CartContext";
 import { useOffers } from "../offers/OffersContext";
 import { getFeatures } from "../services/api";
+import { CitySelector } from "./CitySelector";
 import { Icon } from "./Icon";
 
 const links = [
@@ -61,7 +62,7 @@ export function Layout() {
         <details className="pm-more-menu"><summary>Mais opções</summary><nav className="pm-nav"><NavLink className="side-link" to="/painel" onClick={close}>Visão geral</NavLink><NavLink className="side-link" to="/mercados" onClick={close}>Mercados</NavLink><NavLink className="side-link" to="/minhas-contribuicoes" onClick={close}>Minhas contribuições</NavLink><NavLink className="side-link" to="/perfil" onClick={close}>Meu perfil{user.is_admin ? " · master" : ""}</NavLink></nav></details>
         <div className="sidebar-account"><span className="pm-account-name">{user.name}</span><button className="side-link side-action" onClick={() => {logout();close();navigate("/");}}>Sair da conta ↗</button></div>
       </aside>
-      <div className="pm-content"><main className="page" id="main-content" tabIndex={-1}>{demo && <div className="demo-banner" role="status"><strong>Demonstração acadêmica</strong><span>Preços simulados, identificados como demonstração.</span></div>}<Outlet/></main><footer className="site-footer">Feito para ajudar na sua próxima compra. Confira os preços e as condições na loja.</footer></div>
+      <div className="pm-content"><CitySelector/><main className="page" id="main-content" tabIndex={-1}>{demo && <div className="demo-banner" role="status"><strong>Demonstração acadêmica</strong><span>Preços simulados, identificados como demonstração.</span></div>}<Outlet/></main><footer className="site-footer">Feito para ajudar na sua próxima compra. Confira os preços e as condições na loja.</footer></div>
     </div>
     <nav className="mobile-bottom-nav" aria-label="Navegação rápida">{bottom.map(item => <Link key={item.to} to={item.to} onClick={close} aria-current={selected(item.to) ? "page" : undefined} className={selected(item.to) ? "active" : ""}><Icon name={item.icon}/><span>{item.label}</span></Link>)}</nav>
   </div>;

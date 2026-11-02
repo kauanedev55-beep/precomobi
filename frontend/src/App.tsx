@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 
 import { AuthProvider } from "./auth/AuthContext";
 import { CartProvider } from "./cart/CartContext";
+import { RegionProvider } from "./region/RegionContext";
 import { OffersProvider } from "./offers/OffersContext";
 import { Layout } from "./components/Layout";
 import { RequireAuth } from "./components/RequireAuth";
@@ -35,7 +36,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
-          <OffersProvider>
+          <RegionProvider><OffersProvider>
           <Suspense fallback={<div className="pm-session-loading" role="status">Carregando...</div>}><Routes>
             <Route element={<Layout />}>
               <Route index element={<Home />} />
@@ -60,7 +61,7 @@ export default function App() {
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes></Suspense>
-          </OffersProvider>
+          </OffersProvider></RegionProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

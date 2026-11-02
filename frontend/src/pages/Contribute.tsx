@@ -6,6 +6,7 @@ import { ErrorBox, Loading } from "../components/StateViews";
 import { formatPrice } from "../lib/format";
 import { createOffer, createPriceReport, getProductByEan, getMarkets, getProducts, type Market, type PriceReport, type Product, type Offer } from "../services/api";
 import { useOffers } from "../offers/OffersContext";
+import { useRegion, inCity } from "../region/RegionContext";
 import { Icon } from "../components/Icon";
 
 function todayIso(): string {
@@ -17,6 +18,7 @@ export function Contribute() {
   const [scanning, setScanning] = useState(false);
   const [params] = useSearchParams();
   const alerts = useOffers();
+  const {city} = useRegion();
   const [kind, setKind] = useState(params.get("tipo")==="oferta" ? "offer" : "price");
   const [expires, setExpires] = useState("");
   const [conditionType, setConditionType] = useState("");
@@ -47,6 +49,9 @@ export function Contribute() {
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Não foi possível carregar os dados."))
       .finally(() => setLoading(false));
   }, []);
+
+  const cityMarkets = markets.filter(m => inCity(m,city));
+  useEffect(() => {setMarketId("");}, [city]);
 
   async function scanProduct(code: string) {
     setScanning(false); setError("");
@@ -130,7 +135,7 @@ export function Contribute() {
       {scanning && <BarcodeScanner onDetected={code => void scanProduct(code)} onClose={() => setScanning(false)} />}
       <button className="outline-button" type="button" onClick={() => setScanning(true)}>Ler código de barras ou QR do produto</button>
       <form className="product-search-inline" onSubmit={e => {e.preventDefault(); void searchProduct();}}><input aria-label="Nome do produto" placeholder="Ou busque pelo nome do produto" value={search} onChange={e => setSearch(e.target.value)}/><button className="outline-button" disabled={searching}>{searching ? "Buscando..." : "Buscar"}</button></form>
-      {markets.length === 0 && <p className="notice">Não há mercados nesta base. O preço só pode ser salvo após os cadastros reais estarem disponíveis no servidor.</p>}
+      {cityMarkets.length === 0 && <p className="notice">{!city ? "Escolha a cidade acima para selecionar o mercado." : "Não há mercados cadastrados nesta cidade."}</p>}
       <form className="form-card" onSubmit={submit} noValidate>
         <label className="field"><span>Produto</span>
           <select value={productId} onChange={(event) => setProductId(event.target.value)}>
@@ -141,14 +146,14 @@ export function Contribute() {
         <label className="field"><span>Mercado</span>
           <select value={marketId} onChange={(event) => setMarketId(event.target.value)}>
             <option value="">Selecione...</option>
-            {markets.map((market) => <option key={market.id} value={market.id}>{market.name}</option>)}
+            {cityMarkets.map((market) => <option key={market.id} value={market.id}>{market.name}</option>)}
           </select>
         </label>
         <label className="field"><span>Preço (R$)</span><input inputMode="decimal" placeholder="24,90" value={price} onChange={(event) => setPrice(event.target.value)} /></label>
         <label className="field"><span>Data da observação (opcional — padrão: agora)</span><input type="date" max={todayIso()} value={date} onChange={(event) => setDate(event.target.value)} /></label>
         {kind==="offer" ? <div className="offer-fields"><h2>Detalhes da promoção</h2><label className="field"><span>Válida até</span><input type="date" min={todayIso()} value={expires} onChange={e => setExpires(e.target.value)} required/></label><label className="field"><span>Quem pode aproveitar esse preço?</span><select value={conditionType} onChange={e => setConditionType(e.target.value)} required><option value="">Escolha uma opção</option><option value="all">Qualquer pessoa, sem clube ou quantidade mínima</option><option value="other">Exige clube, quantidade mínima ou outra condição</option></select></label>{conditionType==="other" && <label className="field"><span>Descreva a condição</span><textarea maxLength={500} minLength={5} placeholder="Ex.: exige cadastro no clube da loja e compra de 3 unidades" value={conditions} onChange={e => setConditions(e.target.value)} required/></label>}<p className="form-hint">Informe a validade que você verificou. Após esse prazo, a promoção sai das promoções ativas. Se acabar antes, você pode encerrá-la em Minhas promoções; outras pessoas podem avisar que acabou.</p></div> : <label className="field"><span>Observação pública (opcional)</span><input maxLength={500} placeholder="Ex.: preço na prateleira, válido sem clube" value={notes} onChange={(event) => setNotes(event.target.value)} /></label>}
         {error && <p className="error-message" role="alert">{error}</p>}
-        <button className="primary-button" type="submit" disabled={saving || markets.length === 0}>{saving ? "Compartilhando..." : kind==="offer" ? "Compartilhar promoção" : "Registrar preço"}</button>
+        <button className="primary-button" type="submit" disabled={saving || cityMarkets.length === 0}>{saving ? "Compartilhando..." : kind==="offer" ? "Compartilhar promoção" : "Registrar preço"}</button>
       </form>
     </section>
   );

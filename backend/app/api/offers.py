@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
+from app.core.region import region_market_ids
 from app.models import Market, Product, ShoppingList, ShoppingListItem, User
 from app.models.offers import Offer, OfferCheck
 from app.schemas.mvp import MarketRead
@@ -105,6 +106,7 @@ def to_reads(db, offers, user):
 @router.get("", response_model=list[OfferRead])
 def list_offers(for_my_lists: bool = False, mine: bool = False,
         product_ids: str = Query(default="", max_length=2200),
+    city: str | None = Query(default=None, min_length=1, max_length=100),
         db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     ids = []
     if product_ids:
@@ -122,6 +124,8 @@ def list_offers(for_my_lists: bool = False, mine: bool = False,
         query = query.where(or_(Offer.product_id.in_(saved), Offer.product_id.in_(ids)))
     elif ids:
         query = query.where(Offer.product_id.in_(ids))
+    if city is not None:
+        query = query.where(Offer.market_id.in_(region_market_ids(db, city)))
     offers = list(db.scalars(query.order_by(Offer.created_at.desc(), Offer.id.desc()).limit(100)).unique())
     return to_reads(db, offers, user)
 

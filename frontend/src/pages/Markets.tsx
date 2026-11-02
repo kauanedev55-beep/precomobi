@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useRegion, inCity } from "../region/RegionContext";
 import { useAuth } from "../auth/AuthContext";
 import { MarketForm } from "../components/MarketForm";
 
@@ -9,6 +10,7 @@ import "./markets.css";
 
 export function Markets() {
   const { user } = useAuth();
+  const {city} = useRegion();
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState("");
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -31,6 +33,7 @@ export function Markets() {
     void load();
   }, [load]);
 
+  const visibleMarkets = markets.filter(m => inCity(m,city));
   return (
     <section className="markets-page">
       <div className="markets-heading">
@@ -44,10 +47,10 @@ export function Markets() {
       {notice && <p className="notice good" role="status">{notice}</p>}
       {loading && <Loading />}
       {error && <ErrorBox message={error} onRetry={load} />}
-      {!loading && !error && markets.length === 0 && <Empty title="Nenhum mercado cadastrado ainda" />}
-      {!loading && !error && markets.length > 0 && <p className="markets-count">{markets.length} {markets.length === 1 ? "unidade cadastrada" : "unidades cadastradas"}</p>}
+      {!loading && !error && visibleMarkets.length === 0 && <Empty title="Escolha uma cidade com mercados cadastrados" />}
+      {!loading && !error && visibleMarkets.length > 0 && <p className="markets-count">{visibleMarkets.length} {visibleMarkets.length === 1 ? "unidade cadastrada" : "unidades cadastradas"}</p>}
       <ul className="markets-grid">
-        {markets.map((market) => (
+        {visibleMarkets.map((market) => (
           <li className="market-card" key={market.id}>
             <div className="market-card-heading">
               <span className="market-symbol" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 10h18l-2-6H5l-2 6ZM5 10v10h14V10M9 20v-6h6v6"/><path d="M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/></svg></span>

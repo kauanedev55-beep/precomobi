@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from app.api.deps import get_admin_user, get_current_user_optional
 from app.api.prices import _confirmation_counts, _confirmed_report_ids
 from app.db.session import get_db
+from app.core.region import matches_city, region_market_ids
 from app.models import Market, PriceReport, Product, User
 from app.schemas.mvp import MarketRead, ProductRead
 from app.schemas.prices import ProductDetailRead
@@ -147,6 +148,7 @@ def _import_product_by_ean(db: Session, ean: str) -> Product | None:
 def _cheapest_price_by_product(
     db: Session,
     product_ids: list[int],
+    city: str | None = None,
 ) -> dict[int, dict]:
 
     if not product_ids:
@@ -160,6 +162,7 @@ def _cheapest_price_by_product(
             PriceReport.is_active.is_(True),
             (True if get_settings().demo_mode else PriceReport.source_type != "development"),
             Market.is_active.is_(True),
+            True if city is None else PriceReport.market_id.in_(region_market_ids(db, city)),
         )
         .order_by(
             PriceReport.reported_at.desc(),
@@ -200,6 +203,7 @@ def list_products(
         max_length=100,
         description="Busca por nome, marca ou categoria",
     ),
+    city: str | None = Query(default=None, min_length=1, max_length=100),
     db: Session = Depends(get_db),
 ) -> list[dict]:
 
@@ -261,6 +265,7 @@ def list_products(
     cheapest = _cheapest_price_by_product(
         db,
         [product.id for product in products],
+        city,
     )
 
     return [
@@ -278,6 +283,7 @@ def list_products(
 )
 def get_product(
     product_id: int,
+    city: str | None = Query(default=None, min_length=1, max_length=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_optional),
 ) -> dict:
@@ -298,10 +304,12 @@ def get_product(
         )
     )
 
+    markets = [m for m in markets if matches_city(m, city)]
     reports = db.scalars(
         select(PriceReport)
         .where(
             PriceReport.product_id == product_id,
+            PriceReport.market_id.in_([m.id for m in markets]),
             PriceReport.is_active.is_(True),
             (True if get_settings().demo_mode else PriceReport.source_type != "development"),
         )
@@ -367,6 +375,7 @@ def get_product(
     cheapest = _cheapest_price_by_product(
         db,
         [product_id],
+        city,
     ).get(product_id, {})
 
     return {
@@ -378,16 +387,18 @@ def get_product(
 
 @router.get("/markets", response_model=list[MarketRead])
 def list_markets(
+    city: str | None = Query(default=None, min_length=1, max_length=100),
     db: Session = Depends(get_db),
 ) -> list[Market]:
 
-    return list(
+    markets = list(
         db.scalars(
             select(Market)
             .where(Market.is_active.is_(True))
             .order_by(Market.name)
         )
     )
+    return [m for m in markets if matches_city(m, city)]
 
 
 @router.post("/markets", response_model=MarketRead, status_code=201)
