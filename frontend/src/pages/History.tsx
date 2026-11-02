@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { ConfirmPriceButton } from "../components/ConfirmPriceButton";
+import { CommunityNav } from "../components/CommunityNav";
 import { SourceBadge } from "../components/SourceBadge";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { formatDate, formatDateTime, formatPrice, parseApiDate } from "../lib/format";
@@ -82,9 +83,10 @@ export function History() {
       <h1>Comunidade</h1>
       <p>Preços compartilhados por quem visitou os mercados. Confirme somente os valores que você também verificou.</p>
       <p className="form-hint">Este é o histórico de preços da comunidade. Suas listas salvas ficam em <Link to="/lista#listas-salvas">Minha lista</Link>.</p>
+      <CommunityNav />
       <div className="button-row">
-        <Link className="primary-button" to="/contribuir">Informar preço</Link>
-        <Link className="outline-button" to="/minhas-contribuicoes">Minhas contribuições</Link>
+        <Link className="primary-button" to="/contribuir">Colaborar com um preço</Link>
+
       </div>
       <div className="filters">
         <label className="field"><span>Produto</span>
@@ -110,7 +112,7 @@ export function History() {
       {!loading && reports.length > 0 && (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Data</th><th>Produto</th><th>Mercado</th><th>Preço</th><th>Origem</th><th>Confirmação</th></tr></thead>
+            <thead><tr><th>Data</th><th>Produto</th><th>Mercado</th><th>Preço</th><th>Colaboração</th><th>Confirmação</th></tr></thead>
             <tbody>
               {reports.map((report) => (
                 <tr key={report.id}>
@@ -118,7 +120,7 @@ export function History() {
                   <td>{report.product_name}</td>
                   <td>{report.market_name}</td>
                   <td className="num">{formatPrice(report.price)}</td>
-                  <td><SourceBadge sourceType={report.source_type} /></td>
+                  <td><SourceBadge sourceType={report.source_type} />{report.source_type === "community" && <small className="report-author">{report.is_mine ? "Sua contribuição" : "Informado por outro usuário"}</small>}</td>
                   <td>
                     <ConfirmPriceButton
                       reportId={report.id}

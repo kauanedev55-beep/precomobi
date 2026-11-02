@@ -54,3 +54,22 @@ isolamento entre duas contas, ausência de alteração dos preços comuns e cria
 aditiva das tabelas; testes existentes de compras, leitor e mapas preservados.
 O navegador remoto não alcança o servidor local deste ambiente; avaliação com
 usuários e teste de câmera em celulares físicos continuam necessários.
+
+## Objetivo e navegação
+
+O objetivo principal é montar uma lista, comparar mercados com preços disponíveis
+e abrir a rota do mercado escolhido. A entrada padrão após login e confirmação de
+e-mail passa a ser Minha lista; retornos a páginas protegidas continuam respeitados.
+O painel de visão geral permanece acessível pelo logotipo e por Mais opções.
+
+Computador e celular usam as mesmas quatro entradas, na mesma ordem: Minha lista,
+Produtos, Promoções e Comunidade. A lista tem acesso direto a Adicionar produtos
+e explica as três etapas da compra. Comparações mantêm Minha lista destacada;
+detalhes de produtos mantêm Produtos; avisos mantêm Promoções; contribuição e
+registros pessoais mantêm Comunidade.
+
+Na colaboração, a pergunta É uma promoção? distingue preço comum de promoção com
+validade. Validade e condições continuam obrigatórias no segundo caso. Promoções
+vencidas saem da consulta ativa; avisos de terceiros não fingem encerramento
+automático. A comunidade identifica Sua contribuição ou Informado por outro
+usuário, sem publicar nomes, e-mails ou listas pessoais.

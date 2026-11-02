@@ -31,7 +31,7 @@ export function Login() {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      navigate(state.from ?? "/painel", { replace: true });
+      navigate(state.from ?? "/lista", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível entrar. Tente novamente.");
     } finally {
@@ -91,7 +91,7 @@ export function Login() {
           <button className="pm-login-resend" type="button" onClick={() => void sendEmail("resend")}>Não recebeu o e-mail de confirmação?</button>
           {demo && <button className="outline-button" type="button" disabled={loading} onClick={async () => {
             setLoading(true); setError("");
-            try { await demoLogin(); navigate("/painel"); }
+            try { await demoLogin(); navigate("/lista"); }
             catch (err) { setError(err instanceof Error ? err.message : "Demonstração indisponível."); }
             finally { setLoading(false); }
           }}>Explorar demonstração</button>}

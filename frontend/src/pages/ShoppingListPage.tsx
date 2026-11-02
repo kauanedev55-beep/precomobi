@@ -73,13 +73,13 @@ export function ShoppingListPage() {
 
   return (
     <section>
-      <h1>Lista de compras</h1>
-
-      <h2>Lista em edição</h2>
-      {listOffers.length>0 && <div className="list-offer-notice"><span className="notice-icon"><Icon name="tag"/></span><div><p><strong>{listOffers.length} {listOffers.length===1 ? "oferta encontrada" : "ofertas encontradas"}</strong> para produtos desta lista.</p><Link to="/avisos">Conferir condições e validade →</Link></div></div>}
+      <div className="experience-heading"><div><span className="eyebrow">SUA PRÓXIMA COMPRA COMEÇA AQUI</span><h1>Minha lista</h1><p>Escolha seus produtos, compare os mercados e veja como chegar.</p></div><Link className="primary-button" to="/produtos"><Icon name="plus"/>Adicionar produtos</Link></div>
+      <ol className="shopping-steps" aria-label="Como organizar sua compra"><li aria-current="step"><b>1</b><span>Monte sua lista</span></li><li><b>2</b><span>Compare os mercados</span></li><li><b>3</b><span>Escolha e abra a rota</span></li></ol>
+      <h2>Produtos da lista</h2>
+      {listOffers.length>0 && <div className="list-offer-notice"><span className="notice-icon"><Icon name="tag"/></span><div><p><strong>{listOffers.length} {listOffers.length===1 ? "promoção encontrada" : "promoções encontradas"}</strong> para produtos desta lista.</p><Link to="/avisos">Conferir condições e validade →</Link></div></div>}
       {cart.items.length === 0 ? (
         <Empty title="Sua lista está vazia">
-          Adicione produtos pela página de <Link to="/produtos">Produtos</Link> ou pelo detalhe de cada produto.
+          <p>Comece pelo que você precisa comprar. Você pode buscar pelo nome ou ler o código de barras.</p><Link className="primary-button" to="/produtos">Adicionar o primeiro produto</Link>
         </Empty>
       ) : (
         <>
