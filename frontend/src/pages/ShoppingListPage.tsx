@@ -5,7 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useCart } from "../cart/CartContext";
 import { useRegion } from "../region/RegionContext";
 import { useOffers } from "../offers/OffersContext";
-import { GroceryScene } from "../components/GroceryScene";
+import { ShoppingPhoto } from "../components/ShoppingPhoto";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { formatDate, productSubtitle } from "../lib/format";
@@ -77,7 +77,7 @@ export function ShoppingListPage() {
 
   return (
     <section>
-      <div className="grocery-list-heading"><div><span className="grocery-kicker">DA LISTA À SACOLA</span><h1>Minha lista de compras</h1><p>O que você precisa levar para casa? Adicione os produtos e compare os mercados da sua cidade.</p><Link className="primary-button" to="/produtos"><Icon name="plus"/>Adicionar produtos</Link></div><GroceryScene/></div>
+      <div className="grocery-list-heading"><div><span className="grocery-kicker">DA LISTA À SACOLA</span><h1>Minha lista de compras</h1><p>O que você precisa levar para casa? Adicione os produtos e compare os mercados da sua cidade.</p><Link className="primary-button" to="/produtos"><Icon name="plus"/>Adicionar produtos</Link></div><ShoppingPhoto/></div>
       <ol className="shopping-steps" aria-label="Como organizar sua compra"><li aria-current="step"><b>1</b><span>Monte sua lista</span></li><li><b>2</b><span>Compare os mercados</span></li><li><b>3</b><span>Escolha e abra a rota</span></li></ol>
       <h2>Produtos da lista</h2>
       {listOffers.length>0 && <div className="list-offer-notice"><span className="notice-icon"><Icon name="tag"/></span><div><p><strong>{listOffers.length} {listOffers.length===1 ? "promoção encontrada" : "promoções encontradas"}</strong> para produtos desta lista.</p><Link to="/avisos">Conferir condições e validade →</Link></div></div>}
