@@ -68,7 +68,7 @@ export type MarketResult = {
 };
 
 export type Comparison = {
-  shopping_list_id: number;
+  shopping_list_id: number | null;
   list_name: string;
   results: MarketResult[];
   common_product_ids: number[];
@@ -190,6 +190,7 @@ export const createShoppingList = (payload: { name: string; items: { product_id:
   request<ShoppingList>("/shopping-lists", { method: "POST", body: JSON.stringify(payload) });
 export const getShoppingLists = () => request<ShoppingList[]>("/shopping-lists");
 export const deleteShoppingList = (id: number) => request<void>(`/shopping-lists/${id}`, { method: "DELETE" });
+export const previewShoppingList = (payload: {name: string; items: {product_id: number; quantity: number}[]}, city: string) => request<Comparison>(`/comparisons/preview?city=${encodeURIComponent(city)}`, {method:"POST",body:JSON.stringify(payload)});
 export const compareShoppingList = (listId: number, city?: string) => request<Comparison>(`/comparisons/${listId}${city ? `?city=${encodeURIComponent(city)}` : ""}`);
 
 export const getPriceHistory = (params: { product_id?: number; market_id?: number; city?: string }) => {

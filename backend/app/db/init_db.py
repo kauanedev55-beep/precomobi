@@ -79,6 +79,8 @@ def init_db() -> None:
         add_requested_markets(engine)
         from app.db.greater_vitoria_markets import add_greater_vitoria_markets
         add_greater_vitoria_markets(engine)
+        from app.db.cariacica_markets import add_cariacica_markets
+        add_cariacica_markets(engine)
         return
     with Session(engine) as db:
         user = db.scalar(select(User).where(User.email == "demo@precomobi.local"))

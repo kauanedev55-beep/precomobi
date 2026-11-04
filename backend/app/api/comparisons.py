@@ -1,5 +1,6 @@
 from app.core.config import get_settings
 from decimal import Decimal
+from types import SimpleNamespace
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -8,8 +9,8 @@ from sqlalchemy.orm import Session, selectinload
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.core.region import matches_city
-from app.models import Market, PriceReport, ShoppingList, ShoppingListItem, User
-from app.schemas.mvp import ComparisonRead
+from app.models import Market, PriceReport, Product, ShoppingList, ShoppingListItem, User
+from app.schemas.mvp import ComparisonRead, ShoppingListCreate
 
 router = APIRouter(prefix="/comparisons", tags=["comparisons"])
 
@@ -29,6 +30,29 @@ def compare_shopping_list(
     if not shopping_list or shopping_list.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Lista não encontrada")
 
+    return build_comparison(db, shopping_list, city)
+
+
+@router.post("/preview", response_model=ComparisonRead)
+def preview_shopping_list(
+    payload: ShoppingListCreate,
+    city: str | None = Query(default=None, min_length=1, max_length=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    # Validate products, but never add a shopping list or its items to the session.
+    ids = [item.product_id for item in payload.items]
+    products = {p.id:p for p in db.scalars(select(Product).where(Product.id.in_(ids), Product.is_active.is_(True)))}
+    missing = sorted(set(ids) - products.keys())
+    if missing:
+        raise HTTPException(404, f"Produtos não encontrados: {missing}")
+    draft = SimpleNamespace(id=None, name=payload.name, items=[
+        SimpleNamespace(product_id=i.product_id, quantity=Decimal(i.quantity).quantize(Decimal("0.001")), product=products[i.product_id]) for i in payload.items
+    ])
+    return build_comparison(db, draft, city)
+
+
+def build_comparison(db, shopping_list, city):
     markets = list(db.scalars(select(Market).where(Market.is_active.is_(True)).order_by(Market.name)))
     markets = [m for m in markets if matches_city(m, city)]
     product_ids = [item.product_id for item in shopping_list.items]

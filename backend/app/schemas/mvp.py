@@ -34,7 +34,7 @@ class MarketRead(BaseModel):
 
 class ShoppingListItemCreate(BaseModel):
     product_id: int
-    quantity: Decimal = Field(default=1, gt=0)
+    quantity: Decimal = Field(default=1, gt=0, max_digits=10, decimal_places=3)
 
 
 class ShoppingListCreate(BaseModel):
@@ -105,7 +105,7 @@ class MarketComparisonRead(BaseModel):
 
 
 class ComparisonRead(BaseModel):
-    shopping_list_id: int
+    shopping_list_id: int | None
     list_name: str
     results: list[MarketComparisonRead]
     common_product_ids: list[int]

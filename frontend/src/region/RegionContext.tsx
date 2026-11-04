@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useAuth } from "../auth/AuthContext";
 import { getMarkets } from "../services/api";
 
-const defaults = ["Serra", "Vitória", "Vila Velha"];
+const defaults = ["Serra", "Vitória", "Vila Velha", "Cariacica"];
 const normalize = (s: string) => s.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
 export function inCity(market: {city: string; state: string}, city: string) {
   return Boolean(city) && market.state.trim().toUpperCase() === "ES" && (city === "*" || normalize(market.city) === normalize(city));

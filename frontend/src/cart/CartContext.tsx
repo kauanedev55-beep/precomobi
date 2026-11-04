@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { useAuth } from "../auth/AuthContext";
 import type { Product } from "../services/api";
 
-// A "lista em edição" mora no navegador (localStorage) até o usuário salvá-la; só então vai para a API.
+// Only explicitly saved lists persist in the API. Drafts live in memory during navigation.
 const STORAGE_KEY = "precomobi_draft_list";
 
 export type CartItem = { product: Product; quantity: number };
@@ -27,14 +27,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 function AccountCart({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const key = `${STORAGE_KEY}_${user?.id ?? "guest"}`;
-  const [items, setItems] = useState<CartItem[]>(() => {
-    try { const value = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(value) ? value.filter(i => i?.product?.id && Number.isFinite(i.quantity) && i.quantity > 0) : []; }
-    catch { return []; }
-  });
-
-  useEffect(() => {
-    try { localStorage.setItem(key, JSON.stringify(items)); } catch { /* Navegação continua sem persistência local. */ }
-  }, [items, key]);
+  const [items, setItems] = useState<CartItem[]>([]);
+  // Retire this account's old automatic draft; saved lists in the database are untouched.
+  useEffect(() => {try {localStorage.removeItem(key);} catch { /* In-memory shopping still works. */ }}, [key]);
 
   const value = useMemo<CartContextValue>(
     () => ({

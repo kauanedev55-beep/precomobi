@@ -5,7 +5,7 @@ https://unsplash.com/license
 
 Estas fotografias são ilustrações genéricas da experiência de compra. Não são
 fotos das unidades cadastradas, prova de estoque, preços atuais nem endosso de
-pessoas ou marcas. Os cartões exibem os créditos ao serem expandidos. Arquivos
+pessoas ou marcas. A página traz fontes e créditos em Sobre as fotografias. Arquivos
 hospedados com a aplicação para evitar dependência de imagens externas no uso.
 A entrega foi solicitada em JPEG de 1200px; o recorte visual é feito por CSS.
 

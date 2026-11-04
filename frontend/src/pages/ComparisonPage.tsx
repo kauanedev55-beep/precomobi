@@ -1,16 +1,26 @@
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 
+import { useCart } from "../cart/CartContext";
+import { useOffers } from "../offers/OffersContext";
 import { useRegion } from "../region/RegionContext";
 import { PurchaseDecision } from "../components/PurchaseDecision";
 import { fullAddress, googleMapsUrl } from "../lib/navigation";
 import { SourceBadge } from "../components/SourceBadge";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { formatDate, formatPrice } from "../lib/format";
-import { compareShoppingList, type Comparison } from "../services/api";
+import { compareShoppingList, previewShoppingList, createShoppingList, type Comparison } from "../services/api";
 
-export function ComparisonPage() {
+export function ComparisonPage({preview=false}: {preview?: boolean}) {
   const { id } = useParams();
+  const cart = useCart();
+  const alerts = useOffers();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const draftName = typeof location.state?.name === "string" ? location.state.name : "Minha compra";
+  const draftKey = (preview ? cart.items : []).map(i => `${i.product.id}:${i.quantity}`).join(",");
+  const [isSaving,setSaving] = useState(false);
+  const [saveError,setSaveError] = useState("");
   const {city} = useRegion();
   const sequence = useRef(0);
   const [loadedCity,setLoadedCity] = useState<string | null>(null);
@@ -22,18 +32,19 @@ export function ComparisonPage() {
 
   const load = useCallback(async () => {
     const request = ++sequence.current;
+    if (preview && !draftKey) {setComparison(null);setLoading(false);setError("");return;}
     if (!city) {setComparison(null);setLoading(false);setError("");return;}
     setLoading(true);
     setError("");
     try {
-      const data = await compareShoppingList(Number(id),city);
+      const data = preview ? await previewShoppingList({name:draftName,items:cart.items.map(i => ({product_id:i.product.id,quantity:i.quantity}))},city) : await compareShoppingList(Number(id),city);
       if(request === sequence.current) {setComparison(data);setLoadedCity(city);}
     } catch (err) {
       if(request === sequence.current) setError(err instanceof Error ? err.message : "Não foi possível comparar a lista.");
     } finally {
       if(request === sequence.current) setLoading(false);
     }
-  }, [id,city]);
+  }, [id,city,preview,draftName,draftKey]);
 
   useEffect(() => {
     void load();
@@ -43,8 +54,18 @@ export function ComparisonPage() {
     return () => { window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
   }, [load]);
 
-  if (!city) return <Empty title="Onde você quer comparar sua lista?">Escolha Serra, Vitória ou Vila Velha no seletor acima. Sua lista está salva.</Empty>;
-  if (!error && (!comparison || loadedCity !== city || comparison.shopping_list_id !== Number(id))) return <Loading text="Comparando os mercados..." />;
+  async function saveDraft() {
+    setSaving(true);setSaveError("");
+    try {
+      const list=await createShoppingList({name:draftName,items:cart.items.map(i => ({product_id:i.product.id,quantity:i.quantity}))});
+      alerts.refresh();cart.clear();navigate(`/comparacao/${list.id}`,{replace:true});
+    } catch(err) {setSaveError(err instanceof Error ? err.message : "Não foi possível salvar.");}
+    finally {setSaving(false);}
+  }
+
+  if (preview && !draftKey) return <Empty title="Não há uma lista em edição"><Link to="/lista">Montar uma nova lista</Link>. Comparações sem salvar não ficam guardadas depois de recarregar o aplicativo.</Empty>;
+  if (!city) return <Empty title="Onde você quer comparar sua lista?">Escolha a cidade no seletor acima para comparar os mercados disponíveis.</Empty>;
+  if (!error && (!comparison || loadedCity !== city || comparison.shopping_list_id !== (preview ? null : Number(id)))) return <Loading text="Comparando os mercados..." />;
   if (error || !comparison) return <ErrorBox message={error || "Comparação indisponível."} onRetry={load} />;
 
   const priced = comparison.results.filter(r => r.found_items > 0);
@@ -69,6 +90,7 @@ export function ComparisonPage() {
     <section>
       <p className="breadcrumb"><Link to="/lista">← Lista de compras</Link></p>
       <div className="comparison-heading"><h1>Comparação: {comparison.list_name}</h1><button type="button" className="outline-button" disabled={loading} onClick={() => void load()}>{loading ? "Atualizando..." : "Atualizar preços"}</button></div>
+      {preview && <div className="preview-actions"><p>Você está comparando sem salvar. Para usar esta lista em outra compra ou dispositivo, escolha Salvar lista.</p><div className="button-row"><button className="outline-button" type="button" onClick={() => void saveDraft()} disabled={isSaving}>{isSaving ? "Salvando..." : "Salvar lista"}</button><button className="primary-button" type="button" disabled={isSaving} onClick={() => {cart.clear();navigate("/lista",{replace:true});}}>Concluir sem salvar</button></div>{saveError && <p className="error-message" role="alert">{saveError}</p>}</div>}
       {comparison.results.length === 0 && <div className="notice">Não há mercados cadastrados na cidade escolhida. Você pode mudar a cidade acima.</div>}
       <p className="form-hint">Comparando {comparison.results.length} mercados {city === "*" ? "nas cidades cadastradas no ES" : `em ${city}`}. Mostramos primeiro os que têm preços para sua lista.</p>
       {decisionMarkets.length >= 2 && <PurchaseDecision markets={decisionMarkets} partial={partialDecision} commonCount={comparison.common_items_count} />}

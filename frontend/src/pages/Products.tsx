@@ -14,7 +14,7 @@ export function Products() {
   const q = params.get("q") ?? "";
   const [input, setInput] = useState(q);
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [added, setAdded] = useState<number | null>(null);
   const [scanning, setScanning] = useState(false);
@@ -26,6 +26,8 @@ export function Products() {
 
   const load = useCallback(async () => {
     const request = ++sequence.current;
+    if (!q.trim()) {setProducts([]);setLoading(false);setError("");return;}
+    setProducts([]);
     setLoading(true);
     setError("");
     try {
@@ -49,6 +51,8 @@ export function Products() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {setInput(q);setAdded(null);}, [q]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -74,21 +78,23 @@ export function Products() {
     <section>
       <span className="grocery-kicker">O QUE VAI NA SUA SACOLA?</span><h1>Encontre seus produtos</h1>
       <div className="grocery-search-picks" aria-label="Buscas rápidas"><span>Itens do dia a dia</span>{[{name:"Arroz",category:"Grãos"},{name:"Feijão",category:"Grãos"},{name:"Leite",category:"Laticínios"},{name:"Café",category:"Bebidas"}].map(p => <button type="button" key={p.name} onClick={() => {setInput(p.name);setParams({q:p.name});}}><ProductArt name={p.name} category={p.category} size={30}/>{p.name}</button>)}</div>
-      <form className="search-bar" onSubmit={submit} role="search">
+      <form className="search-bar products-search" onSubmit={submit} role="search">
         <input aria-label="Buscar produto" placeholder="Nome, marca, categoria ou EAN" value={input} onChange={(event) => setInput(event.target.value)} />
         <button className="primary-button" type="submit">Buscar</button>
-        <button className="outline-button" type="button" onClick={() => setScanning(true)}>📷 Ler barras ou QR</button>
+        <button className="outline-button" type="button" onClick={() => setScanning(true)}>📷 Ler código de barras / QR</button>
       </form>
-      <p className="form-hint">Busque por nome ou código de barras. Se o nome não estiver no catálogo, consultamos o Open Food Facts (mínimo 3 letras). {city ? "Os preços exibidos respeitam a cidade escolhida." : "Escolha a cidade acima para consultar os preços. Você já pode adicionar produtos à lista."}</p>
+      <div className="product-search-status">{q.trim() && <><p>Resultados para <strong>“{q}”</strong></p><button className="text-button" type="button" onClick={() => {setInput("");setParams({});setScanError("");setProducts([]);}}>Limpar busca</button></>}</div>
+      <p className="form-hint">Busque um produto pelo nome ou código de barras. Encontrar um produto não significa que ele já tenha preço informado nos mercados. {city ? "Os preços exibidos respeitam a cidade escolhida." : "Escolha a cidade acima para consultar os preços. Você já pode adicionar produtos à lista."}</p>
       {scanError && <p className="error-message" role="alert">{scanError}</p>}
       {scanning && <BarcodeScanner onDetected={onBarcodeDetected} onClose={() => setScanning(false)} />}
 
-      {loading && <Loading text="Buscando produtos..." />}
+      {!q.trim() && <Empty title="O que você precisa comprar?">Digite um nome e toque em Buscar, escolha um item do dia a dia ou leia o código de barras.</Empty>}
+      {q.trim() && loading && <Loading text="Buscando produtos..." />}
       {error && <ErrorBox message={error} onRetry={load} />}
-      {!loading && !error && products.length === 0 && (
+      {q.trim() && !loading && !error && products.length === 0 && (
         <Empty title="Nenhum produto encontrado">{q ? `Nada encontrado para “${q}”. Tente outro nome ou o código EAN completo.` : "Ainda não há produtos cadastrados."}</Empty>
       )}
-      {!loading && !error && products.length > 0 && (
+      {q.trim() && !loading && !error && products.length > 0 && (
         <ul className="product-grid">
           {products.map((product) => (
             <li className="product-tile" key={product.id}>
@@ -96,7 +102,7 @@ export function Products() {
                 <ProductArt category={product.category} imageUrl={product.image_url} name={product.name} size={96} />
                 <strong>{product.name}</strong>
                 <small>{productSubtitle(product)}</small>
-                <span className="tile-price">{product.min_price !== null ? formatPrice(product.min_price) : "Sem preço"}</span>
+                <span className="tile-price">{product.min_price !== null ? formatPrice(product.min_price) : "Preço ainda não informado"}</span>
                 {product.min_price_market && <small className="tile-market">em {product.min_price_market}</small>}
               </Link>
               <button className="tile-add" type="button" aria-label={`Adicionar ${product.name} à lista`} onClick={() => { cart.add(product); setAdded(product.id); }}>

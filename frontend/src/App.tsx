@@ -48,6 +48,7 @@ export default function App() {
               <Route path="produtos" element={<RequireAuth><Products /></RequireAuth>} />
               <Route path="produtos/:id" element={<RequireAuth><ProductDetail /></RequireAuth>} />
               <Route path="lista" element={<RequireAuth><ShoppingListPage /></RequireAuth>} />
+              <Route path="comparacao/atual" element={<RequireAuth><ComparisonPage preview /></RequireAuth>} />
               <Route path="comparacao/:id" element={<RequireAuth><ComparisonPage /></RequireAuth>} />
               <Route path="contribuir" element={<RequireAuth><Contribute /></RequireAuth>} />
               <Route path="ofertas" element={<RequireAuth><Offers /></RequireAuth>} />
