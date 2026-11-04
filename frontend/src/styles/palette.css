@@ -1,0 +1,115 @@
+/* Navy, warm sand and amber. Legacy token names remain compatible with every page. */
+:root {
+  --paper:#f1ebe2; --surface:#fffcf7; --ink:#243348; --muted:#5c6573;
+  --line:#dcd5cb; --forest:#29466c; --forest-deep:#1c324f; --forest-soft:#e6edf5;
+  --tag-amber:#bd7724; --tag-amber-soft:#fae8c9;
+}
+body,.pm-public,.pm-public-main,.experience-shell,.experience-shell .pm-content {background:var(--paper);color:var(--ink)}
+.pm-public-header,.experience-shell .pm-topbar {background:#fffcf7;border-color:var(--line)}
+body .brand-mark {background:var(--forest)}
+.experience-shell .pm-user-pill {background:#e6edf5;color:#29466c}
+.experience-shell .header-alerts {color:#29466c}
+.experience-shell .header-alerts b {background:#fae8c9;color:#68400f}
+/* The menu gives the screen a clear edge; the content stays quiet and readable. */
+.experience-shell .pm-sidebar {background:#223a59;border-color:#223a59;color:#f8f4ec}
+.experience-shell .pm-sidebar .side-link {color:#e8edf5}
+.experience-shell .pm-sidebar .side-link:hover {background:#314d70;color:#fff}
+.experience-shell .pm-sidebar .side-link.active {background:#fae8c9;color:#3e301b}
+.experience-shell .pm-sidebar .sidebar-caption {color:#c3d0e2}
+.experience-shell .pm-sidebar .pm-more-menu {border-color:#4a607c}
+.experience-shell .pm-sidebar .pm-more-menu summary {color:#e8edf5}
+.experience-shell .pm-sidebar .sidebar-account {border-color:#4a607c}
+.experience-shell .pm-sidebar .pm-account-name {color:#f8f4ec}
+.experience-shell .sidebar-contribute {background:#314d70;color:#fff1d8}
+.experience-shell .sidebar-contribute span {color:#dce5f1}
+body .primary-button {background:var(--forest);color:#fff}
+body .primary-button:hover {background:var(--forest-deep)}
+body .outline-button {background:#fffcf7;color:#29466c;border-color:#aab8ca}
+body .outline-button:hover {background:#e6edf5;border-color:#8299b6}
+a:focus-visible,button:focus-visible,summary:focus-visible {outline-color:#365f92}
+.pm-private input,.pm-private select,.pm-private textarea {background:#fffdfa;border-color:#b8bdc6;color:var(--ink)}
+.pm-private input:focus,.pm-private select:focus,.pm-private textarea:focus {border-color:#365f92;outline-color:#d3dfef}
+body .text-button,body .link-button {color:#29466c}
+body .text-button.danger {color:#a33d35}
+.pm-private .form-card,.pm-private .list-card,.pm-private .product-tile,body .offer-card,body .market-card,body .city-selector,body .unpriced-markets {background:#fffcf7;border-color:var(--line)}
+.pm-private .table-wrap {background:#fffcf7;border-color:var(--line)}
+.pm-private th {background:#eae3d9;color:#43516a}
+body .offer-tabs a {color:#526078}
+body .offer-tabs a.selected {background:#29466c;color:#fff;border-color:#29466c}
+/* Amber signals a promotion, while navy signals navigation and the shopping list. */
+body .offer-status {background:#fae8c9;color:#68400f}
+body .offer-status.offer-inactive {background:#e7e3dd;color:#595f68}
+body .offer-list-tag {background:#e6edf5;color:#29466c}
+body .offer-price,body .offer-product-name {color:#243348}
+body .offer-market,body .offer-card .offer-observed,body .offer-disclaimer {color:#5c6573}
+body .offer-trust {color:#435a75;border-color:#ded8ce}
+body .offer-feedback {border-color:#ded8ce}
+body .offer-feedback>span {color:#5c6573}
+body .offer-feedback button {background:#eee8df;border-color:#d5cbbd;color:#3e4d63}
+body .offer-feedback button:first-child {background:#e6edf5;color:#29466c;border-color:#b9c9dd}
+body .list-offer-notice {background:#fae8c9;border-color:#dec6a1;color:#5e3e18}
+body .list-offer-notice a {color:#65410f}
+body .contribution-choice label {background:#fffcf7;border-color:#b8bdc6}
+body .contribution-choice label:has(input:checked) {background:#e6edf5;border-color:#29466c}
+body .contribution-choice input {accent-color:#29466c}
+body .offer-fields {border-color:var(--line)}
+body .city-selector select {background:#f4f0e9;border-color:#aab8ca;color:#29466c}
+body .shopping-steps b {background:#fffcf7;border-color:#b8bdc6;color:#5c6573}
+body .shopping-steps li[aria-current] {color:#29466c}
+body .shopping-steps li[aria-current] b {background:#29466c;border-color:#29466c;color:#fff}
+body .report-author {color:#5c6573}
+/* Dashboard: one strong shopping action, one softer discovery surface. */
+body .shopping-hero {background:linear-gradient(135deg,#223a59,#36577c)}
+body .hero-pill {border-color:#91a7c2;background:#ffffff0a;color:#f7f2e8}
+body .shopping-hero p,body .hero-secondary {color:#e6edf5}
+body .shopping-hero .primary-button {background:#edbd70;color:#302611}
+body .shopping-hero .primary-button:hover {background:#f5cc89}
+body .art-list {background:#fff5e4;color:#314861;box-shadow:0 10px 30px #17283c33}
+body .art-list i {background:linear-gradient(90deg,#b4c7de 15%,transparent 15% 24%,#dfd8ca 24% 90%,transparent 90%)}
+body .art-list b {color:#526078;border-color:#dcd5cb}
+body .art-tag {background:#edbd70;border-color:#29466c;color:#302611}
+body .discovery-card {background:#efddbf;border-color:#decaab}
+body .discovery-icon {color:#80521c;background:#fffcf7b3}
+body .discovery-card p {color:#654c2b}
+body .discovery-cta {color:#533b1c}
+body .dashboard-quick a,body .community-invite {background:#fffcf7;border-color:#d5cbbd}
+body .dashboard-quick a>svg:first-child {color:#365f92}
+body .invite-icon {background:#e6edf5;color:#29466c}
+body .eyebrow,body .pm-kicker,body .welcome-dot {color:#8a5517}
+body .market-symbol {background:#e6edf5;color:#29466c}
+body .market-map-link {background:#e6edf5;color:#29466c}
+body .market-map-link:hover {background:#d5e1ef;color:#1c324f}
+body .market-map-link:focus-visible {outline-color:#365f92}
+body .market-city,body .market-address,body .markets-count,body .markets-heading p {color:#5c6573}
+body .market-card:hover {border-color:#aab8ca;box-shadow:0 6px 20px #2433480c}
+body .source-badge.community {background:#e6edf5;color:#29466c}
+/* Public introduction and login use the same palette as the signed-in screens. */
+body .pm-visual-circle {background:linear-gradient(135deg,#f3dfbc,#d2ddeb)}
+body .pm-visual-card,body .pm-visual-floating {background:#fffcf7}
+body .pm-visual-heading {color:#29466c}
+body .pm-visual-item-icon {background:#e6edf5;color:#29466c}
+body .pm-visual-item span:last-child {color:#365f92}
+body .pm-landing-trust {color:#5c6573}
+body .pm-login {background:#fffcf7;border-color:var(--line);box-shadow:0 20px 65px #24334814}
+body .pm-login-heading h1,body .pm-login-field {color:#243348}
+body .pm-login-eyebrow {color:#8a5517}
+body .pm-login-heading p,body .pm-login-signup,body .pm-login-resend,body .pm-login-input-icon,body .pm-login-remember {color:#5c6573}
+body .pm-login-input-wrap {background:#fffdfa;border-color:#b8bdc6}
+body .pm-login-input-wrap:focus-within {border-color:#365f92;box-shadow:0 0 0 3px #d3dfef}
+body .pm-login-reveal,body .pm-login-link,body .pm-login-signup a {color:#29466c}
+body .pm-login-remember input {accent-color:#29466c}
+body .pm-login-submit {background:#29466c;color:#fff}
+body .pm-login-submit:hover {background:#1c324f}
+body .pm-login-art {background-color:#223a59;background-image:linear-gradient(180deg,#223a5914,#223a5966 44%,#16283ff5 100%),url('/precomobi-login-vegetais.jpg')}
+body .pm-login-art-shade {background:linear-gradient(120deg,#223a5940,transparent 75%)}
+body .pm-login-art-kicker {color:#f5cf93}
+body .pm-login-art-content li {color:#f5f0e7}
+@media(max-width:760px) {
+  body .mobile-bottom-nav {background:#fffcf7f5;border-color:#dcd5cb}
+  body .mobile-bottom-nav a {color:#526078}
+  body .mobile-bottom-nav a.active {background:#29466c;color:#fff}
+}
+body .pm-feature-steps article>span,body .pm-verification-icon {background:#e6edf5;color:#29466c}
+body .pm-last-cta {background:#e2e8ee}
+body .pm-dash-feature {background:linear-gradient(135deg,#e6edf5,#f8f1e6);border-color:#c7d2df}
+body .pm-auth-intro {background:linear-gradient(145deg,#223a59,#36577c)}
