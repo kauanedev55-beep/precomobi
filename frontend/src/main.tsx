@@ -5,6 +5,7 @@ import App from "./App";
 import "./styles/global.css";
 import "./styles/experience.css";
 import "./styles/palette.css";
+import "./styles/grocery.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

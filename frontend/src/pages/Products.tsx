@@ -72,7 +72,8 @@ export function Products() {
 
   return (
     <section>
-      <h1>Produtos</h1>
+      <span className="grocery-kicker">O QUE VAI NA SUA SACOLA?</span><h1>Encontre seus produtos</h1>
+      <div className="grocery-search-picks" aria-label="Buscas rápidas"><span>Itens do dia a dia</span>{[{name:"Arroz",category:"Grãos"},{name:"Feijão",category:"Grãos"},{name:"Leite",category:"Laticínios"},{name:"Café",category:"Bebidas"}].map(p => <button type="button" key={p.name} onClick={() => {setInput(p.name);setParams({q:p.name});}}><ProductArt name={p.name} category={p.category} size={30}/>{p.name}</button>)}</div>
       <form className="search-bar" onSubmit={submit} role="search">
         <input aria-label="Buscar produto" placeholder="Nome, marca, categoria ou EAN" value={input} onChange={(event) => setInput(event.target.value)} />
         <button className="primary-button" type="submit">Buscar</button>

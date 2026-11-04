@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useCart } from "../cart/CartContext";
 import { useRegion } from "../region/RegionContext";
 import { useOffers } from "../offers/OffersContext";
+import { GroceryScene } from "../components/GroceryScene";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { formatDate, productSubtitle } from "../lib/format";
@@ -76,14 +77,12 @@ export function ShoppingListPage() {
 
   return (
     <section>
-      <div className="experience-heading"><div><span className="eyebrow">SUA PRÓXIMA COMPRA COMEÇA AQUI</span><h1>Minha lista</h1><p>Escolha seus produtos, compare os mercados e veja como chegar.</p></div><Link className="primary-button" to="/produtos"><Icon name="plus"/>Adicionar produtos</Link></div>
+      <div className="grocery-list-heading"><div><span className="grocery-kicker">DA LISTA À SACOLA</span><h1>Minha lista de compras</h1><p>O que você precisa levar para casa? Adicione os produtos e compare os mercados da sua cidade.</p><Link className="primary-button" to="/produtos"><Icon name="plus"/>Adicionar produtos</Link></div><GroceryScene/></div>
       <ol className="shopping-steps" aria-label="Como organizar sua compra"><li aria-current="step"><b>1</b><span>Monte sua lista</span></li><li><b>2</b><span>Compare os mercados</span></li><li><b>3</b><span>Escolha e abra a rota</span></li></ol>
       <h2>Produtos da lista</h2>
       {listOffers.length>0 && <div className="list-offer-notice"><span className="notice-icon"><Icon name="tag"/></span><div><p><strong>{listOffers.length} {listOffers.length===1 ? "promoção encontrada" : "promoções encontradas"}</strong> para produtos desta lista.</p><Link to="/avisos">Conferir condições e validade →</Link></div></div>}
       {cart.items.length === 0 ? (
-        <Empty title="Sua lista está vazia">
-          <p>Comece pelo que você precisa comprar. Você pode buscar pelo nome ou ler o código de barras.</p><Link className="primary-button" to="/produtos">Adicionar o primeiro produto</Link>
-        </Empty>
+        <div className="grocery-empty"><span><Icon name="basket" size={32}/></span><div><h3>Vamos colocar o primeiro produto?</h3><p>Busque pelo nome ou leia o código de barras da embalagem.</p></div><Link className="outline-button" to="/produtos">Escolher produtos<Icon name="arrow" size={18}/></Link></div>
       ) : (
         <>
           <ul className="card-list">

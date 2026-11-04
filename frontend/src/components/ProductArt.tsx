@@ -9,7 +9,7 @@ const CATEGORY_STYLE: Record<string, { bg: string; fg: string; icon: "graos" | "
   "Bebidas": { bg: "#e9dccb", fg: "#6b4a2f", icon: "bebidas" },
   "Massas": { bg: "#fbe9bd", fg: "#a87a10", icon: "massas" },
 };
-const DEFAULT_STYLE = { bg: "#e3f1e4", fg: "#1f6b44", icon: "generico" as const };
+const DEFAULT_STYLE = { bg: "#f5e4cc", fg: "#956336", icon: "generico" as const };
 
 function Icon({ icon }: { icon: "graos" | "laticinios" | "bebidas" | "massas" | "generico" }) {
   switch (icon) {

@@ -1,0 +1,56 @@
+/* Grocery identity: original food illustrations, clear shopping actions and warm materials. */
+.grocery-scene{display:block;width:100%;height:auto;overflow:visible}
+.grocery-kicker{display:inline-flex;align-items:center;gap:8px;font-size:.73rem;line-height:1.6;letter-spacing:.12em;font-weight:750;color:#8a5517}
+.grocery-hero{display:grid;grid-template-columns:1.05fr 1fr;align-items:center;gap:32px;padding:60px 0 68px;min-height:590px}
+.grocery-hero h1{max-width:610px;margin:22px 0;font-size:clamp(2.6rem,4.4vw,4.4rem);line-height:1.08;font-weight:800;letter-spacing:-.055em;color:#243348}
+.grocery-hero h1 em{font-style:normal;color:#29466c;position:relative;white-space:nowrap;text-decoration:underline;text-decoration-color:#e6b66e;text-decoration-thickness:6px;text-underline-offset:8px}
+.grocery-hero-copy>p{max-width:490px;color:#526078;font-size:1.08rem;line-height:1.8;margin:26px 0 30px}
+.grocery-hero-actions{display:flex;align-items:center;flex-wrap:wrap;gap:20px}
+.grocery-how-link{min-height:48px;display:inline-flex;align-items:center;color:#43516a;text-underline-offset:5px;font-size:.95rem;font-weight:600}
+.grocery-reassurance{display:flex;align-items:center;gap:8px;margin-top:28px;font-size:.83rem;color:#5c6573;line-height:1.6}
+.grocery-reassurance svg{color:#6e8055}
+.grocery-hero-art{position:relative;padding:30px 0 40px;min-width:0}
+.grocery-hero-art>.grocery-scene{width:112%;max-width:620px;margin-left:-4%}
+.grocery-art-note{position:absolute;top:2px;right:15px;font-size:.82rem;line-height:1.7;transform:rotate(4deg);color:#735737;text-align:right}
+.grocery-art-note strong{font-weight:650}
+.grocery-community-note{position:relative;display:flex;align-items:center;gap:12px;margin:-10px 10px 0 25px;width:fit-content;padding:16px 20px;border:1px solid #ddc9ae;border-radius:16px;background:#fffcf7;box-shadow:0 10px 30px #49381e09}
+.grocery-community-note>span{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#f6e4c6;color:#82531e}
+.grocery-community-note strong{font-size:.9rem;color:#243348}.grocery-community-note p{font-size:.82rem!important;line-height:1.5;margin:4px 0 0;color:#5c6573}
+.grocery-how{scroll-margin-top:95px;padding:40px 0 56px;border-top:1px solid #dcd5cb}
+.grocery-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:28px}
+.grocery-section-heading h2{font-size:clamp(1.65rem,2.4vw,2.3rem);line-height:1.25;margin:12px 0 0;max-width:560px}
+.grocery-section-heading>p{color:#5c6573;font-size:.93rem;line-height:1.7;margin:0}
+.grocery-step-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.grocery-step-grid article{border:1px solid #ded5c8;border-radius:20px;padding:26px;background:#fffcf7}
+.grocery-step-symbol{display:grid;place-items:center;width:58px;height:58px;border-radius:16px;margin-bottom:24px;background:#f6e4c6;color:#84551f;transform:rotate(-5deg)}
+.grocery-step-symbol.tone-1{background:#e4ebf3;color:#29466c;transform:rotate(3deg)}
+.grocery-step-symbol.tone-2{background:#e5eadc;color:#4d6641;transform:rotate(-3deg)}
+.grocery-step-grid small{font-size:.7rem;letter-spacing:.1em;font-weight:750;color:#6c655a}
+.grocery-step-grid h3{font-size:1.25rem;margin:10px 0 12px;line-height:1.4}.grocery-step-grid p{margin:0;font-size:.96rem;line-height:1.75;color:#5c6573}
+.grocery-community{scroll-margin-top:95px;display:grid;grid-template-columns:.8fr 1.2fr;align-items:center;gap:64px;padding:52px 48px;margin:12px 0 64px;background:#e9dfd0;border-radius:28px}
+.grocery-community h2{font-size:clamp(1.7rem,2.7vw,2.5rem);line-height:1.2;margin:18px 0 22px}
+.grocery-community p{color:#526078;font-size:1rem;line-height:1.8;max-width:520px}.grocery-community .grocery-small-note{font-size:.88rem;margin-bottom:24px}
+.grocery-community-picture{position:relative;min-height:270px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fffcf7;border:1px solid #d7c8b4;border-radius:28px;transform:rotate(-4deg);color:#29466c;box-shadow:0 20px 30px #70563309}
+.grocery-community-picture>svg{margin-bottom:22px}.grocery-community-picture>span{font-size:1.65rem;line-height:1.35;text-align:center;letter-spacing:-.04em}.grocery-community-picture b{font-weight:750}
+.grocery-community-picture i{position:absolute;right:-20px;bottom:15px;display:grid;place-items:center;width:74px;height:74px;border-radius:20px;background:#e6b66e;transform:rotate(14deg);color:#634316;border:5px solid #e9dfd0}
+.grocery-final{display:flex;align-items:center;justify-content:space-between;gap:24px;border-top:1px solid #dcd5cb;padding:32px 0 44px;margin-bottom:16px}.grocery-final>svg{color:#8a5517}.grocery-final>div{flex:1}.grocery-final h2{font-size:1.5rem;margin:0 0 8px}.grocery-final p{font-size:.95rem;color:#5c6573;margin:0}.grocery-final>a{flex-shrink:0}
+body .grocery-list-heading{display:grid;grid-template-columns:minmax(0,1fr) 230px;align-items:center;gap:22px;padding:26px 30px;margin:0 0 20px;background:#e9dfd0;border:1px solid #dccdb8;border-radius:22px;overflow:hidden}
+.pm-private .grocery-list-heading h1{font-size:clamp(1.8rem,2.6vw,2.4rem);margin:12px 0}
+.grocery-list-heading p{color:#526078;max-width:520px;line-height:1.7;margin:0 0 20px}.grocery-list-heading>.grocery-scene{width:250px;margin:-20px -14px -18px 0}
+body .grocery-empty{display:flex;align-items:center;gap:20px;padding:24px;border:1px dashed #cbbba5;border-radius:18px;background:#fffcf7;margin:18px 0 30px}
+.grocery-empty>span{display:grid;place-items:center;min-width:64px;height:64px;border-radius:16px;background:#f6e4c6;color:#8a5517}.grocery-empty>div{flex:1}.grocery-empty h3{font-size:1.2rem;margin:0 0 8px}.grocery-empty p{font-size:.93rem!important;line-height:1.6;color:#5c6573;margin:0}.grocery-empty a{flex-shrink:0}
+.dashboard-grocery-art{position:absolute;right:-42px;bottom:-8px;width:270px;pointer-events:none;z-index:0}.dashboard-grocery-art .grocery-scene{filter:drop-shadow(0 8px 12px #15263c20)}
+body .shopping-hero>p{max-width:280px}body .shopping-hero h2{max-width:310px}
+.grocery-search-picks{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:18px 0}.grocery-search-picks>span{font-size:.85rem;color:#5c6573;margin-right:4px}
+.grocery-search-picks button{display:inline-flex;align-items:center;gap:8px;padding:7px 13px 7px 7px;min-height:44px;background:#fffcf7;border:1px solid #d5c7b3;border-radius:30px;color:#34465f;font-size:.88rem;font-weight:600;cursor:pointer}
+.grocery-search-picks button:hover{background:#f5e6cf;border-color:#b39061}.grocery-search-picks .product-art{border-radius:50%}
+body .markets-grid .market-card{position:relative;overflow:hidden;padding-top:30px}
+.markets-grid .market-card::before{content:"";position:absolute;top:0;left:0;right:0;height:7px;background:repeating-linear-gradient(90deg,#29466c 0 28px,#e6b66e 28px 56px,#f6ead7 56px 84px)}
+body .offer-card{border-top:4px solid #d59a47}
+@media(min-width:821px) and (max-width:1150px){.grocery-hero{gap:12px}.grocery-hero h1{font-size:3.2rem}.grocery-community{gap:40px;padding:40px 30px}.dashboard-grocery-art{right:12px;width:300px}.grocery-empty{flex-wrap:wrap}}
+@media(max-width:850px){.grocery-hero{grid-template-columns:1fr;padding:38px 0 35px;gap:18px}.grocery-hero h1{font-size:clamp(2.5rem,7vw,3.8rem);max-width:650px}.grocery-hero-copy>p{max-width:600px}.grocery-hero-art{width:min(460px,95%);margin:0 auto;padding-top:20px}.grocery-hero-art>.grocery-scene{width:100%;margin:0}.grocery-art-note{top:0;font-size:.76rem}.grocery-community-note{margin:-12px auto 0}.grocery-section-heading{display:block}.grocery-section-heading>p{margin-top:18px}.grocery-step-grid{gap:12px}.grocery-step-grid article{padding:20px}.grocery-community{gap:32px;padding:36px 28px}.grocery-community-picture{min-height:240px}.grocery-final{flex-wrap:wrap}.grocery-final>a{margin-left:60px}}
+@media(max-width:640px){.grocery-kicker{font-size:.65rem;letter-spacing:.08em}.grocery-hero{padding-top:30px}.grocery-hero h1{font-size:2.7rem;line-height:1.12;margin:18px 0}.grocery-hero-copy>p{font-size:1rem;line-height:1.75;margin:22px 0}.grocery-hero-actions{gap:8px 18px}.grocery-hero-actions>.primary-button{min-height:50px}.grocery-reassurance{font-size:.8rem;margin-top:18px}.grocery-hero-art{width:min(380px,100%);padding-bottom:12px}.grocery-community-note{padding:13px 15px}.grocery-community-note strong{font-size:.82rem}.grocery-community-note p{font-size:.77rem!important}.grocery-how{padding:32px 0}.grocery-step-grid{grid-template-columns:1fr}.grocery-step-grid article{display:grid;grid-template-columns:56px minmax(0,1fr);gap:6px 18px;padding:22px}.grocery-step-symbol{grid-row:1 / 4;width:52px;height:52px;margin:0}.grocery-step-grid small,.grocery-step-grid h3,.grocery-step-grid p{grid-column:2;margin:0}.grocery-step-grid h3{font-size:1.16rem}.grocery-step-grid p{font-size:.92rem;margin-top:4px}.grocery-section-heading h2{font-size:1.85rem}.grocery-section-heading>p{font-size:.9rem}.grocery-community{grid-template-columns:1fr;gap:32px;padding:30px 24px;margin-bottom:32px}.grocery-community-picture{min-height:200px;max-width:280px;width:90%;margin:auto}.grocery-community-picture>svg{width:58px;height:58px;margin-bottom:14px}.grocery-community-picture>span{font-size:1.5rem}.grocery-community h2{font-size:1.9rem}.grocery-final{gap:18px}.grocery-final h2{font-size:1.3rem}.grocery-final>a{margin:0;width:100%}.grocery-final>svg{width:28px}.grocery-final p{font-size:.88rem}body .grocery-list-heading{grid-template-columns:minmax(0,1fr) 105px;gap:8px;padding:22px 18px}.grocery-list-heading>.grocery-scene{width:150px;margin:0 -30px 0 -15px}.pm-private .grocery-list-heading h1{font-size:1.8rem}.grocery-list-heading p{font-size:.92rem!important;margin-bottom:16px}.grocery-list-heading .primary-button{font-size:.85rem;padding:12px}.grocery-empty{flex-wrap:wrap;gap:14px}.grocery-empty>span{min-width:48px;height:48px}.grocery-empty>div{min-width:170px}.grocery-empty>a{width:100%}.dashboard-grocery-art{width:220px;right:-60px;opacity:.25}body .shopping-hero>p{max-width:260px}.grocery-search-picks{gap:8px}.grocery-search-picks>span{width:100%}}
+@media(max-width:380px){body .grocery-list-heading{grid-template-columns:1fr}.grocery-list-heading>.grocery-scene{display:none}.grocery-hero h1{font-size:2.35rem}}
+/* Keep the artwork outside the reading column in narrow shopping headers. */
+@media(min-width:1151px){.dashboard-grocery-art{width:190px;right:-16px}}
+@media(max-width:640px) and (min-width:381px){body .grocery-list-heading{position:relative;grid-template-columns:1fr}.grocery-list-heading>.grocery-scene{position:absolute;width:120px;right:-8px;top:12px;margin:0}.pm-private .grocery-list-heading h1{max-width:calc(100% - 76px)}.grocery-list-heading p{position:relative}.grocery-list-heading .primary-button{width:100%}}

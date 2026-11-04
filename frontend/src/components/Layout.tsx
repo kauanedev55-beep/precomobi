@@ -36,7 +36,7 @@ export function Layout() {
     return () => window.removeEventListener("keydown", escape);
   }, [open]);
   if(checking) return <div className="pm-session-loading" role="status">Preparando seu PreçoMobi...</div>;
-  const brand = <><span className="brand-mark"><Icon name="tag"/></span><span>Preço<span>Mobi</span></span></>;
+  const brand = <><span className="brand-mark"><Icon name="basket"/></span><span>Preço<span>Mobi</span></span></>;
   if(!user) return <div className="pm-public">
     <a className="skip-link" href="#main-content">Pular para o conteúdo</a>
     <header className="pm-public-header"><Link className="brand" to="/">{brand}</Link><nav className="pm-public-nav" aria-label="Navegação pública"><Link to="/#como-funciona">Como funciona</Link><Link to="/#beneficios">Benefícios</Link></nav><div className="pm-public-actions"><Link className="outline-button" to="/login">Entrar</Link><Link className="primary-button" to="/cadastro">Criar conta</Link></div></header>

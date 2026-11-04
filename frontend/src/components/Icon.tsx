@@ -1,4 +1,6 @@
 const paths = {
+  basket: "M3 9h18l-2 12H5L3 9Zm4 0 3-6m7 6-3-6M9 13v4m6-4v4",
+  store: "M3 10h18l-2-7H5l-2 7Zm2 0v11h14V10M9 21v-7h6v7M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0",
   home: "m3 10 9-7 9 7M5 9v12h14V9M9 21v-7h6v7",
   list: "M9 5h12M9 12h12M9 19h12M3 5h1M3 12h1M3 19h1",
   tag: "M20 13 11 22 2 13V3h10l8 8a1.5 1.5 0 0 1 0 2ZM7 8h.01",
