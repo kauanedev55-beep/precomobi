@@ -83,6 +83,7 @@ export function ProductDetail() {
       </dl>
 
       {product.description && <p>{product.description}</p>}
+      {product.catalog_source_url && <p className="form-hint"><a href={product.catalog_source_url} target="_blank" rel="noopener noreferrer">Foto e referência do produto: catálogo Extrabom</a></p>}
       <h2>Preços por mercado</h2>
       {hasDemoPrices && <div className="notice" role="status"><strong>Preços de demonstração:</strong> valores ilustrativos do projeto acadêmico. Não representam cotações atuais.</div>}
       <details className="pm-price-details">

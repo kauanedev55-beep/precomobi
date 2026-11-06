@@ -205,6 +205,8 @@ def list_products(
     ),
     city: str | None = Query(default=None, min_length=1, max_length=100),
     category: str | None = Query(default=None, max_length=100),
+    external: bool = True,
+    everyday: bool = False,
     db: Session = Depends(get_db),
 ) -> list[dict]:
 
@@ -215,7 +217,13 @@ def list_products(
     if category:
         query = query.where(func.lower(Product.category) == category.strip().lower())
 
-    if ean is not None:
+    if everyday and ean is None:
+        from app.db.daily_products import matches_daily_product
+        everyday_items = or_(Product.is_standard.is_(True),
+                            (Product.created_by_id.is_not(None) & Product.brand.is_(None)))
+        products = [p for p in db.scalars(query.where(everyday_items).order_by(Product.name))
+                    if not q or matches_daily_product(q, p.name, p.category, p.brand)]
+    elif ean is not None:
         product = db.scalar(
             query.where(Product.ean == ean)
         )
@@ -255,7 +263,7 @@ def list_products(
                 query.order_by(Product.name)
             )
         )
-        if not products and not category and q and len(q.strip()) >= 3:
+        if external and not products and not category and q and len(q.strip()) >= 3:
             by_id = {}
             for item in _search_external_products(q.strip()):
                 code = item.get("code")

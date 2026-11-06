@@ -55,6 +55,19 @@ def test_local_search_and_short_terms_never_call_external(client, monkeypatch):
     assert client.get('/api/products').status_code == 200
 
 
+def test_local_only_search_never_imports_unpriced_external_products(client, monkeypatch):
+    def unexpected(*args, **kwargs):
+        pytest.fail('A local-only search must not contact the external catalog')
+    monkeypatch.setattr(catalog, 'urlopen', unexpected)
+    with SessionLocal() as db:
+        before = set(db.scalars(select(Product.id)))
+    response = client.get('/api/products', params={'q':'Produto ausente busca local', 'external':'false'})
+    assert response.status_code == 200 and response.json() == []
+    assert client.get('/api/products', params={'q':'Camil','external':'false'}).json()
+    with SessionLocal() as db:
+        assert set(db.scalars(select(Product.id))) == before
+
+
 def test_external_failures_are_explicit_and_do_not_change_catalog(client, monkeypatch):
     with SessionLocal() as db:
         before = list(db.scalars(select(Product.id)))

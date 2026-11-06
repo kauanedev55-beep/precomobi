@@ -77,6 +77,8 @@ def init_db() -> None:
     from app.db.product_units import add_product_units
     add_product_units(engine)
     if not get_settings().demo_mode:
+        from app.db.daily_products import add_daily_products
+        add_daily_products(engine)
         from app.db.requested_markets import add_requested_markets
         add_requested_markets(engine)
         from app.db.greater_vitoria_markets import add_greater_vitoria_markets

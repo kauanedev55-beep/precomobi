@@ -11,6 +11,8 @@ export type Product = {
   quantity_value: string | null;
   quantity_unit: string | null;
   image_url: string | null;
+  is_standard?: boolean;
+  catalog_source_url?: string | null;
   sale_unit: "unit" | "kg";
   packaging: string | null;
   description: string | null;
@@ -159,11 +161,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 // ---------- endpoints ----------
 export const getApiHealth = () => request<{ status: string; service: string }>("/health");
 
-export const getProducts = (q?: string, city?: string, category?: string) => {
+export const getProducts = (q?: string, city?: string, category?: string, external?: boolean, everyday?: boolean) => {
   const query=new URLSearchParams();
   if(q?.trim()) query.set("q",q.trim());
   if(city) query.set("city",city);
   if(category) query.set("category",category);
+  if(external !== undefined) query.set("external",String(external));
+  if(everyday !== undefined) query.set("everyday",String(everyday));
   return request<Product[]>(`/products?${query}`);
 };
 export type ProductCreate = {

@@ -9,6 +9,8 @@ def add_product_units(engine):
         "packaging": "VARCHAR(60)",
         "description": "VARCHAR(500)",
         "created_by_id": "INTEGER REFERENCES users(id)",
+        "is_standard": "BOOLEAN NOT NULL DEFAULT FALSE",
+        "catalog_source_url": "VARCHAR(500)",
     }
     with engine.begin() as conn:
         for name, definition in definitions.items():

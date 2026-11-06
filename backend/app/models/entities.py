@@ -47,6 +47,8 @@ class Product(Base):
     packaging: Mapped[Optional[str]] = mapped_column(String(60))
     description: Mapped[Optional[str]] = mapped_column(String(500))
     created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
+    is_standard: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    catalog_source_url: Mapped[Optional[str]] = mapped_column(String(500))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

@@ -16,6 +16,8 @@ class ProductRead(BaseModel):
     quantity_value: Decimal | None
     quantity_unit: str | None
     image_url: str | None = None
+    is_standard: bool = False
+    catalog_source_url: str | None = None
     sale_unit: Literal["unit", "kg"] = "unit"
     packaging: str | None = None
     description: str | None = None

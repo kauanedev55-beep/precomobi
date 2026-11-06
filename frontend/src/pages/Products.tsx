@@ -3,16 +3,24 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { BarcodeScanner } from "../components/BarcodeScanner";
 import { ProductArt } from "../components/ProductArt";
+import "../styles/product-results.css";
 import { useRegion } from "../region/RegionContext";
 import { useCart } from "../cart/CartContext";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { formatPrice, productSubtitle } from "../lib/format";
 import { getProductByEan, getProducts, type Product } from "../services/api";
 
+function ProductPhoto({url, name}: {url: string; name: string}) {
+  const [failed, setFailed] = useState(false);
+  return failed ? null : <img className="result-photo" src={url} alt={name} width={64} height={64} loading="lazy" onError={()=>setFailed(true)}/>;
+}
+
 export function Products() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
   const category = params.get("categoria") ?? "";
+  const expandedSearch = params.get("ampliar") === "1";
+  const brandsMode = params.get("marcas") === "1";
   const [input, setInput] = useState(q);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,14 +49,14 @@ export function Products() {
           throw err;
         }
       } else {
-        const data=await getProducts(q,city || "__none__",category || undefined); if(request===sequence.current) setProducts(data);
+        const data=await getProducts(q,city || "__none__",category || undefined,expandedSearch,!brandsMode); if(request===sequence.current) setProducts(data);
       }
     } catch (err) {
       if(request===sequence.current) setError(err instanceof Error ? err.message : "Não foi possível carregar os produtos.");
     } finally {
       if(request===sequence.current) setLoading(false);
     }
-  }, [q,city,category]);
+  }, [q,city,category,expandedSearch,brandsMode]);
 
   useEffect(() => {
     void load();
@@ -58,7 +66,7 @@ export function Products() {
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    setParams(input.trim() ? { q: input.trim() } : {});
+    setParams({... (input.trim() ? {q:input.trim()} : {}), ...(brandsMode ? {marcas:"1"} : {})});
   }
 
   async function onBarcodeDetected(ean: string) {
@@ -78,48 +86,47 @@ export function Products() {
     }
   }
 
+  const priced = products.filter(p => p.min_price !== null);
+  const unpriced = products.filter(p => p.min_price === null);
+  const createLink = `/produtos/novo?${new URLSearchParams(/^\d{8,14}$/.test(q) ? {ean:q} : {nome:q,categoria:category})}`;
+  function productRow(product: Product, hasPrice: boolean) {
+    const wasAdded=added===product.id;
+    return <li className="product-result" key={product.id}>
+      {product.image_url && <ProductPhoto key={product.image_url} url={product.image_url} name={product.name}/>}
+      <div className="result-description"><Link to={`/produtos/${product.id}`} className="result-name">{product.name}</Link><p>{productSubtitle(product)}</p>{!product.quantity_value && product.sale_unit!=="kg" && <small>Conteúdo da embalagem não informado</small>}
+      {product.catalog_source_url && <a className="result-source" href={product.catalog_source_url} target="_blank" rel="noopener noreferrer">Foto e referência: Extrabom</a>}
+      {hasPrice && <div className="result-price"><strong>{formatPrice(product.min_price)} <small>{product.sale_unit==="kg" ? "/ kg" : "/ embalagem ou unidade"}</small></strong><span>Menor preço informado · {product.min_price_market}</span></div>}</div>
+      <div className="result-actions"><button className={hasPrice ? "primary-button" : "outline-button"} type="button" onClick={()=>{if(product.sale_unit==="kg") {navigate(`/produtos/${product.id}`);return;} cart.add(product);setAdded(product.id);}} aria-label={product.sale_unit==="kg" ? `Escolher peso de ${product.name}` : `Adicionar ${product.name} à lista`}>{wasAdded ? "Adicionar mais uma" : product.sale_unit==="kg" ? "Escolher peso" : "Adicionar à lista"}</button>{!hasPrice && <Link to={`/contribuir?produto=${product.id}`} className="text-button">Informar preço</Link>}</div>
+    </li>;
+  }
   return (
-    <section>
-      <span className="grocery-kicker">O QUE VAI NA SUA SACOLA?</span><h1>Encontre seus produtos</h1>
-      <p>Busque produtos para adicionar à lista. Aqui você também pode cadastrar o que ainda não encontrou.</p>
+    <section className="product-search-page">
+      <span className="grocery-kicker">O QUE VAI NA SUA SACOLA?</span><h1>Adicionar produtos</h1>
+      <p>Escolha o alimento e a quantidade. Marcas e embalagens específicas ficam em uma busca separada.</p>
+      <nav className="offer-tabs" aria-label="Tipo de produto"><button type="button" className={!brandsMode ? "outline-button" : "text-button"} aria-pressed={!brandsMode} onClick={()=>setParams({...Object.fromEntries(params),marcas:"0",ampliar:"0"})}>Produtos do dia a dia</button><button type="button" className={brandsMode ? "outline-button" : "text-button"} aria-pressed={brandsMode} onClick={()=>setParams({...Object.fromEntries(params),marcas:"1",ampliar:"0"})}>Marcas e embalagens</button></nav>
       {added !== null && <p className="notice good" role="status">Produto adicionado. <Link to="/lista">Ver minha lista</Link></p>}
-      <div className="button-row"><Link className="outline-button" to="/produtos/novo">+ Cadastrar produto que não encontrei</Link><Link className="outline-button" to="/lista">← Voltar para minha lista</Link></div>
+      <Link className="outline-button back-button" to="/lista">← Minha lista</Link>
       <div className="produce-categories" aria-label="Hortifruti">{["Frutas","Verduras","Legumes"].map(c=><button type="button" key={c} aria-pressed={category===c} onClick={()=>{setInput("");setParams({categoria:c});}}>{c}</button>)}</div>
       <div className="grocery-search-picks" aria-label="Buscas rápidas"><span>Itens do dia a dia</span>{[{name:"Arroz",category:"Grãos"},{name:"Feijão",category:"Grãos"},{name:"Leite",category:"Laticínios"},{name:"Café",category:"Bebidas"}].map(p => <button type="button" key={p.name} onClick={() => {setInput(p.name);setParams({q:p.name});}}><ProductArt name={p.name} category={p.category} size={30}/>{p.name}</button>)}</div>
       <form className="search-bar products-search" onSubmit={submit} role="search">
-        <input aria-label="Buscar produto" placeholder="Nome, marca, categoria ou EAN" value={input} onChange={(event) => setInput(event.target.value)} />
+        <input aria-label="Buscar produto" placeholder={brandsMode ? "Nome, marca ou código de barras" : "Ex.: batatas, feijão, banana"} value={input} onChange={(event) => setInput(event.target.value)} />
         <button className="primary-button" type="submit">Buscar</button>
         <button className="outline-button" type="button" onClick={() => setScanning(true)}>📷 Ler código de barras / QR</button>
       </form>
       <div className="product-search-status">{(q.trim() || category) && <><p>Resultados para <strong>“{q || category}”</strong></p><button className="text-button" type="button" onClick={() => {setInput("");setParams({});setScanError("");setProducts([]);}}>Limpar busca</button></>}</div>
-      <p className="form-hint">Busque um produto pelo nome ou código de barras. Encontrar um produto não significa que ele já tenha preço informado nos mercados. {city ? "Os preços exibidos respeitam a cidade escolhida." : "Escolha a cidade acima para consultar os preços. Você já pode adicionar produtos à lista."}</p>
+      {!city && <p className="notice">Escolha a cidade acima para consultar preços. Você pode montar a lista mesmo sem preço cadastrado.</p>}
       {scanError && <div className="notice" role="alert"><p>{scanError}</p><Link className="outline-button" to={`/produtos/novo?ean=${encodeURIComponent(missingCode)}`}>Cadastrar esse produto</Link></div>}
       {scanning && <BarcodeScanner onDetected={onBarcodeDetected} onClose={() => setScanning(false)} />}
 
       {!q.trim() && !category && <Empty title="O que você precisa comprar?">Digite um nome e toque em Buscar, escolha um item do dia a dia ou leia o código de barras.</Empty>}
       {(q.trim() || category) && loading && <Loading text="Buscando produtos..." />}
       {error && <><ErrorBox message={error} onRetry={load}/><Link className="outline-button" to={`/produtos/novo?${new URLSearchParams(/^\d{8,14}$/.test(q) ? {ean:q} : {nome:q})}`}>Cadastrar sem depender da busca externa</Link></>}
-      {(q.trim() || category) && !loading && !error && products.length === 0 && (
-        <Empty title="Nenhum produto encontrado"><p>{q ? `Nada encontrado para “${q}”.` : `Ainda não há produtos em ${category}.`}</p><Link className="primary-button" to={`/produtos/novo?${new URLSearchParams(/^\d{8,14}$/.test(q) ? {ean:q} : {nome:q,categoria:category})}`}>Cadastrar meu produto</Link></Empty>
-      )}
-      {(q.trim() || category) && !loading && !error && products.length > 0 && (
-        <ul className="product-grid">
-          {products.map((product) => (
-            <li className="product-tile" key={product.id}>
-              <Link className="product-tile-link" to={`/produtos/${product.id}`}>
-                <ProductArt category={product.category} imageUrl={product.image_url} name={product.name} size={96} />
-                <strong>{product.name}</strong>
-                <small>{productSubtitle(product)}</small>
-                <span className="tile-price">{product.min_price !== null ? `${formatPrice(product.min_price)}${product.sale_unit==="kg" ? " / kg" : ""}` : "Preço ainda não informado"}</span>
-                {product.min_price_market && <small className="tile-market">em {product.min_price_market}</small>}
-              </Link>
-              <button className="tile-add" type="button" aria-label={product.sale_unit==="kg" ? `Escolher peso de ${product.name}` : `Adicionar ${product.name} à lista`} onClick={() => { if(product.sale_unit==="kg") {navigate(`/produtos/${product.id}`);return;} cart.add(product); setAdded(product.id); }}>
-                {added === product.id ? "✓" : "+"}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {(q.trim() || category) && !loading && !error && <div className="search-results" aria-live="polite">
+        {priced.length > 0 ? <><h2>Com preço {city && city!=="*" ? `em ${city}` : "nos mercados selecionados"} <span className="result-count">{priced.length}</span></h2><ul className="product-result-list">{priced.map(p=>productRow(p,true))}</ul></> : <div className="search-price-empty"><h2>{products.length ? brandsMode ? "Encontramos produtos, mas ainda faltam os preços" : "Monte sua lista com os produtos abaixo" : "Ainda não encontramos esse produto"}</h2><p>{products.length ? `Ainda não há preço informado para esses produtos${city && city!=="*" ? ` em ${city}` : " na região escolhida"}. Você pode adicioná-los à lista e informar um preço quando estiver no mercado.` : "Confira o nome, leia o código de barras ou cadastre o produto que você compra."}</p></div>}
+        {unpriced.length > 0 && (!brandsMode ? <><h2>Escolha o tipo de produto</h2><p className="form-hint">Adicione o que você precisa. Os preços serão mostrados quando forem informados para esse produto nos mercados.</p><ul className="product-result-list">{unpriced.map(p=>productRow(p,false))}</ul></> : <details className="unpriced-results" open={priced.length===0} key={`${q}:${category}:${expandedSearch}:${brandsMode}`}><summary>Ver {unpriced.length} produtos sem preço</summary><p>Confira a marca e a embalagem antes de adicionar.</p><ul className="product-result-list">{unpriced.map(p=>productRow(p,false))}</ul></details>)}
+        <div className="search-next-step"><div><strong>Não encontrou o produto certo?</strong><p>Cadastre a marca, a embalagem e o tamanho que você usa. Frutas e verduras também podem ser vendidas por quilo.</p></div><Link className="outline-button" to={createLink}>Cadastrar produto</Link></div>
+        {brandsMode && !products.length && q.trim().length>=3 && !category && !expandedSearch && <button className="text-button" type="button" onClick={()=>setParams({q,ampliar:"1",marcas:"1"})}>Ampliar busca de produtos</button>}
+      </div>}
     </section>
   );
 }
