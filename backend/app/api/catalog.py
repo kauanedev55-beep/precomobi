@@ -222,7 +222,7 @@ def list_products(
         everyday_items = or_(Product.is_standard.is_(True),
                             (Product.created_by_id.is_not(None) & Product.brand.is_(None)))
         products = [p for p in db.scalars(query.where(everyday_items).order_by(Product.name))
-                    if not q or matches_daily_product(q, p.name, p.category, p.brand)]
+                    if not q or matches_daily_product(q, p.name, p.category, p.brand, p.catalog_source_url)]
     elif ean is not None:
         product = db.scalar(
             query.where(Product.ean == ean)

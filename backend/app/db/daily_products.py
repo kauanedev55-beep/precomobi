@@ -16,15 +16,17 @@ def terms(value):
     return [aliases.get(word, word[:-1] if word.endswith('s') and len(word)>3 else word)
             for word in re.findall(r'[a-z0-9]+',value)]
 
-def matches_daily_product(query, name, category=None, brand=None):
-    words = terms(' '.join(filter(None, [name, category, brand])))
+def matches_daily_product(query, name, category=None, brand=None, catalog_source_url=None):
+    # This alias describes the reference photo, not a relabeling of legacy prices.
+    photo_alias = 'casca rosada avermelhada vermelha' if catalog_source_url == 'https://www.extrabom.com.br/p/batata-doce-unidade/1475/' else None
+    words = terms(' '.join(filter(None, [name, category, brand, photo_alias])))
     return all(any(word.startswith(token) for word in words) for token in terms(query))
 
-def add_daily_products(engine):
-    entries = json.loads(Path(__file__).with_name('daily_catalog.json').read_text())
+def add_daily_products(engine, *, manifest='daily_catalog.json', migration_key=MIGRATION_KEY):
+    entries = json.loads(Path(__file__).with_name(manifest).read_text())
     with engine.begin() as connection:
         connection.execute(text('CREATE TABLE IF NOT EXISTS app_data_migrations (migration_key VARCHAR(100) PRIMARY KEY)'))
-        marker = connection.execute(text('INSERT INTO app_data_migrations (migration_key) VALUES (:key) ON CONFLICT (migration_key) DO NOTHING RETURNING migration_key'), {'key':MIGRATION_KEY}).scalar()
+        marker = connection.execute(text('INSERT INTO app_data_migrations (migration_key) VALUES (:key) ON CONFLICT (migration_key) DO NOTHING RETURNING migration_key'), {'key':migration_key}).scalar()
         if marker is None:
             return
         with Session(bind=connection) as db:
@@ -33,8 +35,12 @@ def add_daily_products(engine):
                 # Matching source URLs allow already curated records to be reused.
                 if db.scalar(select(Product.id).where(Product.is_standard.is_(True), Product.catalog_source_url==entry['source_url'])):
                     continue
-                values = {k:v for k,v in entry.items() if k not in ('source_url','source_name')}
+                values = {k:v for k,v in entry.items() if k not in ('source_url','source_name','source_label')}
                 values['quantity_value'] = Decimal(values['quantity_value'])
                 db.add(Product(**values, is_standard=True, catalog_source_url=entry['source_url'],
-                    description='Identificação e imagem de referência do catálogo Extrabom. Não indica estoque ou preço em uma unidade específica.',is_active=True))
+                    description=f"Identificação e imagem de referência do {entry.get('source_label', 'catálogo Extrabom')}. Não indica estoque ou preço em uma unidade específica.",is_active=True))
             db.flush()
+
+
+def add_daily_variants(engine):
+    add_daily_products(engine, manifest='daily_variants.json', migration_key='daily-visual-variants-2026-11-06')

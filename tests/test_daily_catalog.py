@@ -68,3 +68,27 @@ def test_everyday_search_is_separate_from_brands_and_never_contacts_external(cli
         with engine.begin() as conn:
             conn.execute(delete(Product).where(Product.is_standard.is_(True) | (Product.id==manual_id)))
             conn.execute(text('DELETE FROM app_data_migrations WHERE migration_key=:key'),{'key':MIGRATION_KEY})
+
+
+def test_purple_skin_variant_is_additive_separate_and_has_no_imported_price(tmp_path):
+    from app.db.daily_products import add_daily_variants
+    engine=create_engine(f"sqlite:///{tmp_path/'variants.db'}")
+    Base.metadata.create_all(engine)
+    add_daily_products(engine)
+    with Session(engine) as db:
+        original=db.scalar(select(Product).where(Product.name=='Batata-doce'))
+        original_id=original.id;original_photo=original.image_url
+    add_daily_variants(engine);add_daily_variants(engine)
+    with Session(engine) as db:
+        original=db.get(Product,original_id)
+        variant=db.scalar(select(Product).where(Product.name=='Batata-doce de casca roxa'))
+        assert variant.id!=original_id and variant.image_url!=original_photo
+        assert original.name=='Batata-doce' and original.image_url==original_photo
+        assert variant.sale_unit=='kg' and variant.quantity_unit=='kg' and variant.quantity_value==1
+        assert db.scalar(select(func.count()).select_from(Product))==26
+        assert db.scalar(select(func.count()).select_from(PriceReport))==0
+        assert matches_daily_product('batata doce roxa',variant.name)
+        assert matches_daily_product('batata doce rosada',original.name,catalog_source_url=original.catalog_source_url)
+        assert not matches_daily_product('batata doce rosada',original.name)
+        assert not matches_daily_product('batata doce polpa roxa',variant.name)
+    engine.dispose()

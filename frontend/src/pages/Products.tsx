@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, useRef, type FormEvent } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { BarcodeScanner } from "../components/BarcodeScanner";
+import {ProductPhoto} from "../components/ProductPhoto";
+import {produceGuide,productDisplayName,catalogCredit} from "../lib/produceGuides";
 import { ProductArt } from "../components/ProductArt";
 import "../styles/product-results.css";
 import { useRegion } from "../region/RegionContext";
@@ -10,10 +12,6 @@ import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { formatPrice, productSubtitle } from "../lib/format";
 import { getProductByEan, getProducts, type Product } from "../services/api";
 
-function ProductPhoto({url, name}: {url: string; name: string}) {
-  const [failed, setFailed] = useState(false);
-  return failed ? null : <img className="result-photo" src={url} alt={name} width={64} height={64} loading="lazy" onError={()=>setFailed(true)}/>;
-}
 
 export function Products() {
   const [params, setParams] = useSearchParams();
@@ -86,15 +84,19 @@ export function Products() {
     }
   }
 
+  const guidedChoices=products.length>0 && products.length<=6 && products.every(p=>produceGuide(p));
+  const resultListClass=guidedChoices ? "product-result-list produce-choice-grid" : "product-result-list";
   const priced = products.filter(p => p.min_price !== null);
   const unpriced = products.filter(p => p.min_price === null);
   const createLink = `/produtos/novo?${new URLSearchParams(/^\d{8,14}$/.test(q) ? {ean:q} : {nome:q,categoria:category})}`;
   function productRow(product: Product, hasPrice: boolean) {
     const wasAdded=added===product.id;
+    const guide=produceGuide(product);
+    const displayName=productDisplayName(product);
     return <li className="product-result" key={product.id}>
-      {product.image_url && <ProductPhoto key={product.image_url} url={product.image_url} name={product.name}/>}
-      <div className="result-description"><Link to={`/produtos/${product.id}`} className="result-name">{product.name}</Link><p>{productSubtitle(product)}</p>{!product.quantity_value && product.sale_unit!=="kg" && <small>Conteúdo da embalagem não informado</small>}
-      {product.catalog_source_url && <a className="result-source" href={product.catalog_source_url} target="_blank" rel="noopener noreferrer">Foto e referência: Extrabom</a>}
+      {product.image_url && <ProductPhoto key={product.image_url} url={product.image_url} name={displayName} hint={guide?.hint} source={product.catalog_source_url}/>}
+      <div className="result-description"><Link to={`/produtos/${product.id}`} className="result-name">{displayName}</Link><p>{productSubtitle(product)}</p>{guide && <><span className="produce-choice-badge">{guide.badge}</span><p className="produce-choice-hint">{guide.hint}</p></>}{!product.quantity_value && product.sale_unit!=="kg" && <small>Conteúdo da embalagem não informado</small>}
+      {product.catalog_source_url && <a className="result-source" href={product.catalog_source_url} target="_blank" rel="noopener noreferrer">Foto e referência: {catalogCredit(product.catalog_source_url)}</a>}
       {hasPrice && <div className="result-price"><strong>{formatPrice(product.min_price)} <small>{product.sale_unit==="kg" ? "/ kg" : "/ embalagem ou unidade"}</small></strong><span>Menor preço informado · {product.min_price_market}</span></div>}</div>
       <div className="result-actions"><button className={hasPrice ? "primary-button" : "outline-button"} type="button" onClick={()=>{if(product.sale_unit==="kg") {navigate(`/produtos/${product.id}`);return;} cart.add(product);setAdded(product.id);}} aria-label={product.sale_unit==="kg" ? `Escolher peso de ${product.name}` : `Adicionar ${product.name} à lista`}>{wasAdded ? "Adicionar mais uma" : product.sale_unit==="kg" ? "Escolher peso" : "Adicionar à lista"}</button>{!hasPrice && <Link to={`/contribuir?produto=${product.id}`} className="text-button">Informar preço</Link>}</div>
     </li>;
@@ -122,8 +124,9 @@ export function Products() {
       {(q.trim() || category) && loading && <Loading text="Buscando produtos..." />}
       {error && <><ErrorBox message={error} onRetry={load}/><Link className="outline-button" to={`/produtos/novo?${new URLSearchParams(/^\d{8,14}$/.test(q) ? {ean:q} : {nome:q})}`}>Cadastrar sem depender da busca externa</Link></>}
       {(q.trim() || category) && !loading && !error && <div className="search-results" aria-live="polite">
-        {priced.length > 0 ? <><h2>Com preço {city && city!=="*" ? `em ${city}` : "nos mercados selecionados"} <span className="result-count">{priced.length}</span></h2><ul className="product-result-list">{priced.map(p=>productRow(p,true))}</ul></> : <div className="search-price-empty"><h2>{products.length ? brandsMode ? "Encontramos produtos, mas ainda faltam os preços" : "Monte sua lista com os produtos abaixo" : "Ainda não encontramos esse produto"}</h2><p>{products.length ? `Ainda não há preço informado para esses produtos${city && city!=="*" ? ` em ${city}` : " na região escolhida"}. Você pode adicioná-los à lista e informar um preço quando estiver no mercado.` : "Confira o nome, leia o código de barras ou cadastre o produto que você compra."}</p></div>}
-        {unpriced.length > 0 && (!brandsMode ? <><h2>Escolha o tipo de produto</h2><p className="form-hint">Adicione o que você precisa. Os preços serão mostrados quando forem informados para esse produto nos mercados.</p><ul className="product-result-list">{unpriced.map(p=>productRow(p,false))}</ul></> : <details className="unpriced-results" open={priced.length===0} key={`${q}:${category}:${expandedSearch}:${brandsMode}`}><summary>Ver {unpriced.length} produtos sem preço</summary><p>Confira a marca e a embalagem antes de adicionar.</p><ul className="product-result-list">{unpriced.map(p=>productRow(p,false))}</ul></details>)}
+        {guidedChoices && <p className="produce-photo-note">Compare as fotos e o nome do tipo antes de adicionar. Toque em uma foto para ampliar. Cor e tamanho podem variar.</p>}
+        {priced.length > 0 ? <><h2>Com preço {city && city!=="*" ? `em ${city}` : "nos mercados selecionados"} <span className="result-count">{priced.length}</span></h2><ul className={resultListClass}>{priced.map(p=>productRow(p,true))}</ul></> : <div className="search-price-empty"><h2>{products.length ? brandsMode ? "Encontramos produtos, mas ainda faltam os preços" : "Monte sua lista com os produtos abaixo" : "Ainda não encontramos esse produto"}</h2><p>{products.length ? `Ainda não há preço informado para esses produtos${city && city!=="*" ? ` em ${city}` : " na região escolhida"}. Você pode adicioná-los à lista e informar um preço quando estiver no mercado.` : "Confira o nome, leia o código de barras ou cadastre o produto que você compra."}</p></div>}
+        {unpriced.length > 0 && (!brandsMode ? <><h2>Escolha o tipo de produto</h2><p className="form-hint">Adicione o que você precisa. Os preços serão mostrados quando forem informados para esse produto nos mercados.</p><ul className={resultListClass}>{unpriced.map(p=>productRow(p,false))}</ul></> : <details className="unpriced-results" open={priced.length===0} key={`${q}:${category}:${expandedSearch}:${brandsMode}`}><summary>Ver {unpriced.length} produtos sem preço</summary><p>Confira a marca e a embalagem antes de adicionar.</p><ul className={resultListClass}>{unpriced.map(p=>productRow(p,false))}</ul></details>)}
         <div className="search-next-step"><div><strong>Não encontrou o produto certo?</strong><p>Cadastre a marca, a embalagem e o tamanho que você usa. Frutas e verduras também podem ser vendidas por quilo.</p></div><Link className="outline-button" to={createLink}>Cadastrar produto</Link></div>
         {brandsMode && !products.length && q.trim().length>=3 && !category && !expandedSearch && <button className="text-button" type="button" onClick={()=>setParams({q,ampliar:"1",marcas:"1"})}>Ampliar busca de produtos</button>}
       </div>}

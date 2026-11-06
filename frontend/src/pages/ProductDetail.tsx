@@ -6,6 +6,8 @@ import { useCart } from "../cart/CartContext";
 import { ConfirmPriceButton } from "../components/ConfirmPriceButton";
 import { QuantityPicker } from "../components/QuantityPicker";
 import { itemSubtotal, saleLabel } from "../lib/quantities";
+import {ProductPhoto} from "../components/ProductPhoto";
+import {produceGuide,productDisplayName,catalogCredit} from "../lib/produceGuides";
 import { ProductArt } from "../components/ProductArt";
 import { SourceBadge } from "../components/SourceBadge";
 import { ErrorBox, Loading } from "../components/StateViews";
@@ -46,6 +48,8 @@ export function ProductDetail() {
   if (loading) return <Loading text="Carregando produto..." />;
   if (error || !product) return <ErrorBox message={error || "Produto não encontrado."} onRetry={load} />;
 
+  const guide=produceGuide(product);
+  const displayName=productDisplayName(product);
   const withPrice = product.prices.filter((price) => price.price !== null);
   const hasDemoPrices = product.prices.some((price) => price.source_type === "development");
   const cheapest = withPrice.length ? Math.min(...withPrice.map((price) => Number(price.price))) : null;
@@ -55,9 +59,9 @@ export function ProductDetail() {
       <p className="button-row"><Link className="outline-button back-button" to="/produtos">← Voltar para produtos</Link><Link className="outline-button" to="/lista">Minha lista</Link></p>
 
       <div className="product-hero">
-        <ProductArt category={product.category} imageUrl={product.image_url} name={product.name} size={120} />
+        {product.image_url ? <ProductPhoto url={product.image_url} name={displayName} hint={guide?.hint} source={product.catalog_source_url} size={160}/> : <ProductArt category={product.category} name={product.name} size={120}/> }
         <div>
-          <h1>{product.name}</h1>
+          <h1>{displayName}</h1>
           <p className="product-meta">{productSubtitle(product)}{product.category ? ` · ${product.category}` : ""}</p>
           {product.min_price !== null ? (
             <p className="hero-price">{formatPrice(product.min_price)}{product.sale_unit==="kg" ? " / kg" : " por embalagem / unidade"}<small>a partir de, em {product.min_price_market}</small></p>
@@ -67,6 +71,7 @@ export function ProductDetail() {
         </div>
       </div>
 
+      {guide && <div className="product-guide-box"><strong>Como reconhecer</strong><p>{guide.hint}</p><small>Compare com a etiqueta do mercado. A foto é uma referência visual.</small></div>}
       <div className="product-buy-panel"><QuantityPicker onValidityChange={setQuantityValid} value={quantity} unit={product.sale_unit} name={product.name} onChange={v=>{setQuantity(v);setAdded(false);}}/>{product.min_price!==null && <p>Estimativa para essa quantidade: <strong>{formatPrice(itemSubtotal(product.min_price,quantity))}</strong></p>}{product.sale_unit==="kg" && <p className="form-hint">A estimativa usa o peso informado. Ajuste na lista quando souber o peso real da balança.</p>}
       <div className="button-row">
         <button className="primary-button" type="button" disabled={added || !quantityValid} onClick={() => { cart.add(product,quantity); setAdded(true); }}>{added ? "Adicionado à lista ✓" : "Adicionar à lista"}</button>
@@ -83,7 +88,7 @@ export function ProductDetail() {
       </dl>
 
       {product.description && <p>{product.description}</p>}
-      {product.catalog_source_url && <p className="form-hint"><a href={product.catalog_source_url} target="_blank" rel="noopener noreferrer">Foto e referência do produto: catálogo Extrabom</a></p>}
+      {product.catalog_source_url && <p className="form-hint"><a href={product.catalog_source_url} target="_blank" rel="noopener noreferrer">Foto e referência: {catalogCredit(product.catalog_source_url)}</a></p>}
       <h2>Preços por mercado</h2>
       {hasDemoPrices && <div className="notice" role="status"><strong>Preços de demonstração:</strong> valores ilustrativos do projeto acadêmico. Não representam cotações atuais.</div>}
       <details className="pm-price-details">

@@ -5,6 +5,8 @@ import { useAuth } from "../auth/AuthContext";
 import { useCart } from "../cart/CartContext";
 import { useRegion } from "../region/RegionContext";
 import { useOffers } from "../offers/OffersContext";
+import {ProductPhoto} from "../components/ProductPhoto";
+import {produceGuide,productDisplayName} from "../lib/produceGuides";
 import { ShoppingPhoto } from "../components/ShoppingPhoto";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
@@ -97,9 +99,11 @@ export function ShoppingListPage() {
           <ul className="card-list">
             {cart.items.map((item) => (
               <li className="list-card" key={item.product.id}>
-                <div>
-                  <Link className="card-title" to={`/produtos/${item.product.id}`}>{item.product.name}</Link>
+                <div className="shopping-produce-title">
+                  {produceGuide(item.product) && item.product.image_url && <ProductPhoto url={item.product.image_url} name={productDisplayName(item.product)} hint={produceGuide(item.product)?.hint} source={item.product.catalog_source_url} size={82}/>}
+                  <div><Link className="card-title" to={`/produtos/${item.product.id}`}>{productDisplayName(item.product)}</Link>
                   <small>{productSubtitle(item.product)}</small>
+                  {produceGuide(item.product) && <small className="list-produce-hint">{produceGuide(item.product)?.badge}</small>}</div>
                 </div>
                 <div className="card-actions">
                   <QuantityPicker onValidityChange={valid=>setInvalidQuantities(ids=>valid ? ids.filter(id=>id!==item.product.id) : [...new Set([...ids,item.product.id])])} value={item.quantity} unit={item.product.sale_unit} name={item.product.name} onChange={q=>cart.setQuantity(item.product.id,q)}/>
