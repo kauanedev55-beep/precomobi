@@ -128,3 +128,68 @@ def test_pepper_addition_is_idempotent_and_searchable_without_accents(tmp_path):
         assert products[0].catalog_source_url.endswith('/2900/')
         assert db.scalar(select(func.count()).select_from(PriceReport)) == 0
     engine.dispose()
+
+
+def test_produce_expansion_keeps_identities_units_and_existing_records(tmp_path):
+    from app.db.daily_products import add_daily_variants, add_daily_search_additions, add_daily_produce_expansion
+    engine = create_engine(f"sqlite:///{tmp_path/'expanded.db'}")
+    Base.metadata.create_all(engine)
+    add_daily_products(engine)
+    add_daily_variants(engine)
+    add_daily_search_additions(engine)
+    with Session(engine) as db:
+        before = {p.id:(p.name,p.image_url,p.sale_unit) for p in db.scalars(select(Product))}
+    add_daily_produce_expansion(engine)
+    add_daily_produce_expansion(engine)
+    manifest = json.loads((Path(__file__).parents[1]/'backend/app/db/daily_produce_expansion.json').read_text())
+    with Session(engine) as db:
+        rows = list(db.scalars(select(Product)))
+        assert len(rows) == len(before)+len(manifest)
+        assert all((db.get(Product,i).name,db.get(Product,i).image_url,db.get(Product,i).sale_unit)==values for i,values in before.items())
+        assert len({p.catalog_source_url for p in rows}) == len(rows)
+        assert all(p.is_standard and p.ean is None and p.image_url for p in rows)
+        assert db.scalar(select(func.count()).select_from(PriceReport)) == 0
+        by_name={p.name:p for p in rows}
+        assert by_name['Couve'].sale_unit == 'unit'
+        assert by_name['Rabanete'].sale_unit == 'unit'
+        assert by_name['Repolho roxo'].sale_unit == 'kg'
+        assert by_name['Morango 250 g'].quantity_value == 250
+        assert by_name['Morango 250 g'].quantity_unit == 'g'
+        assert by_name['Abacaxi'].sale_unit == 'unit'
+    engine.dispose()
+
+
+def test_expanded_produce_search_recognizes_common_names_without_mixing_types():
+    assert matches_daily_product('salsinha','Salsa','Verduras')
+    assert matches_daily_product('tangerina','Mexerica ponkan','Frutas')
+    assert matches_daily_product('folhas','Rúcula','Verduras')
+    assert matches_daily_product('folhagens','Alface roxa','Verduras')
+    assert matches_daily_product('folhosas','Couve','Verduras')
+    assert not matches_daily_product('folhas','Couve-flor 300 g','Verduras')
+    assert not matches_daily_product('folhas','Maçã gala','Frutas')
+    assert not matches_daily_product('alface roxa','Alface americana','Verduras')
+    assert matches_daily_product('macas','Maçã fuji','Frutas')
+
+
+def test_expanded_catalog_is_visible_in_consumer_search_and_respects_region(client, monkeypatch):
+    from app.db.daily_products import add_daily_produce_expansion
+    from app.db.session import engine
+    monkeypatch.setattr('app.api.catalog.urlopen', lambda *a,**k: (_ for _ in ()).throw(AssertionError('No external import')))
+    add_daily_produce_expansion(engine)
+    manifest=json.loads((Path(__file__).parents[1]/'backend/app/db/daily_produce_expansion.json').read_text())
+    try:
+        leaves=client.get('/api/products',params={'q':'folhas','preferred':True,'city':'__none__'})
+        assert leaves.status_code == 200
+        rows=leaves.json()
+        assert {'Rúcula','Couve','Espinafre','Agrião','Alface roxa'} <= {p['name'] for p in rows}
+        assert all(p['category']=='Verduras' and p['is_standard'] and p['min_price'] is None for p in rows)
+        assert 'Couve-flor 300 g' not in {p['name'] for p in rows}
+        fruit=client.get('/api/products',params={'q':'frutas','preferred':True,'city':'__none__'}).json()
+        assert len(fruit)==sum(p['category']=='Frutas' for p in manifest)
+        assert all(p['category']=='Frutas' and p['min_price'] is None for p in fruit)
+        lettuce=client.get('/api/products',params={'q':'alface roxa','preferred':True}).json()
+        assert [p['name'] for p in lettuce]==['Alface roxa']
+    finally:
+        with engine.begin() as conn:
+            conn.execute(delete(Product).where(Product.catalog_source_url.in_([p['source_url'] for p in manifest])))
+            conn.execute(text('DELETE FROM app_data_migrations WHERE migration_key=:key'),{'key':'daily-produce-expansion-2026-11-06'})
