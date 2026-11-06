@@ -1,3 +1,4 @@
+import {saleLabel} from "../lib/quantities";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../cart/CartContext";
@@ -32,7 +33,7 @@ export function OfferCard({offer, onUpdated}: {offer: Offer; onUpdated?: (offer:
   return <article className={`offer-card ${warning ? "offer-needs-review" : ""}`}>
     <div className="offer-card-top"><span className={`offer-status ${offer.state!=="active" ? "offer-inactive" : ""}`}><Icon name="tag" size={16}/>{offer.state==="active" ? "Promoção · informada por usuário" : offer.state==="expired" ? "Validade encerrada" : "Promoção encerrada"}</span>{inList && <span className="offer-list-tag">Na sua lista</span>}</div>
     <div className="offer-product"><ProductArt category={null} imageUrl={offer.image_url} name={offer.product_name} size={64}/><div><Link to={`/produtos/${offer.product_id}`} className="offer-product-name">{offer.product_name}</Link><span className="offer-market"><Icon name="pin" size={16}/>{offer.market.name}</span></div></div>
-    <strong className="offer-price">{formatPrice(offer.price)}</strong>
+    <strong className="offer-price">{formatPrice(offer.price)} <small>/ {saleLabel(offer.sale_unit)}</small></strong>
     <p className="offer-conditions">{offer.conditions}</p>
     <p className="offer-validity">Válida até <strong>{formatDateTime(offer.expires_at)}</strong></p>
     <p className="offer-observed">Vista em {formatDateTime(offer.observed_at)} · {offer.is_mine ? "Você compartilhou" : "Informada por outro usuário"}</p>

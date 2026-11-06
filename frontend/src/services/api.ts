@@ -1,3 +1,4 @@
+import {validationMessage} from "../lib/validation";
 const API_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
 // ---------- tipos (espelham os schemas do backend) ----------
@@ -10,6 +11,9 @@ export type Product = {
   quantity_value: string | null;
   quantity_unit: string | null;
   image_url: string | null;
+  sale_unit: "unit" | "kg";
+  packaging: string | null;
+  description: string | null;
   min_price: string | null;
   min_price_market: string | null;
 };
@@ -42,6 +46,8 @@ export type Market = {
 export type ComparisonItem = {
   product_id: number;
   product_name: string;
+  sale_unit: "unit" | "kg";
+  packaging: string | null;
   quantity: string;
   unit_price: string | null;
   subtotal: string | null;
@@ -96,6 +102,7 @@ export type PriceReport = {
   id: number;
   product_id: number;
   product_name: string;
+  sale_unit: "unit" | "kg";
   market_id: number;
   market_name: string;
   price: string;
@@ -138,9 +145,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as { detail?: unknown } | null;
     if (response.status === 401 && authToken && onUnauthorized) onUnauthorized();
-    let message = "A API retornou um erro.";
-    if (typeof body?.detail === "string") message = body.detail;
-    else if (Array.isArray(body?.detail)) message = "Verifique os dados informados e tente novamente.";
+    const message = validationMessage(body?.detail);
     throw new Error(message);
   }
 
@@ -154,30 +159,40 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 // ---------- endpoints ----------
 export const getApiHealth = () => request<{ status: string; service: string }>("/health");
 
-export const getProducts = (q?: string, city?: string) => {
+export const getProducts = (q?: string, city?: string, category?: string) => {
   const query=new URLSearchParams();
   if(q?.trim()) query.set("q",q.trim());
   if(city) query.set("city",city);
+  if(category) query.set("category",category);
   return request<Product[]>(`/products?${query}`);
 };
+export type ProductCreate = {
+  name: string; category: string; brand: string | null; no_brand: boolean; ean: string | null; no_barcode: boolean;
+  sale_unit: "unit" | "kg"; packaging: string; quantity_value: string; quantity_unit: string; description: string | null;
+};
+export const createProduct = (payload: ProductCreate) => request<Product>("/products", {method:"POST", body:JSON.stringify(payload)});
 export const getProductByEan = (ean: string, city?: string) => request<Product[]>(`/products?ean=${encodeURIComponent(ean)}${city ? `&city=${encodeURIComponent(city)}` : ""}`);
 export const getProduct = (id: number, city?: string) => request<ProductDetail>(`/products/${id}${city ? `?city=${encodeURIComponent(city)}` : ""}`);
 export const getMarkets = () => request<Market[]>("/markets");
 export type Offer = {
-  id: number; product_id: number; product_name: string; image_url: string | null;
+  id: number; product_id: number; product_name: string; sale_unit: "unit" | "kg"; image_url: string | null;
   market: Market; price: string; conditions: string; observed_at: string; expires_at: string;
   state: "active" | "expired" | "ended"; confirmations: number; changed_reports: number;
   ended_reports: number; my_check: "confirmed" | "changed" | "ended" | null; is_mine: boolean;
 };
-export const getOffers = (options: { forMyLists?: boolean; productIds?: number[]; mine?: boolean; city?: string } = {}) => {
+export const getOffers = (options: { forAlerts?: boolean; forMyLists?: boolean; productIds?: number[]; mine?: boolean; city?: string } = {}) => {
   const query = new URLSearchParams();
+  if (options.forAlerts) query.set("for_alerts", "true");
   if (options.forMyLists) query.set("for_my_lists", "true");
   if (options.mine) query.set("mine", "true");
   if (options.city) query.set("city", options.city);
   if (options.productIds?.length) query.set("product_ids", [...new Set(options.productIds)].slice(0,200).join(","));
   return request<Offer[]>(`/offers?${query}`);
 };
-export const createOffer = (payload: { product_id: number; market_id: number; price: string; conditions: string; expires_at: string; observed_at?: string }) => request<Offer>("/offers", { method: "POST", body: JSON.stringify(payload) });
+export type AlertPreference = {enabled:boolean;scope:"lists"|"markets"|"both";market_ids:number[]};
+export const getAlertPreferences = () => request<AlertPreference>("/alert-preferences");
+export const saveAlertPreferences = (payload:AlertPreference) => request<AlertPreference>("/alert-preferences", {method:"PUT",body:JSON.stringify(payload)});
+export const createOffer = (payload: { product_id: number; market_id: number; price: string; sale_unit?: "unit" | "kg"; conditions: string; expires_at: string; observed_at?: string }) => request<Offer>("/offers", { method: "POST", body: JSON.stringify(payload) });
 export const checkOffer = (id: number, status: "confirmed" | "changed" | "ended", observed_price?: string) => request<Offer>(`/offers/${id}/check`, { method: "POST", body: JSON.stringify({status, observed_price}) });
 export const endOffer = (id: number) => request<Offer>(`/offers/${id}/end`, { method: "POST" });
 export type MarketCreate = {
@@ -206,6 +221,7 @@ export const createPriceReport = (payload: {
   product_id: number;
   market_id: number;
   price: string;
+  sale_unit?: "unit" | "kg";
   observed_at?: string;
   notes?: string;
 }) => request<PriceReport>("/price-reports", { method: "POST", body: JSON.stringify(payload) });

@@ -1,3 +1,5 @@
+import {CommunityPriceCard} from "../components/CommunityPriceCard";
+import {saleLabel} from "../lib/quantities";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -31,14 +33,14 @@ export function MyContributions() {
   return (
     <section>
       <h1>Minhas contribuições</h1>
-      <p>Aqui aparecem somente os preços que você informou. Eles também ficam disponíveis na comunidade para ajudar outras pessoas a comparar mercados.</p>
+      <p>Somente os preços que você compartilhou. É normal encontrar esses mesmos registros na comunidade: lá todos podem consultá-los. Cadastrar um produto sem informar preço ainda não conta como contribuição de preço.</p>
       <CommunityNav />
       <div className="button-row"><Link className="primary-button" to="/contribuir">Informar preço</Link><Link className="outline-button" to="/ofertas?minhas=1">Minhas promoções</Link></div>
       {loading && <Loading />}
       {error && <ErrorBox message={error} onRetry={load} />}
       {!loading && !error && reports.length === 0 && <Empty title="Você ainda não informou nenhum preço"><Link to="/contribuir">Contribuir com o primeiro preço</Link></Empty>}
       {!loading && reports.length > 0 && (
-        <div className="table-wrap">
+        <><div className="community-mobile-cards">{reports.map(report=><CommunityPriceCard key={report.id} report={report} mine />)}</div><div className="table-wrap community-desktop-table">
           <table>
             <thead><tr><th>Produto</th><th>Mercado</th><th>Preço</th><th>Data</th><th>Origem</th><th>Confirmações</th><th>Observação</th></tr></thead>
             <tbody>
@@ -46,7 +48,7 @@ export function MyContributions() {
                 <tr key={report.id}>
                   <td><Link to={`/produtos/${report.product_id}`}>{report.product_name}</Link></td>
                   <td>{report.market_name}</td>
-                  <td className="num">{formatPrice(report.price)}</td>
+                  <td className="num">{formatPrice(report.price)} / {saleLabel(report.sale_unit)}</td>
                   <td>{formatDateTime(report.reported_at)}</td>
                   <td><SourceBadge sourceType={report.source_type} /></td>
                   <td>{report.confirmations_count} {report.confirmations_count === 1 ? "pessoa confirmou" : "pessoas confirmaram"}</td>
@@ -55,7 +57,7 @@ export function MyContributions() {
               ))}
             </tbody>
           </table>
-        </div>
+        </div></>
       )}
     </section>
   );

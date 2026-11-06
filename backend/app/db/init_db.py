@@ -74,6 +74,8 @@ def init_db() -> None:
     if "image_url" not in product_columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE products ADD COLUMN image_url VARCHAR(500)"))
+    from app.db.product_units import add_product_units
+    add_product_units(engine)
     if not get_settings().demo_mode:
         from app.db.requested_markets import add_requested_markets
         add_requested_markets(engine)
@@ -81,6 +83,8 @@ def init_db() -> None:
         add_greater_vitoria_markets(engine)
         from app.db.cariacica_markets import add_cariacica_markets
         add_cariacica_markets(engine)
+        from app.db.chain_markets import add_chain_markets
+        add_chain_markets(engine)
         return
     with Session(engine) as db:
         user = db.scalar(select(User).where(User.email == "demo@precomobi.local"))

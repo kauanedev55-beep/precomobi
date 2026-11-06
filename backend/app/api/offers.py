@@ -9,7 +9,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator, model_validator
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user
@@ -17,6 +17,7 @@ from app.db.session import get_db
 from app.core.region import region_market_ids
 from app.models import Market, Product, ShoppingList, ShoppingListItem, User
 from app.models.offers import Offer, OfferCheck
+from app.models.alerts import AlertPreference, FavoriteMarket
 from app.schemas.mvp import MarketRead
 
 router = APIRouter(prefix="/offers", tags=["offers"])
@@ -30,6 +31,7 @@ class OfferCreate(BaseModel):
     product_id: int
     market_id: int
     price: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
+    sale_unit: Literal["unit", "kg"] | None = None
     conditions: str = Field(min_length=5, max_length=500)
     observed_at: datetime | None = None
     expires_at: datetime
@@ -66,6 +68,7 @@ class OfferRead(BaseModel):
     id: int
     product_id: int
     product_name: str
+    sale_unit: Literal["unit", "kg"] = "unit"
     image_url: str | None
     market: MarketRead
     price: Decimal
@@ -94,7 +97,7 @@ def to_reads(db, offers, user):
         own = dict(db.execute(select(OfferCheck.offer_id, OfferCheck.status)
                    .where(OfferCheck.offer_id.in_(ids), OfferCheck.user_id == user.id)).all())
     now = datetime.now(timezone.utc)
-    return [dict(id=o.id, product_id=o.product_id, product_name=o.product.name,
+    return [dict(id=o.id, product_id=o.product_id, product_name=o.product.name, sale_unit=o.product.sale_unit,
         image_url=o.product.image_url, market=MarketRead.model_validate(o.market),
         price=o.price, conditions=o.conditions, observed_at=utc(o.observed_at), expires_at=utc(o.expires_at),
         state="ended" if o.ended_at else "expired" if utc(o.expires_at) <= now else "active",
@@ -104,7 +107,7 @@ def to_reads(db, offers, user):
 
 
 @router.get("", response_model=list[OfferRead])
-def list_offers(for_my_lists: bool = False, mine: bool = False,
+def list_offers(for_my_lists: bool = False, mine: bool = False, for_alerts: bool = False,
         product_ids: str = Query(default="", max_length=2200),
     city: str | None = Query(default=None, min_length=1, max_length=100),
         db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -115,16 +118,29 @@ def list_offers(for_my_lists: bool = False, mine: bool = False,
             raise HTTPException(422, "Produtos inválidos para filtrar as ofertas")
         ids = [int(p) for p in parts]
     query = base_query().join(Product).join(Market, Offer.market_id == Market.id).where(Product.is_active.is_(True), Market.is_active.is_(True))
+    if for_alerts:
+        pref=db.get(AlertPreference,user.id)
+        if not pref or not pref.enabled:
+            return []
+        filters=[]
+        if pref.scope in ("lists","both"):
+            saved_ids=select(ShoppingListItem.product_id).join(ShoppingList).where(ShoppingList.user_id==user.id)
+            filters.append(and_(or_(Offer.product_id.in_(saved_ids),Offer.product_id.in_(ids)),
+                True if city is None else Offer.market_id.in_(region_market_ids(db,city))))
+        if pref.scope in ("markets","both"):
+            favorites=select(FavoriteMarket.market_id).where(FavoriteMarket.user_id==user.id)
+            filters.append(Offer.market_id.in_(favorites))
+        query=query.where(or_(*filters),Offer.user_id!=user.id)
     if mine:
         query = query.where(Offer.user_id == user.id)
     else:
         query = query.where(Offer.ended_at.is_(None), Offer.expires_at > datetime.now(timezone.utc))
-    if for_my_lists:
+    if for_my_lists and not for_alerts:
         saved = select(ShoppingListItem.product_id).join(ShoppingList).where(ShoppingList.user_id == user.id)
         query = query.where(or_(Offer.product_id.in_(saved), Offer.product_id.in_(ids)))
-    elif ids:
+    elif ids and not for_alerts:
         query = query.where(Offer.product_id.in_(ids))
-    if city is not None:
+    if city is not None and not for_alerts:
         query = query.where(Offer.market_id.in_(region_market_ids(db, city)))
     offers = list(db.scalars(query.order_by(Offer.created_at.desc(), Offer.id.desc()).limit(100)).unique())
     return to_reads(db, offers, user)
@@ -135,7 +151,9 @@ def create_offer(payload: OfferCreate, db: Session = Depends(get_db), user: User
     product, market = db.get(Product, payload.product_id), db.get(Market, payload.market_id)
     if not product or not product.is_active or not market or not market.is_active:
         raise HTTPException(404, "Produto ou mercado não encontrado")
-    offer = Offer(**payload.model_dump(), user_id=user.id)
+    if payload.sale_unit is not None and payload.sale_unit != product.sale_unit:
+        raise HTTPException(422, "A unidade do preço difere da unidade de venda do produto.")
+    offer = Offer(**payload.model_dump(exclude={"sale_unit"}), user_id=user.id)
     db.add(offer)
     db.commit()
     offer = db.scalar(base_query().where(Offer.id == offer.id))

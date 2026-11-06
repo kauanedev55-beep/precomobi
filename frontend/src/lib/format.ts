@@ -26,8 +26,9 @@ export function sourceLabel(sourceType: string | null | undefined): string {
   return "Origem não informada";
 }
 
-export function productSubtitle(product: { brand: string | null; quantity_value: string | null; quantity_unit: string | null }): string {
-  const parts = [product.brand];
+export function productSubtitle(product: { brand: string | null; quantity_value: string | null; quantity_unit: string | null; sale_unit?: "unit" | "kg"; packaging?: string | null }): string {
+  const parts = [product.brand, product.packaging];
+  if(product.sale_unit === "kg") {parts.push("Vendido por kg");return parts.filter(Boolean).join(" · ");}
   if (product.quantity_value && product.quantity_unit) parts.push(`${Number(product.quantity_value)} ${product.quantity_unit}`);
   return parts.filter(Boolean).join(" · ") || "Produto";
 }

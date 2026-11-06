@@ -12,13 +12,13 @@ const Contribute = lazy(() => import("./pages/Contribute").then(m => ({ default:
 const Offers = lazy(() => import("./pages/Offers").then(m => ({ default: m.Offers })));
 const History = lazy(() => import("./pages/History").then(m => ({ default: m.History })));
 import { Home } from "./pages/Home";
-const Dashboard = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })));
 const Login = lazy(() => import("./pages/Login").then(m => ({ default: m.Login })));
 const MapPage = lazy(() => import("./pages/MapPage").then(m => ({ default: m.MapPage })));
 const Markets = lazy(() => import("./pages/Markets").then(m => ({ default: m.Markets })));
 const MyContributions = lazy(() => import("./pages/MyContributions").then(m => ({ default: m.MyContributions })));
 import { NotFound } from "./pages/NotFound";
 const ProductDetail = lazy(() => import("./pages/ProductDetail").then(m => ({ default: m.ProductDetail })));
+const ProductCreatePage = lazy(() => import("./pages/ProductCreate").then(m => ({default:m.ProductCreatePage})));
 const Products = lazy(() => import("./pages/Products").then(m => ({ default: m.Products })));
 const Profile = lazy(() => import("./pages/Profile").then(m => ({ default: m.Profile })));
 const Register = lazy(() => import("./pages/Register").then(m => ({ default: m.Register })));
@@ -40,12 +40,13 @@ export default function App() {
           <Suspense fallback={<div className="pm-session-loading" role="status">Carregando...</div>}><Routes>
             <Route element={<Layout />}>
               <Route index element={<Home />} />
-              <Route path="painel" element={<RequireAuth><Dashboard /></RequireAuth>} />
+              <Route path="painel" element={<RequireAuth><Navigate replace to="/lista" /></RequireAuth>} />
               <Route path="login" element={<Login />} />
               <Route path="cadastro" element={<Register />} />
               <Route path="confirmar-email" element={<VerifyEmail />} />
               <Route path="redefinir-senha" element={<ResetPassword />} />
               <Route path="produtos" element={<RequireAuth><Products /></RequireAuth>} />
+              <Route path="produtos/novo" element={<RequireAuth><ProductCreatePage /></RequireAuth>} />
               <Route path="produtos/:id" element={<RequireAuth><ProductDetail /></RequireAuth>} />
               <Route path="lista" element={<RequireAuth><ShoppingListPage /></RequireAuth>} />
               <Route path="comparacao/atual" element={<RequireAuth><ComparisonPage preview /></RequireAuth>} />

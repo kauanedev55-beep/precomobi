@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from typing import Literal
 
 
 class ProductRead(BaseModel):
@@ -15,8 +16,59 @@ class ProductRead(BaseModel):
     quantity_value: Decimal | None
     quantity_unit: str | None
     image_url: str | None = None
+    sale_unit: Literal["unit", "kg"] = "unit"
+    packaging: str | None = None
+    description: str | None = None
     min_price: Decimal | None = None
     min_price_market: str | None = None
+
+
+class ProductCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=3, max_length=180)
+    category: Literal["Frutas", "Verduras", "Legumes", "Grãos", "Laticínios", "Carnes e pescados", "Bebidas", "Padaria", "Massas", "Mercearia", "Limpeza", "Higiene", "Outros"]
+    brand: str | None = Field(default=None, max_length=120)
+    no_brand: bool = False
+    ean: str | None = Field(default=None, max_length=14)
+    no_barcode: bool = False
+    sale_unit: Literal["unit", "kg"]
+    packaging: Literal["A granel", "Saco", "Pacote", "Caixa", "Garrafa", "Lata", "Pote", "Bandeja", "Maço", "Unidade", "Outro"]
+    quantity_value: Decimal = Field(gt=0, max_digits=10, decimal_places=3)
+    quantity_unit: Literal["g", "kg", "ml", "L", "un"]
+    description: str | None = Field(default=None, max_length=500)
+
+    @field_validator("name", "brand", "ean", "description", mode="before")
+    @classmethod
+    def strip_text(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def consistent_product(self):
+        if bool(self.brand) == self.no_brand:
+            raise ValueError("Informe a marca ou marque Sem marca")
+        if bool(self.ean) == self.no_barcode:
+            raise ValueError("Informe o código ou marque Sem código de barras")
+        if self.ean:
+            if not self.ean.isascii() or not self.ean.isdecimal() or len(self.ean) not in (8, 12, 13, 14):
+                raise ValueError("O código deve ter 8, 12, 13 ou 14 dígitos")
+            total = sum(int(n) * (3 if i % 2 == 0 else 1) for i, n in enumerate(reversed(self.ean[:-1])))
+            if (10 - total % 10) % 10 != int(self.ean[-1]):
+                raise ValueError("Código de barras inválido; confira os números da embalagem")
+        if self.no_brand:
+            self.brand = None
+        if self.no_barcode:
+            self.ean = None
+        if self.packaging == "Outro" and (not self.description or len(self.description) < 3):
+            raise ValueError("Descreva a apresentação em Detalhes adicionais")
+        if self.sale_unit == "kg":
+            if self.quantity_unit != "kg" or self.quantity_value != 1:
+                raise ValueError("Venda por peso usa preço de referência para 1 kg")
+        elif self.packaging == "A granel":
+            raise ValueError("Para venda por unidade, informe a embalagem ou Unidade")
+        if self.quantity_unit == "un" and self.quantity_value != self.quantity_value.to_integral_value():
+            raise ValueError("A quantidade de unidades da embalagem deve ser inteira")
+        return self
 
 
 class MarketRead(BaseModel):
@@ -80,6 +132,8 @@ class ComparisonItemRead(BaseModel):
     product_id: int
     product_name: str
     quantity: Decimal
+    sale_unit: Literal["unit", "kg"] = "unit"
+    packaging: str | None = None
     unit_price: Decimal | None
     subtotal: Decimal | None
     reported_at: datetime | None

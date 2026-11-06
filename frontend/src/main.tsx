@@ -7,6 +7,7 @@ import "./styles/experience.css";
 import "./styles/palette.css";
 import "./styles/grocery.css";
 import "./styles/photos.css";
+import "./styles/produce.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -8,6 +8,7 @@ import { useOffers } from "../offers/OffersContext";
 import { ShoppingPhoto } from "../components/ShoppingPhoto";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
+import { QuantityPicker } from "../components/QuantityPicker";
 import { formatDate, productSubtitle } from "../lib/format";
 import { createShoppingList, deleteShoppingList, getShoppingLists, type ShoppingList } from "../services/api";
 
@@ -19,6 +20,8 @@ export function ShoppingListPage() {
   const listOffers = alerts.offers.filter(o => cart.items.some(i => i.product.id===o.product_id));
   const navigate = useNavigate();
   const [name, setName] = useState("Minha compra");
+  const [invalidQuantities,setInvalidQuantities]=useState<number[]>([]);
+  const quantitiesValid=!invalidQuantities.some(id=>cart.items.some(i=>i.product.id===id));
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [savedId,setSavedId] = useState<number | null>(null);
@@ -82,10 +85,10 @@ export function ShoppingListPage() {
 
   return (
     <section>
-      <div className="grocery-list-heading"><div><span className="grocery-kicker">DA LISTA À SACOLA</span><h1>Minha lista de compras</h1><p>O que você precisa levar para casa? Adicione os produtos e compare os mercados da sua cidade.</p><Link className="primary-button" to="/produtos"><Icon name="plus"/>Adicionar produtos</Link></div><ShoppingPhoto/></div>
+      <div className="grocery-list-heading"><div><span className="grocery-kicker">DA LISTA À SACOLA</span><h1>Minha lista de compras</h1><p>O que você precisa levar para casa? Adicione os produtos e compare os mercados da sua cidade.</p>{cart.items.length > 0 && <Link className="primary-button" to="/produtos"><Icon name="plus"/>Adicionar produtos</Link>}</div><ShoppingPhoto/></div>
       <ol className="shopping-steps" aria-label="Como organizar sua compra"><li aria-current="step"><b>1</b><span>Monte sua lista</span></li><li><b>2</b><span>Compare os mercados</span></li><li><b>3</b><span>Escolha e abra a rota</span></li></ol>
       {savedId && <p className="notice good" role="status">Lista salva na sua conta. <Link to={`/comparacao/${savedId}`}>Comparar esta lista</Link>. A lista em edição já está pronta para uma nova compra.</p>}
-      <h2>Produtos da lista</h2>
+      {cart.items.length > 0 && <h2>Produtos da lista</h2>}
       {listOffers.length>0 && <div className="list-offer-notice"><span className="notice-icon"><Icon name="tag"/></span><div><p><strong>{listOffers.length} {listOffers.length===1 ? "promoção encontrada" : "promoções encontradas"}</strong> para produtos desta lista.</p><Link to="/avisos">Conferir condições e validade →</Link></div></div>}
       {cart.items.length === 0 ? (
         <div className="grocery-empty"><span><Icon name="basket" size={32}/></span><div><h3>Vamos colocar o primeiro produto?</h3><p>Busque pelo nome ou leia o código de barras da embalagem.</p></div><Link className="outline-button" to="/produtos">Escolher produtos<Icon name="arrow" size={18}/></Link></div>
@@ -99,12 +102,7 @@ export function ShoppingListPage() {
                   <small>{productSubtitle(item.product)}</small>
                 </div>
                 <div className="card-actions">
-                  <label className="qty">
-                    <span className="sr-only">Quantidade de {item.product.name}</span>
-                    <button type="button" aria-label="Diminuir" onClick={() => cart.setQuantity(item.product.id, item.quantity - 1)}>−</button>
-                    <input type="number" min={1} value={item.quantity} onChange={(event) => cart.setQuantity(item.product.id, Math.max(1, Number(event.target.value) || 1))} />
-                    <button type="button" aria-label="Aumentar" onClick={() => cart.setQuantity(item.product.id, item.quantity + 1)}>+</button>
-                  </label>
+                  <QuantityPicker onValidityChange={valid=>setInvalidQuantities(ids=>valid ? ids.filter(id=>id!==item.product.id) : [...new Set([...ids,item.product.id])])} value={item.quantity} unit={item.product.sale_unit} name={item.product.name} onChange={q=>cart.setQuantity(item.product.id,q)}/>
                   <button className="text-button danger" type="button" onClick={() => cart.remove(item.product.id)}>Remover</button>
                 </div>
               </li>
@@ -113,10 +111,11 @@ export function ShoppingListPage() {
           <div className="form-card inline">
             <label className="field"><span>Nome da lista</span><input value={name} onChange={(event) => setName(event.target.value)} maxLength={160} /></label>
             <div className="button-row">
-              <button className="primary-button" type="button" disabled={saving || !city} onClick={() => navigate("/comparacao/atual",{state:{name:name.trim() || "Minha compra"}})}>Comparar sem salvar</button>
-              <button className="outline-button" type="button" onClick={saveList} disabled={saving}>{saving ? "Salvando..." : "Salvar lista"}</button>
+              <button className="primary-button" type="button" disabled={saving || !city || !quantitiesValid} onClick={() => navigate("/comparacao/atual",{state:{name:name.trim() || "Minha compra"}})}>Comparar sem salvar</button>
+              <button className="outline-button" type="button" onClick={saveList} disabled={saving || !quantitiesValid}>{saving ? "Salvando..." : "Salvar lista"}</button>
               <button className="outline-button" type="button" onClick={cart.clear}>Começar nova lista</button>
             </div>
+            {!quantitiesValid && <p className="error-message" role="alert">Confira o peso ou a quantidade dos produtos antes de continuar.</p>}
             {saveError && <p className="error-message" role="alert">{saveError}</p>}
             <p className="form-hint">{!city ? "Escolha a cidade acima para comparar." : `A comparação usa os preços mais recentes dos mercados ${city === "*" ? "nas cidades escolhidas" : `em ${city}`}.`}</p>
           </div>

@@ -1,5 +1,5 @@
 from app.core.config import get_settings
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from types import SimpleNamespace
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -87,7 +87,7 @@ def build_comparison(db, shopping_list, city):
         for list_item in shopping_list.items:
             report = latest.get((market.id, list_item.product_id))
             unit_price = report.price if report else None
-            subtotal = (unit_price * list_item.quantity) if unit_price is not None else None
+            subtotal = (unit_price * list_item.quantity).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if unit_price is not None else None
             if subtotal is not None:
                 total += subtotal
                 found_items += 1
@@ -97,6 +97,8 @@ def build_comparison(db, shopping_list, city):
                 "product_id": list_item.product_id,
                 "product_name": list_item.product.name,
                 "quantity": list_item.quantity,
+                "sale_unit": list_item.product.sale_unit,
+                "packaging": list_item.product.packaging,
                 "unit_price": unit_price,
                 "subtotal": subtotal,
                 "reported_at": report.reported_at if report else None,

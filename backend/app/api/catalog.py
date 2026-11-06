@@ -14,12 +14,12 @@ from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from app.api.deps import get_admin_user, get_current_user_optional
+from app.api.deps import get_admin_user, get_current_user, get_current_user_optional
 from app.api.prices import _confirmation_counts, _confirmed_report_ids
 from app.db.session import get_db
 from app.core.region import matches_city, region_market_ids
 from app.models import Market, PriceReport, Product, User
-from app.schemas.mvp import MarketRead, ProductRead
+from app.schemas.mvp import MarketRead, ProductRead, ProductCreate
 from app.schemas.prices import ProductDetailRead
 from app.schemas.markets import MarketCreate
 
@@ -204,12 +204,16 @@ def list_products(
         description="Busca por nome, marca ou categoria",
     ),
     city: str | None = Query(default=None, min_length=1, max_length=100),
+    category: str | None = Query(default=None, max_length=100),
     db: Session = Depends(get_db),
 ) -> list[dict]:
 
     query = select(Product).where(
         Product.is_active.is_(True)
     )
+
+    if category:
+        query = query.where(func.lower(Product.category) == category.strip().lower())
 
     if ean is not None:
         product = db.scalar(
@@ -251,7 +255,7 @@ def list_products(
                 query.order_by(Product.name)
             )
         )
-        if not products and q and len(q.strip()) >= 3:
+        if not products and not category and q and len(q.strip()) >= 3:
             by_id = {}
             for item in _search_external_products(q.strip()):
                 code = item.get("code")
@@ -275,6 +279,30 @@ def list_products(
         }
         for product in products
     ]
+
+
+@router.post("/products", response_model=ProductRead, status_code=201)
+def create_product(payload: ProductCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    # This catalog is shared. Serialize manual registration to avoid concurrent duplicates.
+    if db.get_bind().dialect.name == "postgresql":
+        db.execute(text("SELECT pg_advisory_xact_lock(73110528)"))
+    if payload.ean and db.scalar(select(Product.id).where(Product.ean == payload.ean)):
+        raise HTTPException(409, "Este código já está cadastrado. Busque pelo código para usar o produto existente.")
+    candidates = db.scalars(select(Product).where(func.lower(Product.name) == payload.name.lower()))
+    for p in candidates:
+        if ((p.brand or "").casefold() == (payload.brand or "").casefold()
+            and p.sale_unit == payload.sale_unit and p.quantity_value == payload.quantity_value
+            and p.quantity_unit == payload.quantity_unit and (p.packaging or "") == payload.packaging):
+            raise HTTPException(409, "Este produto, com essa embalagem e quantidade, já está cadastrado. Busque pelo nome.")
+    product = Product(**payload.model_dump(exclude={"no_brand", "no_barcode"}), created_by_id=user.id, is_active=True)
+    try:
+        db.add(product)
+        db.commit()
+        db.refresh(product)
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(409, "Este código já está cadastrado. Busque o produto existente.") from exc
+    return product
 
 
 @router.get(

@@ -39,7 +39,7 @@ function AccountCart({ children }: { children: ReactNode }) {
           const existing = current.find((item) => item.product.id === product.id);
           if (existing) {
             return current.map((item) =>
-              item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item,
+              item.product.id === product.id ? { ...item, quantity: Math.round((item.quantity + quantity)*1000)/1000 } : item,
             );
           }
           return [...current, { product, quantity }];

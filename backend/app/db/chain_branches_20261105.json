@@ -1,0 +1,394 @@
+[
+  {
+    "name": "Extrabom Campo Grande",
+    "address": "Av. Expedito Garcia, 947, Campo Grande",
+    "neighborhood": "Campo Grande",
+    "city": "Cariacica",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/101-campo-grande/"
+  },
+  {
+    "name": "Extrabom Cruzeiro do Sul",
+    "address": "Rua do Vale, nº 2, Cruzeiro do Sul",
+    "neighborhood": "Cruzeiro do Sul",
+    "city": "Cariacica",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/32-cruzeiro-do-sul/"
+  },
+  {
+    "name": "Extrabom Itacibá",
+    "address": "Rua Manoel Joaquim dos Santos, N 02, Itacibá",
+    "neighborhood": "Itacibá",
+    "city": "Cariacica",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/37-itaciba/"
+  },
+  {
+    "name": "Extrabom Jardim América",
+    "address": "AV. Espírito Santo, N 21, Jardim América",
+    "neighborhood": "Jardim América",
+    "city": "Cariacica",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/41-jardim-america/"
+  },
+  {
+    "name": "Extrabom Carapina Grande",
+    "address": "Avenida Alpheu Ribeiro, 550, Carapina Grande",
+    "neighborhood": "Carapina Grande",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/74-carapina-grande/"
+  },
+  {
+    "name": "Extrabom Colina de Laranjeiras",
+    "address": "Av. Braúna, N1168, Colina de Laranjeiras",
+    "neighborhood": "Colina de Laranjeiras",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/66-colina-de-laranjeiras/"
+  },
+  {
+    "name": "Extrabom Feu Rosa",
+    "address": "Rua dos Cravos, N 102, Feu Rosa",
+    "neighborhood": "Feu Rosa",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/33-feu-rosa/"
+  },
+  {
+    "name": "Extrabom Jacaraípe",
+    "address": "AV. Abido Saad, N 263, Jacaraípe",
+    "neighborhood": "Jacaraípe",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/40-jacaraipe/"
+  },
+  {
+    "name": "Extrabom Laranjeiras",
+    "address": "Av. Eldes Scherrer Souza, S/N, Civit II, Serra - ES, Laranjeiras",
+    "neighborhood": "Laranjeiras",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/67-laranjeiras/"
+  },
+  {
+    "name": "Extrabom Laranjeiras Centro",
+    "address": "Av. Central, 873, Laranjeiras",
+    "neighborhood": "Laranjeiras Centro",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/42-laranjeiras-centro/"
+  },
+  {
+    "name": "Extrabom Porto Canoa",
+    "address": "Av. Porto Canoa, 132, Porto Canoa",
+    "neighborhood": "Porto Canoa",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/52-porto-canoa/"
+  },
+  {
+    "name": "Extrabom Serra Centro",
+    "address": "Av. Cassiano Castelo, N 82, Centro",
+    "neighborhood": "Serra Centro",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/46-serra-centro/"
+  },
+  {
+    "name": "Extrabom Serra Dourada",
+    "address": "Av. Goiania, S/N Qd. 01, Serra Dourada",
+    "neighborhood": "Serra Dourada",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/47-serra-dourada/"
+  },
+  {
+    "name": "Extrabom Top Life",
+    "address": "Av. Brasil, s/n, São Diogo II",
+    "neighborhood": "Top Life",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/43-top-life/"
+  },
+  {
+    "name": "Extrabom Valparaíso",
+    "address": "Rua do Comércio, N 26, Valparaíso",
+    "neighborhood": "Valparaíso",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/48-valparaiso/"
+  },
+  {
+    "name": "Extrabom Barramares",
+    "address": "Avenida Amaral Peixoto, 169 - LJ 04, Barramares",
+    "neighborhood": "Barramares",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/83-barramares/"
+  },
+  {
+    "name": "Extrabom Boulevard Shopping Vila Velha",
+    "address": "Rod. do Sol, 5000, lojas 1061 a 1063, Jockey de Itaparica",
+    "neighborhood": "Boulevard Shopping Vila Velha",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/29-boulevard-shopping-vila-velha/"
+  },
+  {
+    "name": "Extrabom Gaivotas",
+    "address": "Av. Cel. Pedro Maia de Carvalho, 347, Praia das Gaivotas",
+    "neighborhood": "Gaivotas",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/84-gaivotas/"
+  },
+  {
+    "name": "Extrabom Glória",
+    "address": "Av. Carlos Lindenberg, N 1955, Glória",
+    "neighborhood": "Glória",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/34-gloria/"
+  },
+  {
+    "name": "Extrabom Itapoã",
+    "address": "AV. FORTALEZA, 476, Itapoã",
+    "neighborhood": "Itapoã",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/38-itapoa/"
+  },
+  {
+    "name": "Extrabom Goiabeiras",
+    "address": "Av. Fernando Ferrari, N 2635, Segurança Do Lar",
+    "neighborhood": "Goiabeiras",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/35-goiabeiras/"
+  },
+  {
+    "name": "Extrabom Grande Santo Antônio",
+    "address": "Rod. Serafim Derenzi, 995, Inhanguetá",
+    "neighborhood": "Grande Santo Antônio",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/90-grande-santo-antonio/"
+  },
+  {
+    "name": "Extrabom Itararé",
+    "address": "Rua Daniel Abreu Machado, N 151, Itararé",
+    "neighborhood": "Itararé",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/39-itarare/"
+  },
+  {
+    "name": "Extrabom Jardim Camburi",
+    "address": "AV. José Maria Vivacqua Santos, 520, Jardim Camburi",
+    "neighborhood": "Jardim Camburi",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/64-jardim-camburi/"
+  },
+  {
+    "name": "Extrabom Praia do Suá",
+    "address": "Rua Padre Antonio Ribeiro Pinto, N 156, Praia do Suá",
+    "neighborhood": "Praia do Suá",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/44-praia-do-sua/"
+  },
+  {
+    "name": "Extrabom Vila Rubim",
+    "address": "Rua Pedro Nolasco, N 150 - Pav. 1 E 2, Vila Rubim",
+    "neighborhood": "Vila Rubim",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://www.extrabom.com.br/lojas/49-vila-rubim/"
+  },
+  {
+    "name": "Sempretem Alto Lage",
+    "address": "Av. Mário Gurgel, 2728 - Alto Lage, Cariacica - ES, 29151-026",
+    "neighborhood": "Alto Lage",
+    "city": "Cariacica",
+    "state": "ES",
+    "source": "https://superatacadosempretem.com.br/"
+  },
+  {
+    "name": "Sempretem Barra do Jucu",
+    "address": "Rod. do Sol, 3371 - Barra do Jucu, Vila Velha - ES, 29125-033",
+    "neighborhood": "Barra do Jucu",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://superatacadosempretem.com.br/"
+  },
+  {
+    "name": "Sempretem Jardim Limoeiro",
+    "address": "Av. Des. Mário da Silva Nunes, 545 - Jardim Limoeiro, Serra - ES, 29164-010",
+    "neighborhood": "Jardim Limoeiro",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://superatacadosempretem.com.br/"
+  },
+  {
+    "name": "Sempretem Jardim Camburi",
+    "address": "R. Carlos Gomes Lucas, s/n - Jardim Camburi, Vitória - ES, 29090-050",
+    "neighborhood": "Jardim Camburi",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://superatacadosempretem.com.br/"
+  },
+  {
+    "name": "Sempretem Jacaraípe",
+    "address": "R. Rômulo Castelo, 754 - Irema, Serra - ES, 29172-620",
+    "neighborhood": "Irema",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://superatacadosempretem.com.br/"
+  },
+  {
+    "name": "Casagrande Maracanã",
+    "address": "Av. Um",
+    "neighborhood": "Maracanã",
+    "city": "Cariacica",
+    "state": "ES",
+    "source": "https://www.redecasagrande.com.br/institucional"
+  },
+  {
+    "name": "Casagrande Cruzeiro do Sul",
+    "address": "Rua Estrela Matutina, 255",
+    "neighborhood": "Cruzeiro do Sul",
+    "city": "Cariacica",
+    "state": "ES",
+    "source": "https://www.redecasagrande.com.br/institucional"
+  },
+  {
+    "name": "Casagrande Jacaraípe",
+    "address": "Av. Nossa Senhora dos Navegantes, 983, Quadra 23",
+    "neighborhood": "Estância Monazítica",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.redecasagrande.com.br/institucional"
+  },
+  {
+    "name": "Casagrande Barcelona",
+    "address": "Av. Norte Sul",
+    "neighborhood": "Barcelona",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.redecasagrande.com.br/institucional"
+  },
+  {
+    "name": "Casagrande Alto Laje",
+    "address": "Rodovia Governador José Henrique Sette, 1100",
+    "neighborhood": "Alto Laje",
+    "city": "Cariacica",
+    "state": "ES",
+    "source": "https://br.todosnegocios.com/pt/casagrande-supermercados-alto-laje_1J-27-3038-8500"
+  },
+  {
+    "name": "Casagrande Rio Marinho",
+    "address": "Rua Guaraná, s/n",
+    "neighborhood": "Rio Marinho",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.solutudo.com.br/empresas/es/vl-velha/mercados/supermercados-casagrande-ltda-23866386"
+  },
+  {
+    "name": "Casagrande Coqueiral de Itaparica",
+    "address": "Rua Itaiabaia, 100",
+    "neighborhood": "Coqueiral de Itaparica",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.econodata.com.br/consulta-empresa/27473669001129-supermercados-casagrande-ltda"
+  },
+  {
+    "name": "Carone Campo Grande",
+    "address": "Av. Expedito Garcia, 343",
+    "neighborhood": "Campo Grande",
+    "city": "Cariacica",
+    "state": "ES",
+    "source": "https://jucai.com.br/lojas/espirito-santo/cariacica/campo-grande/"
+  },
+  {
+    "name": "Carone Jardim Limoeiro",
+    "address": "Rodovia ES-010, 4320",
+    "neighborhood": "Jardim Limoeiro",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://casadosdados.com.br/solucao/cnpj/drift-comercio-de-alimentos-sa-28129260000342"
+  },
+  {
+    "name": "Carone Jardim Camburi",
+    "address": "Av. Judith Leão Castello Ribeiro, 272",
+    "neighborhood": "Jardim Camburi",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://www.solutudo.com.br/empresas/es/vitoria/mercados/supermercado-carone-132069"
+  },
+  {
+    "name": "Carone Santa Lúcia",
+    "address": "Av. Rio Branco, 77",
+    "neighborhood": "Santa Lúcia",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://jucai.global/lojas/espirito-santo/vitoria/santa-lucia/"
+  },
+  {
+    "name": "Carone Praia do Canto",
+    "address": "Rua Joaquim Lírio, 76",
+    "neighborhood": "Praia do Canto",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://www.efirma.com.br/empresa/supermercado-carone-rio-janeiro/filiais"
+  },
+  {
+    "name": "Carone Itapoã",
+    "address": "Rua São Paulo, 2600",
+    "neighborhood": "Itapoã",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.waze.com/live-map/directions/br/es/supermercado-carone-itapoa?to=place.ChIJm6DtIG0WuAARj1-YlAUdK0o"
+  },
+  {
+    "name": "Carone Praia da Costa",
+    "address": "Av. Champagnat, 920",
+    "neighborhood": "Praia da Costa",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.benditoguia.com.br/empresa/supermercado-carone-praia-da-costa-vila-velha-es"
+  },
+  {
+    "name": "Atacadão Serra",
+    "address": "Rodovia BR 101 Norte, s/n",
+    "neighborhood": "Chico City",
+    "city": "Serra",
+    "state": "ES",
+    "source": "https://www.atacadao.com.br/institucional/nossas-lojas?estado=ES"
+  },
+  {
+    "name": "Atacadão Vitória",
+    "address": "Av. Nossa Senhora da Penha, 2565",
+    "neighborhood": "Santa Luiza",
+    "city": "Vitória",
+    "state": "ES",
+    "source": "https://www.atacadao.com.br/institucional/nossas-lojas?estado=ES"
+  },
+  {
+    "name": "Atacadão Vila Velha",
+    "address": "Rodovia Darly Santos, 160",
+    "neighborhood": "Rio Marinho",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.atacadao.com.br/institucional/nossas-lojas?estado=ES"
+  },
+  {
+    "name": "Assaí Vila Velha",
+    "address": "Av. Carlos Lindenberg, 5333",
+    "neighborhood": "Nossa Senhora da Penha",
+    "city": "Vila Velha",
+    "state": "ES",
+    "source": "https://www.assai.com.br/loja/assai-vila-velha"
+  }
+]

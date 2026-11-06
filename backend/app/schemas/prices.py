@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, Field
+from typing import Literal
 
 from app.schemas.mvp import ProductRead
 
@@ -10,6 +11,7 @@ class PriceReportCreate(BaseModel):
     product_id: int
     market_id: int
     price: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
+    sale_unit: Literal["unit", "kg"] | None = None
     observed_at: datetime | None = None
     notes: str | None = Field(default=None, max_length=500)
 
@@ -18,6 +20,7 @@ class PriceReportRead(BaseModel):
     id: int
     product_id: int
     product_name: str
+    sale_unit: Literal["unit", "kg"] = "unit"
     market_id: int
     market_name: str
     price: Decimal

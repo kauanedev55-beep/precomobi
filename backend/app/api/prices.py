@@ -50,6 +50,7 @@ def _to_read(report: PriceReport, counts: dict[int, int] | None = None, confirme
         "id": report.id,
         "product_id": report.product_id,
         "product_name": report.product.name,
+        "sale_unit": report.product.sale_unit,
         "market_id": report.market_id,
         "market_name": report.market.name,
         "price": report.price,
@@ -75,6 +76,9 @@ def create_price_report(
         raise HTTPException(status_code=404, detail="Produto não encontrado.")
     if not market or not market.is_active:
         raise HTTPException(status_code=404, detail="Mercado não encontrado.")
+
+    if payload.sale_unit is not None and payload.sale_unit != product.sale_unit:
+        raise HTTPException(422, "A unidade do preço difere da unidade de venda do produto.")
 
     observed_at = payload.observed_at
     if observed_at is not None:

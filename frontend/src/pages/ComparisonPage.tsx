@@ -8,6 +8,7 @@ import { PurchaseDecision } from "../components/PurchaseDecision";
 import { fullAddress, googleMapsUrl } from "../lib/navigation";
 import { SourceBadge } from "../components/SourceBadge";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
+import { quantityLabel, saleLabel } from "../lib/quantities";
 import { formatDate, formatPrice } from "../lib/format";
 import { compareShoppingList, previewShoppingList, createShoppingList, type Comparison } from "../services/api";
 
@@ -130,13 +131,13 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
             {result.comparable_total !== null && !result.complete && <p className="form-hint">Itens em comum entre mercados: {formatPrice(result.comparable_total)} ({comparison.common_items_count} produtos).</p>}
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Produto</th><th>Qtd.</th><th>Preço un.</th><th>Subtotal</th><th>Origem</th></tr></thead>
+                <thead><tr><th>Produto</th><th>Qtd.</th><th>Preço por kg ou embalagem</th><th>Subtotal</th><th>Origem</th></tr></thead>
                 <tbody>
                   {result.items.map((item) => (
                     <tr key={item.product_id} className={item.unit_price === null ? "missing-row" : undefined}>
                       <td>{item.product_name}</td>
-                      <td className="num">{Number(item.quantity)}</td>
-                      <td className="num">{item.unit_price !== null ? formatPrice(item.unit_price) : "Sem preço"}</td>
+                      <td className="num">{quantityLabel(item.quantity,item.sale_unit)}</td>
+                      <td className="num">{item.unit_price !== null ? `${formatPrice(item.unit_price)} / ${saleLabel(item.sale_unit)}` : "Sem preço"}</td>
                       <td className="num">{formatPrice(item.subtotal)}</td>
                       <td>{item.source_type ? <><SourceBadge sourceType={item.source_type} /><small className="block">{formatDate(item.reported_at)}</small></> : "—"}</td>
                     </tr>

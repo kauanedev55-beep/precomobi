@@ -1,3 +1,5 @@
+import {CommunityPriceCard} from "../components/CommunityPriceCard";
+import {saleLabel} from "../lib/quantities";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
@@ -92,9 +94,9 @@ export function History() {
 
   return (
     <section>
-      <h1>Comunidade</h1>
-      <p>Preços compartilhados por quem visitou os mercados. Confirme somente os valores que você também verificou.</p>
-      <p className="form-hint">Este é o histórico de preços da comunidade. Suas listas salvas ficam em <Link to="/lista#listas-salvas">Minha lista</Link>.</p>
+      <h1>Preços da comunidade</h1>
+      <p>Aqui estão os preços de todos, inclusive os que você compartilhou. Não é o histórico das suas compras. Confirme somente os valores de outras pessoas que você verificou no mercado.</p>
+
       <CommunityNav />
       <div className="button-row">
         <Link className="primary-button" to="/contribuir">Colaborar com um preço</Link>
@@ -122,7 +124,7 @@ export function History() {
       {!loading && !error && !(productId && marketId) && reports.length > 0 && <p className="form-hint">Escolha um produto e um mercado para ver o gráfico de evolução.</p>}
       {canChart && <PriceChart reports={reports} />}
       {!loading && reports.length > 0 && (
-        <div className="table-wrap">
+        <><div className="community-mobile-cards">{reports.map(report=><CommunityPriceCard key={report.id} report={report} onConfirmed={()=>void load()} />)}</div><div className="table-wrap community-desktop-table">
           <table>
             <thead><tr><th>Data</th><th>Produto</th><th>Mercado</th><th>Preço</th><th>Colaboração</th><th>Confirmação</th></tr></thead>
             <tbody>
@@ -131,7 +133,7 @@ export function History() {
                   <td>{formatDateTime(report.reported_at)}</td>
                   <td>{report.product_name}</td>
                   <td>{report.market_name}</td>
-                  <td className="num">{formatPrice(report.price)}</td>
+                  <td className="num">{formatPrice(report.price)} / {saleLabel(report.sale_unit)}</td>
                   <td><SourceBadge sourceType={report.source_type} />{report.source_type === "community" && <small className="report-author">{report.is_mine ? "Sua contribuição" : "Informado por outro usuário"}</small>}</td>
                   <td>
                     <ConfirmPriceButton
@@ -148,7 +150,7 @@ export function History() {
               ))}
             </tbody>
           </table>
-        </div>
+        </div></>
       )}
     </section>
   );

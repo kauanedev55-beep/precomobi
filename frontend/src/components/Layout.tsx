@@ -28,6 +28,7 @@ export function Layout() {
     : to === "/comunidade" ? ["/comunidade", "/contribuir", "/minhas-contribuicoes"].includes(pathname)
     : pathname === "/produtos" || pathname.startsWith("/produtos/");
   const close = () => setOpen(false);
+  useEffect(() => {setOpen(false);}, [pathname]);
   useEffect(() => {getFeatures().then(f => setDemo(f.demo_mode)).catch(() => undefined);}, []);
   useEffect(() => {
     if (!open) return;
@@ -48,8 +49,8 @@ export function Layout() {
     <a className="skip-link" href="#main-content">Pular para o conteúdo</a>
     <header className="topbar pm-topbar">
       <button className="menu-toggle pm-menu-button" type="button" aria-controls="pm-sidebar" aria-expanded={open} aria-label="Abrir ou fechar menu" onClick={() => setOpen(!open)}>☰</button>
-      <Link className="brand" to="/painel" onClick={close}>{brand}</Link><div className="pm-top-spacer"/>
-      <Link className="header-alerts" to="/avisos" onClick={close} aria-label={`Avisos: ${offers.length} promoções para suas listas`}><Icon name="bell"/><span>Avisos</span>{offers.length>0 && <b>{offers.length}</b>}</Link>
+      <Link className="brand" to="/lista" onClick={close}>{brand}</Link><div className="pm-top-spacer"/>
+      <Link className="header-alerts" to="/avisos" onClick={close} aria-label={`Avisos: ${offers.length} ofertas do seu interesse`}><Icon name="bell"/><span>Avisos</span>{offers.length>0 && <b>{offers.length}</b>}</Link>
       <Link className="pm-header-list" to="/lista" onClick={close}>Minha lista <span>{items.length}</span></Link>
       <Link className="pm-user-pill" to="/perfil" aria-label="Meu perfil" onClick={close}>{user.name.slice(0,1).toUpperCase()}</Link>
     </header>
@@ -59,10 +60,10 @@ export function Layout() {
         <p className="sidebar-caption">SEU DIA A DIA</p>
         <nav className="pm-nav">{links.map(item => <Link key={item.to} to={item.to} onClick={close} aria-current={selected(item.to) ? "page" : undefined} className={`side-link${selected(item.to) ? " active" : ""}`}><Icon name={item.icon}/>{item.label}</Link>)}</nav>
         <Link className="sidebar-contribute" to="/contribuir" onClick={close}><Icon name="plus"/>Colaborar com um preço<span>Preço comum ou promoção</span></Link>
-        <details className="pm-more-menu"><summary>Mais opções</summary><nav className="pm-nav"><NavLink className="side-link" to="/painel" onClick={close}>Visão geral</NavLink><NavLink className="side-link" to="/mercados" onClick={close}>Mercados</NavLink><NavLink className="side-link" to="/minhas-contribuicoes" onClick={close}>Minhas contribuições</NavLink><NavLink className="side-link" to="/perfil" onClick={close}>Meu perfil{user.is_admin ? " · master" : ""}</NavLink></nav></details>
+        <details className="pm-more-menu"><summary>Mais opções</summary><nav className="pm-nav"><NavLink className="side-link" to="/mercados" onClick={close}>Mercados</NavLink><NavLink className="side-link" to="/perfil" onClick={close}>Meu perfil{user.is_admin ? " · master" : ""}</NavLink></nav></details>
         <div className="sidebar-account"><span className="pm-account-name">{user.name}</span><button className="side-link side-action" onClick={() => {logout();close();navigate("/");}}>Sair da conta ↗</button></div>
       </aside>
-      <div className="pm-content"><CitySelector/><main className="page" id="main-content" tabIndex={-1}>{demo && <div className="demo-banner" role="status"><strong>Demonstração acadêmica</strong><span>Preços simulados, identificados como demonstração.</span></div>}<Outlet/></main><footer className="site-footer">Feito para ajudar na sua próxima compra. Confira os preços e as condições na loja.</footer></div>
+      <div className="pm-content">{!["/perfil", "/produtos/novo", "/minhas-contribuicoes"].includes(pathname) && <CitySelector/>}<main className="page" id="main-content" tabIndex={-1}>{demo && <div className="demo-banner" role="status"><strong>Demonstração acadêmica</strong><span>Preços simulados, identificados como demonstração.</span></div>}<Outlet/></main><footer className="site-footer">Feito para ajudar na sua próxima compra. Confira os preços e as condições na loja.</footer></div>
     </div>
     <nav className="mobile-bottom-nav" aria-label="Navegação rápida">{bottom.map(item => <Link key={item.to} to={item.to} onClick={close} aria-current={selected(item.to) ? "page" : undefined} className={selected(item.to) ? "active" : ""}><Icon name={item.icon}/><span>{item.label}</span></Link>)}</nav>
   </div>;

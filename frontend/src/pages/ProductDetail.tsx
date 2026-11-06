@@ -4,6 +4,8 @@ import { Link, useParams } from "react-router-dom";
 import { useRegion } from "../region/RegionContext";
 import { useCart } from "../cart/CartContext";
 import { ConfirmPriceButton } from "../components/ConfirmPriceButton";
+import { QuantityPicker } from "../components/QuantityPicker";
+import { itemSubtotal, saleLabel } from "../lib/quantities";
 import { ProductArt } from "../components/ProductArt";
 import { SourceBadge } from "../components/SourceBadge";
 import { ErrorBox, Loading } from "../components/StateViews";
@@ -19,6 +21,8 @@ export function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [added, setAdded] = useState(false);
+  const [quantity,setQuantity] = useState(1);
+  const [quantityValid,setQuantityValid]=useState(true);
 
   const load = useCallback(async () => {
     const request = ++sequence.current;
@@ -37,6 +41,8 @@ export function ProductDetail() {
     void load();
   }, [load]);
 
+  useEffect(() => {setAdded(false);setQuantity(1);setQuantityValid(true);}, [id]);
+
   if (loading) return <Loading text="Carregando produto..." />;
   if (error || !product) return <ErrorBox message={error || "Produto não encontrado."} onRetry={load} />;
 
@@ -46,7 +52,7 @@ export function ProductDetail() {
 
   return (
     <section>
-      <p className="breadcrumb"><Link to="/produtos">← Produtos</Link></p>
+      <p className="button-row"><Link className="outline-button back-button" to="/produtos">← Voltar para produtos</Link><Link className="outline-button" to="/lista">Minha lista</Link></p>
 
       <div className="product-hero">
         <ProductArt category={product.category} imageUrl={product.image_url} name={product.name} size={120} />
@@ -54,26 +60,29 @@ export function ProductDetail() {
           <h1>{product.name}</h1>
           <p className="product-meta">{productSubtitle(product)}{product.category ? ` · ${product.category}` : ""}</p>
           {product.min_price !== null ? (
-            <p className="hero-price">{formatPrice(product.min_price)}<small>a partir de, em {product.min_price_market}</small></p>
+            <p className="hero-price">{formatPrice(product.min_price)}{product.sale_unit==="kg" ? " / kg" : " por embalagem / unidade"}<small>a partir de, em {product.min_price_market}</small></p>
           ) : (
             <p className="hero-price muted">Sem preço informado ainda</p>
           )}
         </div>
       </div>
 
+      <div className="product-buy-panel"><QuantityPicker onValidityChange={setQuantityValid} value={quantity} unit={product.sale_unit} name={product.name} onChange={v=>{setQuantity(v);setAdded(false);}}/>{product.min_price!==null && <p>Estimativa para essa quantidade: <strong>{formatPrice(itemSubtotal(product.min_price,quantity))}</strong></p>}{product.sale_unit==="kg" && <p className="form-hint">A estimativa usa o peso informado. Ajuste na lista quando souber o peso real da balança.</p>}
       <div className="button-row">
-        <button className="primary-button" type="button" onClick={() => { cart.add(product); setAdded(true); }}>{added ? "Adicionado à lista ✓" : "Adicionar à lista"}</button>
+        <button className="primary-button" type="button" disabled={added || !quantityValid} onClick={() => { cart.add(product,quantity); setAdded(true); }}>{added ? "Adicionado à lista ✓" : "Adicionar à lista"}</button>
         <Link className="outline-button" to={`/contribuir?produto=${product.id}`}>Contribuir com preço</Link>
         <Link className="outline-button" to={`/comunidade?produto=${product.id}`}>Preços da comunidade</Link>
         {added && <Link className="text-button" to="/lista">Ir para a lista →</Link>}
       </div>
 
+      </div>
       <dl className="info-grid">
         <div><dt>Marca</dt><dd>{product.brand ?? "—"}</dd></div>
-        <div><dt>Embalagem</dt><dd>{productSubtitle({ brand: null, quantity_value: product.quantity_value, quantity_unit: product.quantity_unit })}</dd></div>
+        <div><dt>Embalagem / apresentação</dt><dd>{product.packaging || "Não informada"}</dd></div><div><dt>Conteúdo / referência</dt><dd>{product.quantity_value && product.quantity_unit ? `${Number(product.quantity_value)} ${product.quantity_unit}` : "Não informado"}</dd></div><div><dt>Preço informado por</dt><dd>{saleLabel(product.sale_unit)}</dd></div>
         <div><dt>EAN</dt><dd>{product.ean ?? "—"}</dd></div>
       </dl>
 
+      {product.description && <p>{product.description}</p>}
       <h2>Preços por mercado</h2>
       {hasDemoPrices && <div className="notice" role="status"><strong>Preços de demonstração:</strong> valores ilustrativos do projeto acadêmico. Não representam cotações atuais.</div>}
       <details className="pm-price-details">
@@ -85,7 +94,7 @@ export function ProductDetail() {
             {product.prices.map((price) => (
               <tr key={price.market_id} className={price.price !== null && Number(price.price) === cheapest ? "best-row" : undefined}>
                 <td>{price.market_name}</td>
-                <td className="num">{price.price !== null ? formatPrice(price.price) : "Sem preço informado"}{price.price !== null && Number(price.price) === cheapest && withPrice.length > 1 ? " ★" : ""}</td>
+                <td className="num">{price.price !== null ? `${formatPrice(price.price)} / ${saleLabel(product.sale_unit)}` : "Sem preço informado"}{price.price !== null && Number(price.price) === cheapest && withPrice.length > 1 ? " ★" : ""}</td>
                 <td>{formatDate(price.reported_at)}</td>
                 <td>{price.source_type ? <SourceBadge sourceType={price.source_type} /> : "—"}</td>
                 <td>

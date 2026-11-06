@@ -17,12 +17,12 @@ export function OffersProvider({children}: {children: ReactNode}) {
   const refresh = useCallback(() => setRevision(n => n+1), []);
   useEffect(() => {
     let active = true;
-    if (!user || checking || !city) {setOffers([]); setError(""); setLoading(false); return;}
+    if (!user || checking) {setOffers([]); setError(""); setLoading(false); return;}
     setOffers([]);
     setLoading(true);
     async function load() {
       try {
-        const data = await getOffers({forMyLists: true, city, productIds: ids ? ids.split(",").map(Number) : []});
+        const data = await getOffers({forAlerts: true, city: city || "__none__", productIds: ids ? ids.split(",").map(Number) : []});
         if (active) {setOffers(data); setError("");}
       } catch (err) {if(active) setError(err instanceof Error ? err.message : "Não foi possível atualizar os avisos.");}
       finally {if(active) setLoading(false);}

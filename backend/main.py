@@ -11,6 +11,7 @@ from app.api.health import router as health_router
 from app.api.prices import router as prices_router
 from app.api.shopping_lists import router as shopping_lists_router
 from app.api.offers import router as offers_router
+from app.api.alert_preferences import router as alert_preferences_router
 from app.core.config import get_settings
 from app.db.init_db import init_db
 
@@ -55,6 +56,7 @@ app.include_router(prices_router, prefix=settings.api_prefix)
 app.include_router(shopping_lists_router, prefix=settings.api_prefix)
 app.include_router(comparisons_router, prefix=settings.api_prefix)
 app.include_router(offers_router, prefix=settings.api_prefix)
+app.include_router(alert_preferences_router, prefix=settings.api_prefix)
 
 
 @app.get("/")
