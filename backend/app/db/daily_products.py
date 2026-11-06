@@ -32,7 +32,7 @@ def matches_daily_product(query, name, category=None, brand=None, catalog_source
     words = terms(' '.join(filter(None, [name, category, brand, photo_alias, leaf_alias, floor_alias, soap_alias])))
     query_words = terms(query)
     tokens = [word for word in query_words if word not in {'de', 'do', 'da', 'dos', 'das', 'em', 'para'}]
-    return bool(tokens or not query_words) and all(any(word.startswith(token) for word in words) for token in tokens)
+    return bool(tokens or not query_words) and all(any(word == token if token == 'po' else word.startswith(token) for word in words) for token in tokens)
 
 def add_daily_products(engine, *, manifest='daily_catalog.json', migration_key=MIGRATION_KEY):
     entries = json.loads(Path(__file__).with_name(manifest).read_text())

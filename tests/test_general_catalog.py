@@ -55,6 +55,7 @@ def test_consumer_terms_find_floor_cleaner_and_powder_without_matching_everythin
     assert matches_daily_product('limpador de chão','Limpeza Perfumada Limpol Luxury 1 L','Limpeza')
     assert matches_daily_product('limpador de chão','Limpador Multipisos Destac Lavanda 750 ml','Limpeza')
     assert matches_daily_product('sabão em pó','Lava Roupas em Pó Tixan Ypê Primavera 1,6 kg','Limpeza')
+    assert not matches_daily_product('sabão em pó','Sabão Líquido Mon Bijou Poder das Enzimas 3 L','Limpeza')
     assert not matches_daily_product('limpador de chão','Sabão em Pó Omo 800g','Limpeza')
     assert not matches_daily_product('de','Qualquer produto','Mercearia')
     assert matches_daily_product('','Qualquer produto','Mercearia')
@@ -73,6 +74,7 @@ def test_general_catalog_is_searchable_with_local_region_prices_only(client,monk
         powders=client.get('/api/products',params={**params,'q':'sabao em po'}).json()
         assert len({p['brand'] for p in powders})>=5
         assert all(p['sale_unit']=='unit' and p['min_price'] is None for p in powders)
+        assert all('líquido' not in p['name'].lower() and 'liquido' not in p['name'].lower() for p in powders)
         for category in ['Doces','Laticínios','Bebidas']:
             rows=client.get('/api/products',params={**params,'category':category}).json()
             assert rows and all(p['category']==category and p['min_price'] is None for p in rows)
