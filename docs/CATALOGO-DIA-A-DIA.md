@@ -55,3 +55,6 @@ Todos são vendidos por embalagem/unidade: 500 ml de detergente é o conteúdo d
 A carga tem marcador próprio e é idempotente, preservando produtos, observações de preços, mercados e listas existentes. Não exige nova API, serviço pago ou alteração na estrutura das telas. Os itens são encontrados na busca única pelo nome, marca ou “limpeza”.
 
 Fontes: https://www.extrabom.com.br/lista-de-compras/limpeza-essencial-da-semana/73/ ; https://www.extrabom.com.br/lista-de-compras/limpeza-da-casa-completa/72/ ; páginas individuais no manifesto.
+
+
+A ampliação geral seguinte, incluindo mais marcas de limpeza, laticínios, bebidas, doces e mercearia dos catálogos Extrabom e Carone, está descrita em `docs/AMPLIACAO-CATALOGO-REDES.md`.

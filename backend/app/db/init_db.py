@@ -77,12 +77,13 @@ def init_db() -> None:
     from app.db.product_units import add_product_units
     add_product_units(engine)
     if not get_settings().demo_mode:
-        from app.db.daily_products import add_daily_products, add_daily_variants, add_daily_search_additions, add_daily_produce_expansion, add_daily_cleaning_products
+        from app.db.daily_products import add_daily_products, add_daily_variants, add_daily_search_additions, add_daily_produce_expansion, add_daily_cleaning_products, add_general_retail_catalog
         add_daily_products(engine)
         add_daily_variants(engine)
         add_daily_search_additions(engine)
         add_daily_produce_expansion(engine)
         add_daily_cleaning_products(engine)
+        add_general_retail_catalog(engine)
         from app.db.requested_markets import add_requested_markets
         add_requested_markets(engine)
         from app.db.greater_vitoria_markets import add_greater_vitoria_markets

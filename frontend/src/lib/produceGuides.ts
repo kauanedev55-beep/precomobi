@@ -25,6 +25,7 @@ export function catalogCredit(source?: string | null): string {
   try {
     const host=new URL(source).hostname;
     if(host==="www.extrabom.com.br" || host==="extrabom.com.br") return "Extrabom";
+    if(host==="www.carone.com.br" || host==="carone.com.br" || host==="fs.carone.com.br") return "Carone";
     if(host==="www.rappi.com.br" && source.includes("/batata-doce-roxa-251429")) return "Assaí via Rappi";
   }catch { /* Unknown references keep a neutral label. */ }
   return "catálogo de origem";

@@ -12,7 +12,7 @@ MIGRATION_KEY = 'daily-catalog-retail-2026-11-06'
 
 def terms(value):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode().lower()
-    aliases = {'feijoes':'feijao', 'paes':'pao', 'acucares':'acucar', 'batatinha':'batata', 'limoes':'limao', 'mamaos':'mamao', 'salsinha':'salsa', 'salsinhas':'salsa', 'tangerina':'mexerica', 'tangerinas':'mexerica', 'bergamota':'mexerica', 'bergamotas':'mexerica', 'folhagens':'folha', 'folhosas':'folha'}
+    aliases = {'feijoes':'feijao', 'paes':'pao', 'acucares':'acucar', 'batatinha':'batata', 'limoes':'limao', 'mamaos':'mamao', 'salsinha':'salsa', 'salsinhas':'salsa', 'tangerina':'mexerica', 'tangerinas':'mexerica', 'bergamota':'mexerica', 'bergamotas':'mexerica', 'folhagens':'folha', 'folhosas':'folha', 'chao':'piso'}
     return [aliases.get(word, word[:-1] if word.endswith('s') and len(word)>3 else word)
             for word in re.findall(r'[a-z0-9]+',value)]
 
@@ -22,8 +22,12 @@ def matches_daily_product(query, name, category=None, brand=None, catalog_source
     name_words = terms(name)
     leafy = {'alface', 'couve', 'agriao', 'rucula', 'espinafre', 'taioba', 'mostarda', 'chicoria', 'escarola', 'almeirao'}
     leaf_alias = 'folhas folhosas folhagens' if category == 'Verduras' and leafy.intersection(name_words) and 'flor' not in name_words else None
-    words = terms(' '.join(filter(None, [name, category, brand, photo_alias, leaf_alias])))
-    return all(any(word.startswith(token) for word in words) for token in terms(query))
+    floor_alias = 'piso' if category == 'Limpeza' and any(word.startswith('perfumad') for word in name_words) else None
+    soap_alias = 'sabao' if category == 'Limpeza' and 'lava' in name_words and 'roupa' in name_words else None
+    words = terms(' '.join(filter(None, [name, category, brand, photo_alias, leaf_alias, floor_alias, soap_alias])))
+    query_words = terms(query)
+    tokens = [word for word in query_words if word not in {'de', 'do', 'da', 'dos', 'das', 'em', 'para'}]
+    return bool(tokens or not query_words) and all(any(word.startswith(token) for word in words) for token in tokens)
 
 def add_daily_products(engine, *, manifest='daily_catalog.json', migration_key=MIGRATION_KEY):
     entries = json.loads(Path(__file__).with_name(manifest).read_text())
@@ -59,3 +63,7 @@ def add_daily_produce_expansion(engine):
 
 def add_daily_cleaning_products(engine):
     add_daily_products(engine, manifest='daily_cleaning_catalog.json', migration_key='daily-cleaning-catalog-2026-11-06')
+
+
+def add_general_retail_catalog(engine):
+    add_daily_products(engine, manifest='daily_retail_catalog.json', migration_key='daily-retail-catalog-2026-11-06')

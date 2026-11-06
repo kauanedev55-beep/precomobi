@@ -22,3 +22,7 @@ test('unknown or manually registered products are not guessed from their names',
  const p={name:'Batata-doce da vizinha',catalog_source_url:null};assert.equal(produceGuide(p),null);assert.equal(productDisplayName(p),p.name);
  assert.equal(catalogCredit('https://extrabom.com.br.example/fake'),'catálogo de origem');
 });
+test('Carone catalog credits recognize official hosts without trusting lookalike domains',()=>{
+ for(const host of ['www.carone.com.br','carone.com.br','fs.carone.com.br']) assert.equal(catalogCredit(`https://${host}/produto/p`),'Carone');
+ assert.equal(catalogCredit('https://carone.com.br.example/produto/p'),'catálogo de origem');
+});
