@@ -52,6 +52,8 @@ def test_pack_sizes_and_food_types_are_not_inferred_from_marketing_numbers():
 
 def test_consumer_terms_find_floor_cleaner_and_powder_without_matching_everything():
     assert matches_daily_product('limpador de chão','Limpador Perfumado Coala Lima-Limão 120ml','Limpeza')
+    assert matches_daily_product('limpador de chão','Limpeza Perfumada Limpol Luxury 1 L','Limpeza')
+    assert matches_daily_product('limpador de chão','Limpador Multipisos Destac Lavanda 750 ml','Limpeza')
     assert matches_daily_product('sabão em pó','Lava Roupas em Pó Tixan Ypê Primavera 1,6 kg','Limpeza')
     assert not matches_daily_product('limpador de chão','Sabão em Pó Omo 800g','Limpeza')
     assert not matches_daily_product('de','Qualquer produto','Mercearia')

@@ -22,7 +22,12 @@ def matches_daily_product(query, name, category=None, brand=None, catalog_source
     name_words = terms(name)
     leafy = {'alface', 'couve', 'agriao', 'rucula', 'espinafre', 'taioba', 'mostarda', 'chicoria', 'escarola', 'almeirao'}
     leaf_alias = 'folhas folhosas folhagens' if category == 'Verduras' and leafy.intersection(name_words) and 'flor' not in name_words else None
-    floor_alias = 'piso' if category == 'Limpeza' and any(word.startswith('perfumad') for word in name_words) else None
+    floor_alias = None
+    if category == 'Limpeza':
+        if any(word.startswith('perfumad') for word in name_words):
+            floor_alias = 'limpador piso'
+        elif any(word.endswith('piso') for word in name_words):
+            floor_alias = 'piso'
     soap_alias = 'sabao' if category == 'Limpeza' and 'lava' in name_words and 'roupa' in name_words else None
     words = terms(' '.join(filter(None, [name, category, brand, photo_alias, leaf_alias, floor_alias, soap_alias])))
     query_words = terms(query)
