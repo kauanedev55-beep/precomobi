@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
 
 import { useRegion } from "../region/RegionContext";
 import { useCart } from "../cart/CartContext";
@@ -16,6 +16,8 @@ import { getProduct, type ProductDetail as ProductDetailData } from "../services
 
 export function ProductDetail() {
   const { id } = useParams();
+  const location = useLocation();
+  const backSearch = typeof location.state?.search === "string" ? location.state.search : "";
   const cart = useCart();
   const {city} = useRegion();
   const sequence = useRef(0);
@@ -56,7 +58,7 @@ export function ProductDetail() {
 
   return (
     <section>
-      <p className="button-row"><Link className="outline-button back-button" to="/produtos">← Voltar para produtos</Link><Link className="outline-button" to="/lista">Minha lista</Link></p>
+      <p><Link className="outline-button back-button" to={`/produtos${backSearch ? `?${backSearch}` : ""}`}>← Voltar para produtos</Link></p>
 
       <div className="product-hero">
         {product.image_url ? <ProductPhoto url={product.image_url} name={displayName} hint={guide?.hint} source={product.catalog_source_url} size={160}/> : <ProductArt category={product.category} name={product.name} size={120}/> }
@@ -75,12 +77,11 @@ export function ProductDetail() {
       <div className="product-buy-panel"><QuantityPicker onValidityChange={setQuantityValid} value={quantity} unit={product.sale_unit} name={product.name} onChange={v=>{setQuantity(v);setAdded(false);}}/>{product.min_price!==null && <p>Estimativa para essa quantidade: <strong>{formatPrice(itemSubtotal(product.min_price,quantity))}</strong></p>}{product.sale_unit==="kg" && <p className="form-hint">A estimativa usa o peso informado. Ajuste na lista quando souber o peso real da balança.</p>}
       <div className="button-row">
         <button className="primary-button" type="button" disabled={added || !quantityValid} onClick={() => { cart.add(product,quantity); setAdded(true); }}>{added ? "Adicionado à lista ✓" : "Adicionar à lista"}</button>
-        <Link className="outline-button" to={`/contribuir?produto=${product.id}`}>Contribuir com preço</Link>
-        <Link className="outline-button" to={`/comunidade?produto=${product.id}`}>Preços da comunidade</Link>
         {added && <Link className="text-button" to="/lista">Ir para a lista →</Link>}
       </div>
 
       </div>
+      <details className="product-extra-details"><summary>Detalhes do produto</summary>
       <dl className="info-grid">
         <div><dt>Marca</dt><dd>{product.brand ?? "—"}</dd></div>
         <div><dt>Embalagem / apresentação</dt><dd>{product.packaging || "Não informada"}</dd></div><div><dt>Conteúdo / referência</dt><dd>{product.quantity_value && product.quantity_unit ? `${Number(product.quantity_value)} ${product.quantity_unit}` : "Não informado"}</dd></div><div><dt>Preço informado por</dt><dd>{saleLabel(product.sale_unit)}</dd></div>
@@ -89,8 +90,10 @@ export function ProductDetail() {
 
       {product.description && <p>{product.description}</p>}
       {product.catalog_source_url && <p className="form-hint"><a href={product.catalog_source_url} target="_blank" rel="noopener noreferrer">Foto e referência: {catalogCredit(product.catalog_source_url)}</a></p>}
+      </details>
       <h2>Preços por mercado</h2>
       {hasDemoPrices && <div className="notice" role="status"><strong>Preços de demonstração:</strong> valores ilustrativos do projeto acadêmico. Não representam cotações atuais.</div>}
+      <p><Link to={`/contribuir?produto=${product.id}`}>Informar preço neste produto</Link></p>
       <details className="pm-price-details">
         <summary>Ver preços, fontes e confirmações dos mercados</summary>
       <div className="table-wrap">

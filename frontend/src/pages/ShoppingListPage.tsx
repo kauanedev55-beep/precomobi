@@ -115,9 +115,9 @@ export function ShoppingListPage() {
           <div className="form-card inline">
             <label className="field"><span>Nome da lista</span><input value={name} onChange={(event) => setName(event.target.value)} maxLength={160} /></label>
             <div className="button-row">
-              <button className="primary-button" type="button" disabled={saving || !city || !quantitiesValid} onClick={() => navigate("/comparacao/atual",{state:{name:name.trim() || "Minha compra"}})}>Comparar sem salvar</button>
+              <button className="primary-button" type="button" disabled={saving || !city || !quantitiesValid} onClick={() => navigate("/comparacao/atual",{state:{name:name.trim() || "Minha compra"}})}>Comparar mercados</button>
               <button className="outline-button" type="button" onClick={saveList} disabled={saving || !quantitiesValid}>{saving ? "Salvando..." : "Salvar lista"}</button>
-              <button className="outline-button" type="button" onClick={cart.clear}>Começar nova lista</button>
+              <details className="list-more-actions"><summary>Mais opções da lista</summary><button className="text-button danger" type="button" onClick={cart.clear}>Esvaziar lista atual</button></details>
             </div>
             {!quantitiesValid && <p className="error-message" role="alert">Confira o peso ou a quantidade dos produtos antes de continuar.</p>}
             {saveError && <p className="error-message" role="alert">{saveError}</p>}

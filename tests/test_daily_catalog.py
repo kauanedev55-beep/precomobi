@@ -92,3 +92,39 @@ def test_purple_skin_variant_is_additive_separate_and_has_no_imported_price(tmp_
         assert not matches_daily_product('batata doce rosada',original.name)
         assert not matches_daily_product('batata doce polpa roxa',variant.name)
     engine.dispose()
+
+
+def test_preferred_search_falls_back_to_local_brands_without_external_import(client, monkeypatch):
+    from app.db.session import engine, SessionLocal
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Consumer search must not import external results')
+    monkeypatch.setattr('app.api.catalog.urlopen', forbidden)
+    add_daily_products(engine)
+    try:
+        potatoes = client.get('/api/products', params={'q':'batatas','preferred':True}).json()
+        assert {p['name'] for p in potatoes} == {'Batata inglesa','Batata-doce'}
+        assert all(p['is_standard'] for p in potatoes)
+        brands = client.get('/api/products', params={'q':'Camil','preferred':True}).json()
+        assert brands and all('camil' in (p['brand'] or '').lower() for p in brands)
+        assert client.get('/api/products', params={'q':'produto inexiste','preferred':True}).json() == []
+        assert client.get('/api/products', params={'q':'batatas','city':'Cidade sem loja','preferred':True}).json()[0]['min_price'] is None
+    finally:
+        with engine.begin() as conn:
+            conn.execute(delete(Product).where(Product.is_standard.is_(True)))
+            conn.execute(text('DELETE FROM app_data_migrations WHERE migration_key=:key'),{'key':MIGRATION_KEY})
+
+
+def test_pepper_addition_is_idempotent_and_searchable_without_accents(tmp_path):
+    from app.db.daily_products import add_daily_search_additions
+    engine = create_engine(f"sqlite:///{tmp_path/'peppers.db'}")
+    Base.metadata.create_all(engine)
+    add_daily_search_additions(engine)
+    add_daily_search_additions(engine)
+    with Session(engine) as db:
+        products = list(db.scalars(select(Product)))
+        assert len(products) == 1
+        assert matches_daily_product('pimentao', products[0].name)
+        assert products[0].is_standard and products[0].sale_unit == 'kg'
+        assert products[0].catalog_source_url.endswith('/2900/')
+        assert db.scalar(select(func.count()).select_from(PriceReport)) == 0
+    engine.dispose()

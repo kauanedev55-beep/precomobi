@@ -59,7 +59,6 @@ export function Layout() {
       <aside id="pm-sidebar" className={`pm-sidebar ${open ? "is-open" : ""}`} aria-label="Menu do usuário">
         <p className="sidebar-caption">SEU DIA A DIA</p>
         <nav className="pm-nav">{links.map(item => <Link key={item.to} to={item.to} onClick={close} aria-current={selected(item.to) ? "page" : undefined} className={`side-link${selected(item.to) ? " active" : ""}`}><Icon name={item.icon}/>{item.label}</Link>)}</nav>
-        <Link className="sidebar-contribute" to="/contribuir" onClick={close}><Icon name="plus"/>Colaborar com um preço<span>Preço comum ou promoção</span></Link>
         <details className="pm-more-menu"><summary>Mais opções</summary><nav className="pm-nav"><NavLink className="side-link" to="/mercados" onClick={close}>Mercados</NavLink><NavLink className="side-link" to="/perfil" onClick={close}>Meu perfil{user.is_admin ? " · master" : ""}</NavLink></nav></details>
         <div className="sidebar-account"><span className="pm-account-name">{user.name}</span><button className="side-link side-action" onClick={() => {logout();close();navigate("/");}}>Sair da conta ↗</button></div>
       </aside>

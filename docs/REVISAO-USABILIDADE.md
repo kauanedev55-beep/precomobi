@@ -64,3 +64,18 @@ As quatro entradas principais continuam sendo Minha lista, Produtos, Promoções
 7. Conferir Avisos antes/depois de ativar preferências; expandir configuração sem perder o contexto das ofertas.
 8. Em larguras de 360, 390 e 430 pixels, conferir teclado, botões, rolagem, zoom de texto e a ausência de sobreposição da navegação inferior.
 9. Pedir a uma pessoa do público-alvo que monte e compare uma lista sem explicações; observar hesitações, erros e tempo de conclusão.
+
+
+## Revisão após a tela com excesso de controles — 06/11/2026
+
+A revisão anterior ainda deixava muitas decisões antes da busca. Correções:
+
+- Produtos: apenas campo e botão Buscar no fluxo principal; retirados seletores de catálogo, sete atalhos de categoria/produto, Voltar redundante e Limpar busca. Câmera, busca específica e cadastro ficam em Mais opções. Cadastro também aparece contextualizado no resultado vazio.
+- Busca única: prioriza tipos do catálogo de referência; quando não há correspondência, consulta o catálogo local, incluindo marcas. Não importa automaticamente resultados externos. Busca por marca específica continua disponível sem troca de aba. Contrato anterior da API preservado.
+- Resultados: uma lista, sem separar com/sem preço nem repetir blocos explicativos. Cada item tem uma ação principal. Identificação visual permanece na foto e no nome; orientação completa e crédito ficam na ampliação.
+- Ficha: quantidade e Adicionar à lista em destaque. Metadados recolhidos; contribuição contextual junto aos preços. Voltar preserva a busca de origem.
+- Lista: Comparar mercados como ação principal; esvaziar fica nas opções secundárias.
+- Comunidade e promoções: retiradas chamadas de contribuição duplicadas nos estados vazios e no menu lateral. Busca por nome primeiro no formulário de contribuição; câmera/cadastro ficam nas opções.
+- Pimentão verde: referência oficial Extrabom 2900 adicionada por migração idempotente separada, sem preço, estoque ou alterações aos registros existentes.
+
+Validação: testes de busca preferencial (tipos, marca, acentos, resultado vazio e região), migração sem duplicação/preços, suíte de regressão e compilação frontend. A inspeção visual interativa local ficou indisponível: navegador remoto não alcança localhost e a extensão não tem contexto conectado. Não equivale a teste com usuários ou em aparelho físico.

@@ -138,9 +138,9 @@ export function Contribute() {
         </div>
       )}
       {scanning && <BarcodeScanner onDetected={code => void scanProduct(code)} onClose={() => setScanning(false)} />}
-      <button className="outline-button" type="button" onClick={() => setScanning(true)}>Ler código de barras ou QR do produto</button>
+
       <form className="product-search-inline" onSubmit={e => {e.preventDefault(); void searchProduct();}}><input aria-label="Nome do produto" placeholder="Ou busque pelo nome do produto" value={search} onChange={e => setSearch(e.target.value)}/><button className="outline-button" disabled={searching}>{searching ? "Buscando..." : "Buscar"}</button></form>
-      <Link className="outline-button" to={`/produtos/novo?${new URLSearchParams({origem:"contribuir",nome:search})}`}>Não encontrei: cadastrar produto</Link>
+      <details className="search-options"><summary>Outras formas de encontrar o produto</summary><div className="search-options-content"><button className="outline-button" type="button" onClick={() => setScanning(true)}>Ler código de barras ou QR do produto</button><Link className="outline-button" to={`/produtos/novo?${new URLSearchParams({origem:"contribuir",nome:search})}`}>Não encontrei: cadastrar produto</Link></div></details>
       {cityMarkets.length === 0 && <p className="notice">{!city ? "Escolha a cidade acima para selecionar o mercado." : "Não há mercados cadastrados nesta cidade."}</p>}
       <form className="form-card" onSubmit={submit} noValidate>
         <label className="field"><span>Produto</span>

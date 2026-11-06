@@ -161,12 +161,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 // ---------- endpoints ----------
 export const getApiHealth = () => request<{ status: string; service: string }>("/health");
 
-export const getProducts = (q?: string, city?: string, category?: string, external?: boolean, everyday?: boolean) => {
+export const getProducts = (q?: string, city?: string, category?: string, external?: boolean, everyday?: boolean, preferred?: boolean) => {
   const query=new URLSearchParams();
   if(q?.trim()) query.set("q",q.trim());
   if(city) query.set("city",city);
   if(category) query.set("category",category);
   if(external !== undefined) query.set("external",String(external));
+  if(preferred !== undefined) query.set("preferred",String(preferred));
   if(everyday !== undefined) query.set("everyday",String(everyday));
   return request<Product[]>(`/products?${query}`);
 };

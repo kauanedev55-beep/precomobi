@@ -44,3 +44,7 @@ def add_daily_products(engine, *, manifest='daily_catalog.json', migration_key=M
 
 def add_daily_variants(engine):
     add_daily_products(engine, manifest='daily_variants.json', migration_key='daily-visual-variants-2026-11-06')
+
+
+def add_daily_search_additions(engine):
+    add_daily_products(engine, manifest='daily_search_additions.json', migration_key='daily-search-additions-2026-11-06')

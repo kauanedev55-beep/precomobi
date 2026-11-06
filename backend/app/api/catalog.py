@@ -207,6 +207,7 @@ def list_products(
     category: str | None = Query(default=None, max_length=100),
     external: bool = True,
     everyday: bool = False,
+    preferred: bool = False,
     db: Session = Depends(get_db),
 ) -> list[dict]:
 
@@ -217,7 +218,15 @@ def list_products(
     if category:
         query = query.where(func.lower(Product.category) == category.strip().lower())
 
-    if everyday and ean is None:
+    if preferred and ean is None:
+        from app.db.daily_products import matches_daily_product
+        matches = [p for p in db.scalars(query.order_by(Product.name))
+                   if not q or matches_daily_product(q, p.name, p.category, p.brand, p.catalog_source_url)]
+        standards = [p for p in matches if p.is_standard]
+        # One consumer search: show curated food types first, fall back to the
+        # local catalog for names/brands that have no curated match. Never import.
+        products = standards or matches
+    elif everyday and ean is None:
         from app.db.daily_products import matches_daily_product
         everyday_items = or_(Product.is_standard.is_(True),
                             (Product.created_by_id.is_not(None) & Product.brand.is_(None)))

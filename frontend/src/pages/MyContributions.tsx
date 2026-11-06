@@ -33,12 +33,12 @@ export function MyContributions() {
   return (
     <section>
       <h1>Minhas contribuições</h1>
-      <p>Somente os preços que você compartilhou. É normal encontrar esses mesmos registros na comunidade: lá todos podem consultá-los. Cadastrar um produto sem informar preço ainda não conta como contribuição de preço.</p>
+      <p>Consulte os preços que você compartilhou com a comunidade.</p>
       <CommunityNav />
       <div className="button-row"><Link className="primary-button" to="/contribuir">Informar preço</Link><Link className="outline-button" to="/ofertas?minhas=1">Minhas promoções</Link></div>
       {loading && <Loading />}
       {error && <ErrorBox message={error} onRetry={load} />}
-      {!loading && !error && reports.length === 0 && <Empty title="Você ainda não informou nenhum preço"><Link to="/contribuir">Contribuir com o primeiro preço</Link></Empty>}
+      {!loading && !error && reports.length === 0 && <Empty title="Você ainda não informou nenhum preço">Use Informar preço para compartilhar o que encontrou no mercado.</Empty>}
       {!loading && reports.length > 0 && (
         <><div className="community-mobile-cards">{reports.map(report=><CommunityPriceCard key={report.id} report={report} mine />)}</div><div className="table-wrap community-desktop-table">
           <table>
