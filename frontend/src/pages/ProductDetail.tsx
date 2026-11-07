@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Link, useParams, useLocation } from "react-router-dom";
+import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 
 import { useRegion } from "../region/RegionContext";
 import { useCart } from "../cart/CartContext";
 import { ConfirmPriceButton } from "../components/ConfirmPriceButton";
 import { QuantityPicker } from "../components/QuantityPicker";
-import { itemSubtotal, saleLabel } from "../lib/quantities";
+import { itemSubtotal, saleLabel, quantityLabel } from "../lib/quantities";
 import {ProductPhoto} from "../components/ProductPhoto";
 import {produceGuide,productDisplayName,catalogCredit} from "../lib/produceGuides";
 import { ProductArt } from "../components/ProductArt";
@@ -19,12 +19,14 @@ export function ProductDetail() {
   const location = useLocation();
   const backSearch = typeof location.state?.search === "string" ? location.state.search : "";
   const cart = useCart();
+  const navigate = useNavigate();
+  const adding = useRef(false);
+  const searchPath = `/produtos${backSearch ? `?${backSearch}` : ""}`;
   const {city} = useRegion();
   const sequence = useRef(0);
   const [product, setProduct] = useState<ProductDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [added, setAdded] = useState(false);
   const [quantity,setQuantity] = useState(1);
   const [quantityValid,setQuantityValid]=useState(true);
 
@@ -45,7 +47,7 @@ export function ProductDetail() {
     void load();
   }, [load]);
 
-  useEffect(() => {setAdded(false);setQuantity(1);setQuantityValid(true);}, [id]);
+  useEffect(() => {adding.current=false;setQuantity(1);setQuantityValid(true);}, [id]);
 
   if (loading) return <Loading text="Carregando produto..." />;
   if (error || !product) return <ErrorBox message={error || "Produto não encontrado."} onRetry={load} />;
@@ -58,7 +60,7 @@ export function ProductDetail() {
 
   return (
     <section>
-      <p><Link className="outline-button back-button" to={`/produtos${backSearch ? `?${backSearch}` : ""}`}>← Voltar para produtos</Link></p>
+      <p><Link className="outline-button back-button" to={searchPath}>← Voltar para produtos</Link></p>
 
       <div className="product-hero">
         {product.image_url ? <ProductPhoto url={product.image_url} name={displayName} hint={guide?.hint} source={product.catalog_source_url} size={160}/> : <ProductArt category={product.category} name={product.name} size={120}/> }
@@ -74,10 +76,14 @@ export function ProductDetail() {
       </div>
 
       {guide && <div className="product-guide-box"><strong>Como reconhecer</strong><p>{guide.hint}</p><small>Compare com a etiqueta do mercado. A foto é uma referência visual.</small></div>}
-      <div className="product-buy-panel"><QuantityPicker onValidityChange={setQuantityValid} value={quantity} unit={product.sale_unit} name={product.name} onChange={v=>{setQuantity(v);setAdded(false);}}/>{product.min_price!==null && <p>Estimativa para essa quantidade: <strong>{formatPrice(itemSubtotal(product.min_price,quantity))}</strong></p>}{product.sale_unit==="kg" && <p className="form-hint">A estimativa usa o peso informado. Ajuste na lista quando souber o peso real da balança.</p>}
+      <div className="product-buy-panel"><QuantityPicker onValidityChange={setQuantityValid} value={quantity} unit={product.sale_unit} name={product.name} onChange={setQuantity}/>{product.min_price!==null && <p>Estimativa para essa quantidade: <strong>{formatPrice(itemSubtotal(product.min_price,quantity))}</strong></p>}{product.sale_unit==="kg" && <p className="form-hint">A estimativa usa o peso informado. Ajuste na lista quando souber o peso real da balança.</p>}
       <div className="button-row">
-        <button className="primary-button" type="button" disabled={added || !quantityValid} onClick={() => { cart.add(product,quantity); setAdded(true); }}>{added ? "Adicionado à lista ✓" : "Adicionar à lista"}</button>
-        {added && <Link className="text-button" to="/lista">Ir para a lista →</Link>}
+        <button className="primary-button" type="button" disabled={!quantityValid} onClick={() => {
+          if (!quantityValid || adding.current) return;
+          adding.current = true;
+          cart.add(product,quantity);
+          navigate(searchPath,{replace:true,state:{addedMessage:`${displayName}: ${quantityLabel(quantity,product.sale_unit)} adicionado à lista.`}});
+        }}>Adicionar à lista</button>
       </div>
 
       </div>
