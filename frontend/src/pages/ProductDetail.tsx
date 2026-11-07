@@ -5,7 +5,7 @@ import { useRegion } from "../region/RegionContext";
 import { useCart } from "../cart/CartContext";
 import { ConfirmPriceButton } from "../components/ConfirmPriceButton";
 import { QuantityPicker } from "../components/QuantityPicker";
-import { itemSubtotal, saleLabel, quantityLabel } from "../lib/quantities";
+import { itemSubtotal, saleLabel } from "../lib/quantities";
 import {ProductPhoto} from "../components/ProductPhoto";
 import {produceGuide,productDisplayName,catalogCredit} from "../lib/produceGuides";
 import { ProductArt } from "../components/ProductArt";
@@ -82,7 +82,7 @@ export function ProductDetail() {
           if (!quantityValid || adding.current) return;
           adding.current = true;
           cart.add(product,quantity);
-          navigate(searchPath,{replace:true,state:{addedMessage:`${displayName}: ${quantityLabel(quantity,product.sale_unit)} adicionado à lista.`}});
+          navigate(searchPath,{replace:true});
         }}>Adicionar à lista</button>
       </div>
 

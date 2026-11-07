@@ -10,6 +10,7 @@ import {produceGuide,productDisplayName} from "../lib/produceGuides";
 import { ShoppingPhoto } from "../components/ShoppingPhoto";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
+import {cartItemsPayload} from "../lib/cartItems";
 import { QuantityPicker } from "../components/QuantityPicker";
 import { formatDate, productSubtitle } from "../lib/format";
 import { createShoppingList, deleteShoppingList, getShoppingLists, type ShoppingList } from "../services/api";
@@ -60,7 +61,7 @@ export function ShoppingListPage() {
     try {
       const created = await createShoppingList({
         name: name.trim() || "Minha compra",
-        items: cart.items.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
+        items: cartItemsPayload(cart.items),
       });
       alerts.refresh();
       setLists(current => [created,...current]);
@@ -87,7 +88,7 @@ export function ShoppingListPage() {
 
   return (
     <section>
-      <div className="grocery-list-heading"><div><span className="grocery-kicker">DA LISTA À SACOLA</span><h1>Minha lista de compras</h1><p>O que você precisa levar para casa? Adicione os produtos e compare os mercados da sua cidade.</p>{cart.items.length > 0 && <Link className="primary-button" to="/produtos"><Icon name="plus"/>Adicionar produtos</Link>}</div><ShoppingPhoto/></div>
+      <div className="grocery-list-heading"><div><span className="grocery-kicker">DA LISTA À SACOLA</span><h1>Minha lista de compras</h1><p>Monte e use sua lista de compras. Compare os mercados quando quiser.</p>{cart.items.length > 0 && <Link className="primary-button" to="/produtos"><Icon name="plus"/>Adicionar produtos</Link>}</div><ShoppingPhoto/></div>
       <ol className="shopping-steps" aria-label="Como organizar sua compra"><li aria-current="step"><b>1</b><span>Monte sua lista</span></li><li><b>2</b><span>Compare os mercados</span></li><li><b>3</b><span>Escolha e abra a rota</span></li></ol>
       {savedId && <p className="notice good" role="status">Lista salva na sua conta. <Link to={`/comparacao/${savedId}`}>Comparar esta lista</Link>. A lista em edição já está pronta para uma nova compra.</p>}
       {cart.items.length > 0 && <h2>Produtos da lista</h2>}
@@ -98,8 +99,9 @@ export function ShoppingListPage() {
         <>
           <ul className="card-list">
             {cart.items.map((item) => (
-              <li className="list-card" key={item.product.id}>
+              <li className={`list-card${item.isPurchased ? " is-picked" : ""}`} key={item.product.id}>
                 <div className="shopping-produce-title">
+                  <label className="picked-toggle"><input type="checkbox" checked={!!item.isPurchased} onChange={()=>cart.togglePurchased(item.product.id)} aria-label={`Já peguei ${productDisplayName(item.product)}`}/><span>Já peguei</span></label>
                   {produceGuide(item.product) && item.product.image_url && <ProductPhoto url={item.product.image_url} name={productDisplayName(item.product)} hint={produceGuide(item.product)?.hint} source={item.product.catalog_source_url} size={82}/>}
                   <div><Link className="card-title" to={`/produtos/${item.product.id}`}>{productDisplayName(item.product)}</Link>
                   <small>{productSubtitle(item.product)}</small>
@@ -142,7 +144,7 @@ export function ShoppingListPage() {
               </div>
               <div className="card-actions">
                 <Link className="primary-button small" to={`/comparacao/${list.id}`}>Comparar</Link>
-                <button className="outline-button" type="button" onClick={() => cart.replaceAll(list.items.map((item) => ({ product: item.product, quantity: Number(item.quantity) })))}>Editar como nova</button>
+                <button className="outline-button" type="button" onClick={() => cart.replaceAll(list.items.map((item) => ({ product: item.product, quantity: Number(item.quantity), isPurchased:item.is_purchased })))}>Editar como nova</button>
                 <button className="text-button danger" type="button" onClick={() => remove(list)}>Excluir</button>
               </div>
             </li>

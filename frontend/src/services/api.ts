@@ -206,8 +206,10 @@ export type MarketCreate = {
 };
 export const createMarket = (payload: MarketCreate) => request<Market>("/markets", { method: "POST", body: JSON.stringify(payload) });
 
-export const createShoppingList = (payload: { name: string; items: { product_id: number; quantity: number }[] }) =>
+export const createShoppingList = (payload: { name: string; items: { product_id: number; quantity: number; is_purchased?: boolean }[] }) =>
   request<ShoppingList>("/shopping-lists", { method: "POST", body: JSON.stringify(payload) });
+export const updateShoppingList = (id: number, payload: Parameters<typeof createShoppingList>[0]) =>
+  request<ShoppingList>(`/shopping-lists/${id}`, { method: "PUT", body: JSON.stringify(payload) });
 export const getShoppingLists = () => request<ShoppingList[]>("/shopping-lists");
 export const deleteShoppingList = (id: number) => request<void>(`/shopping-lists/${id}`, { method: "DELETE" });
 export const previewShoppingList = (payload: {name: string; items: {product_id: number; quantity: number}[]}, city: string) => request<Comparison>(`/comparisons/preview?city=${encodeURIComponent(city)}`, {method:"POST",body:JSON.stringify(payload)});

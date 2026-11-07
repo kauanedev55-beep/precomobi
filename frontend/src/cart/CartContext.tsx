@@ -1,18 +1,20 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { useAuth } from "../auth/AuthContext";
+import {addCartItem,toggleCartItem,type CartEntry} from "../lib/cartItems";
 import type { Product } from "../services/api";
 
 // Only explicitly saved lists persist in the API. Drafts live in memory during navigation.
 const STORAGE_KEY = "precomobi_draft_list";
 
-export type CartItem = { product: Product; quantity: number };
+export type CartItem = CartEntry<Product>;
 
 type CartContextValue = {
   items: CartItem[];
   add: (product: Product, quantity?: number) => void;
   setQuantity: (productId: number, quantity: number) => void;
   remove: (productId: number) => void;
+  togglePurchased: (productId: number) => void;
   clear: () => void;
   replaceAll: (items: CartItem[]) => void;
 };
@@ -35,15 +37,8 @@ function AccountCart({ children }: { children: ReactNode }) {
     () => ({
       items,
       add: (product, quantity = 1) =>
-        setItems((current) => {
-          const existing = current.find((item) => item.product.id === product.id);
-          if (existing) {
-            return current.map((item) =>
-              item.product.id === product.id ? { ...item, quantity: Math.round((item.quantity + quantity)*1000)/1000 } : item,
-            );
-          }
-          return [...current, { product, quantity }];
-        }),
+        setItems(current=>addCartItem(current,product,quantity)),
+      togglePurchased: productId=>setItems(current=>toggleCartItem(current,productId)),
       setQuantity: (productId, quantity) =>
         setItems((current) =>
           quantity <= 0

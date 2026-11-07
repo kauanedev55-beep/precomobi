@@ -87,6 +87,7 @@ class MarketRead(BaseModel):
 
 
 class ShoppingListItemCreate(BaseModel):
+    is_purchased: bool = False
     product_id: int
     quantity: Decimal = Field(default=1, gt=0, max_digits=10, decimal_places=3)
 

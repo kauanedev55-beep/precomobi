@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -25,7 +27,7 @@ def create_shopping_list(
 
     shopping_list = ShoppingList(name=payload.name, user_id=current_user.id)
     shopping_list.items = [
-        ShoppingListItem(product_id=item.product_id, quantity=item.quantity)
+        ShoppingListItem(product_id=item.product_id, quantity=item.quantity, is_purchased=item.is_purchased)
         for item in payload.items
     ]
     db.add(shopping_list)
@@ -67,6 +69,28 @@ def get_shopping_list(
     if not shopping_list or shopping_list.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Lista não encontrada")
     return shopping_list
+
+
+@router.put("/{shopping_list_id}", response_model=ShoppingListRead)
+def update_shopping_list(
+    shopping_list_id: int,
+    payload: ShoppingListCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ShoppingList:
+    shopping_list = db.get(ShoppingList, shopping_list_id)
+    if not shopping_list or shopping_list.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Lista não encontrada")
+    product_ids = {item.product_id for item in payload.items}
+    found = set(db.scalars(select(Product.id).where(Product.id.in_(product_ids), Product.is_active.is_(True))))
+    missing_ids = sorted(product_ids - found)
+    if missing_ids:
+        raise HTTPException(status_code=404, detail=f"Produtos não encontrados: {missing_ids}")
+    shopping_list.name = payload.name
+    shopping_list.updated_at = datetime.now(timezone.utc)
+    shopping_list.items = [ShoppingListItem(product_id=item.product_id, quantity=item.quantity, is_purchased=item.is_purchased) for item in payload.items]
+    db.commit()
+    return get_shopping_list(shopping_list_id, db, current_user)
 
 
 @router.delete("/{shopping_list_id}", status_code=204)

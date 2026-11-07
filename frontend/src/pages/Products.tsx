@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { BarcodeScanner } from "../components/BarcodeScanner";
 import {ProductPhoto} from "../components/ProductPhoto";
@@ -14,8 +14,6 @@ import { getProductByEan, getProducts, type Product } from "../services/api";
 
 export function Products() {
   const [params, setParams] = useSearchParams();
-  const location = useLocation();
-  const [confirmation,setConfirmation] = useState(() => typeof location.state?.addedMessage === "string" ? location.state.addedMessage : "");
   const q = params.get("q") ?? "";
   const category = params.get("categoria") ?? "";
   const brandsMode = params.get("marcas") === "1";
@@ -64,7 +62,6 @@ export function Products() {
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    setConfirmation("");
     setParams({... (input.trim() ? {q:input.trim()} : {}), ...(brandsMode ? {marcas:"1"} : {})});
   }
 
@@ -96,7 +93,7 @@ export function Products() {
       {product.image_url && <ProductPhoto key={product.image_url} url={product.image_url} name={displayName} hint={guide?.hint} source={product.catalog_source_url}/>}
       <div className="result-description"><Link to={`/produtos/${product.id}`} state={{search:params.toString()}} className="result-name">{displayName}</Link><p>{productSubtitle(product)}</p>{guide && <span className="produce-choice-badge">{guide.badge}</span>}
       {hasPrice && <div className="result-price"><strong>{formatPrice(product.min_price)} <small>{product.sale_unit==="kg" ? "/ kg" : "/ embalagem ou unidade"}</small></strong><span>Menor preço informado · {product.min_price_market}</span></div>}</div>
-      <div className="result-actions"><button className={hasPrice ? "primary-button" : "outline-button"} type="button" onClick={()=>{if(product.sale_unit==="kg") {navigate(`/produtos/${product.id}`,{state:{search:params.toString()}});return;} cart.add(product);setConfirmation("");setAdded(product.id);}} aria-label={product.sale_unit==="kg" ? `Escolher peso de ${product.name}` : `Adicionar ${product.name} à lista`}>{wasAdded ? "Adicionar mais uma" : product.sale_unit==="kg" ? "Escolher peso" : "Adicionar à lista"}</button></div>
+      <div className="result-actions"><button className={hasPrice ? "primary-button" : "outline-button"} type="button" onClick={()=>{if(product.sale_unit==="kg") {navigate(`/produtos/${product.id}`,{state:{search:params.toString()}});return;} cart.add(product);setAdded(product.id);}} aria-label={product.sale_unit==="kg" ? `Escolher peso de ${product.name}` : `Adicionar ${product.name} à lista`}>{wasAdded ? "Adicionar mais uma" : product.sale_unit==="kg" ? "Escolher peso" : "Adicionar à lista"}</button></div>
     </li>;
   }
   return (
@@ -111,7 +108,6 @@ export function Products() {
         <label><input type="checkbox" checked={brandsMode} onChange={e=>setParams({...Object.fromEntries(params),marcas:e.target.checked ? "1" : "0"})}/> Procurar marcas e embalagens específicas</label>
         <Link to={createLink}>Cadastrar produto que não encontrei</Link>
       </div></details>
-      {(added !== null || confirmation) && <p className="notice good" role="status">{confirmation || "Adicionado à lista."} <Link to="/lista">Ver minha lista</Link></p>}
       {!city && <p className="notice">Escolha a cidade acima para consultar preços. Você pode montar a lista mesmo sem preço cadastrado.</p>}
       {scanError && <div className="notice" role="alert"><p>{scanError}</p><Link className="outline-button" to={`/produtos/novo?ean=${encodeURIComponent(missingCode)}`}>Cadastrar esse produto</Link></div>}
       {scanning && <BarcodeScanner onDetected={onBarcodeDetected} onClose={() => setScanning(false)} />}

@@ -5,6 +5,7 @@ import { useCart } from "../cart/CartContext";
 import { useOffers } from "../offers/OffersContext";
 import { getFeatures } from "../services/api";
 import { CitySelector } from "./CitySelector";
+import { BasketDrawer } from "./BasketDrawer";
 import { Icon } from "./Icon";
 
 const links = [
@@ -23,6 +24,7 @@ export function Layout() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const shopping = pathname === "/produtos" || /^\/produtos\/\d+$/.test(pathname);
   const selected = (to: string) => to === "/lista" ? pathname === "/lista" || pathname.startsWith("/comparacao/")
     : to === "/ofertas" ? pathname === "/ofertas" || pathname === "/avisos"
     : to === "/comunidade" ? ["/comunidade", "/contribuir", "/minhas-contribuicoes"].includes(pathname)
@@ -45,7 +47,7 @@ export function Layout() {
     <main className="pm-public-main" id="main-content" tabIndex={-1}><Outlet/></main>
     <footer className="pm-public-footer">PreçoMobi · Sua lista, boas descobertas e escolhas mais conscientes.</footer>
   </div>;
-  return <div className="app-shell pm-shell pm-private experience-shell">
+  return <div className={`app-shell pm-shell pm-private experience-shell${shopping && items.length ? " has-basket-peek" : ""}`}>
     <a className="skip-link" href="#main-content">Pular para o conteúdo</a>
     <header className="topbar pm-topbar">
       <button className="menu-toggle pm-menu-button" type="button" aria-controls="pm-sidebar" aria-expanded={open} aria-label="Abrir ou fechar menu" onClick={() => setOpen(!open)}>☰</button>
@@ -64,6 +66,7 @@ export function Layout() {
       </aside>
       <div className="pm-content">{!["/perfil", "/produtos/novo", "/minhas-contribuicoes"].includes(pathname) && <CitySelector/>}<main className="page" id="main-content" tabIndex={-1}>{demo && <div className="demo-banner" role="status"><strong>Demonstração acadêmica</strong><span>Preços simulados, identificados como demonstração.</span></div>}<Outlet/></main><footer className="site-footer">Feito para ajudar na sua próxima compra. Confira os preços e as condições na loja.</footer></div>
     </div>
+    {shopping && <BasketDrawer/>}
     <nav className="mobile-bottom-nav" aria-label="Navegação rápida">{bottom.map(item => <Link key={item.to} to={item.to} onClick={close} aria-current={selected(item.to) ? "page" : undefined} className={selected(item.to) ? "active" : ""}><Icon name={item.icon}/><span>{item.label}</span></Link>)}</nav>
   </div>;
 }

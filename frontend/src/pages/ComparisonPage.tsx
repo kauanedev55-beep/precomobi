@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 
+import {cartItemsPayload} from "../lib/cartItems";
 import { useCart } from "../cart/CartContext";
 import { useOffers } from "../offers/OffersContext";
 import { useRegion } from "../region/RegionContext";
@@ -38,7 +39,7 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
     setLoading(true);
     setError("");
     try {
-      const data = preview ? await previewShoppingList({name:draftName,items:cart.items.map(i => ({product_id:i.product.id,quantity:i.quantity}))},city) : await compareShoppingList(Number(id),city);
+      const data = preview ? await previewShoppingList({name:draftName,items:cartItemsPayload(cart.items)},city) : await compareShoppingList(Number(id),city);
       if(request === sequence.current) {setComparison(data);setLoadedCity(city);}
     } catch (err) {
       if(request === sequence.current) setError(err instanceof Error ? err.message : "Não foi possível comparar a lista.");
@@ -58,7 +59,7 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
   async function saveDraft() {
     setSaving(true);setSaveError("");
     try {
-      const list=await createShoppingList({name:draftName,items:cart.items.map(i => ({product_id:i.product.id,quantity:i.quantity}))});
+      const list=await createShoppingList({name:draftName,items:cartItemsPayload(cart.items)});
       alerts.refresh();cart.clear();navigate(`/comparacao/${list.id}`,{replace:true});
     } catch(err) {setSaveError(err instanceof Error ? err.message : "Não foi possível salvar.");}
     finally {setSaving(false);}
