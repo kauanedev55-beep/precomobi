@@ -12,7 +12,7 @@ MIGRATION_KEY = 'daily-catalog-retail-2026-11-06'
 
 def terms(value):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode().lower()
-    aliases = {'feijoes':'feijao', 'paes':'pao', 'acucares':'acucar', 'batatinha':'batata', 'limoes':'limao', 'mamaos':'mamao', 'salsinha':'salsa', 'salsinhas':'salsa', 'tangerina':'mexerica', 'tangerinas':'mexerica', 'bergamota':'mexerica', 'bergamotas':'mexerica', 'folhagens':'folha', 'folhosas':'folha', 'chao':'piso'}
+    aliases = {'feijoes':'feijao', 'paes':'pao', 'acucares':'acucar', 'batatinha':'batata', 'limoes':'limao', 'mamaos':'mamao', 'salsinha':'salsa', 'salsinhas':'salsa', 'tangerina':'mexerica', 'tangerinas':'mexerica', 'bergamota':'mexerica', 'bergamotas':'mexerica', 'folhagens':'folha', 'folhosas':'folha', 'chao':'piso', 'papeis':'papel', 'xampu':'shampoo', 'xampus':'shampoo', 'mucarela':'mussarela', 'mucarelas':'mussarela'}
     return [aliases.get(word, word[:-1] if word.endswith('s') and len(word)>3 else word)
             for word in re.findall(r'[a-z0-9]+',value)]
 
@@ -29,7 +29,17 @@ def matches_daily_product(query, name, category=None, brand=None, catalog_source
         elif any(word.endswith('piso') for word in name_words):
             floor_alias = 'piso'
     soap_alias = 'sabao' if category == 'Limpeza' and 'lava' in name_words and 'roupa' in name_words else None
-    words = terms(' '.join(filter(None, [name, category, brand, photo_alias, leaf_alias, floor_alias, soap_alias])))
+    hygiene_alias = None
+    if category == 'Higiene':
+        extra = ['pessoal']
+        if 'dental' in name_words and ('creme' in name_words or 'gel' in name_words):
+            extra.append('pasta dente')
+        if 'haste' in name_words:
+            extra.append('cotonete')
+        if 'toalha' in name_words and 'umedecida' in name_words:
+            extra.append('lenco')
+        hygiene_alias = ' '.join(extra)
+    words = terms(' '.join(filter(None, [name, category, brand, photo_alias, leaf_alias, floor_alias, soap_alias, hygiene_alias])))
     query_words = terms(query)
     tokens = [word for word in query_words if word not in {'de', 'do', 'da', 'dos', 'das', 'em', 'para'}]
     return bool(tokens or not query_words) and all(any(word == token if token == 'po' else word.startswith(token) for word in words) for token in tokens)
@@ -46,6 +56,10 @@ def add_daily_products(engine, *, manifest='daily_catalog.json', migration_key=M
                 # Never relabel imported products or transfer their observations.
                 # Matching source URLs allow already curated records to be reused.
                 if db.scalar(select(Product.id).where(Product.is_standard.is_(True), Product.catalog_source_url==entry['source_url'])):
+                    continue
+                # A sourced barcode already in use belongs to the
+                # existing record. Preserve its prices and never create a duplicate.
+                if entry.get('ean') and db.scalar(select(Product.id).where(Product.ean == entry['ean'])):
                     continue
                 values = {k:v for k,v in entry.items() if k not in ('source_url','source_name','source_label')}
                 values['quantity_value'] = Decimal(values['quantity_value'])
@@ -72,3 +86,7 @@ def add_daily_cleaning_products(engine):
 
 def add_general_retail_catalog(engine):
     add_daily_products(engine, manifest='daily_retail_catalog.json', migration_key='daily-retail-catalog-2026-11-06')
+
+
+def add_dairy_deli_hygiene_catalog(engine):
+    add_daily_products(engine, manifest='daily_dairy_deli_hygiene.json', migration_key='daily-dairy-deli-hygiene-2026-11-06')

@@ -29,7 +29,7 @@ class ProductCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=3, max_length=180)
-    category: Literal["Frutas", "Verduras", "Legumes", "Grãos", "Laticínios", "Carnes e pescados", "Bebidas", "Padaria", "Massas", "Mercearia", "Doces", "Limpeza", "Higiene", "Outros"]
+    category: Literal["Frutas", "Verduras", "Legumes", "Grãos", "Laticínios", "Frios", "Carnes e pescados", "Bebidas", "Padaria", "Massas", "Mercearia", "Doces", "Limpeza", "Higiene", "Outros"]
     brand: str | None = Field(default=None, max_length=120)
     no_brand: bool = False
     ean: str | None = Field(default=None, max_length=14)

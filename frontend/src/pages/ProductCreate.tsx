@@ -6,7 +6,7 @@ import {QuantityPicker} from "../components/QuantityPicker";
 import {createProduct, type Product} from "../services/api";
 import {productSubtitle} from "../lib/format";
 
-const categories=["Frutas","Verduras","Legumes","Grãos","Laticínios","Carnes e pescados","Bebidas","Padaria","Massas","Mercearia","Doces","Limpeza","Higiene","Outros"];
+const categories=["Frutas","Verduras","Legumes","Grãos","Laticínios","Frios","Carnes e pescados","Bebidas","Padaria","Massas","Mercearia","Doces","Limpeza","Higiene","Outros"];
 const packages=["A granel","Saco","Pacote","Caixa","Garrafa","Lata","Pote","Bandeja","Maço","Unidade","Outro"];
 export function ProductCreatePage() {
   const [params]=useSearchParams();const cart=useCart();
