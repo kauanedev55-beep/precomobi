@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useState, useRef, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { BarcodeScanner } from "../components/BarcodeScanner";
-import {ProductPhoto} from "../components/ProductPhoto";
-import {produceGuide,productDisplayName} from "../lib/produceGuides";
+import {ProductSearchItem} from "../components/ProductSearchItem";
+import {produceGuide} from "../lib/produceGuides";
 import "../styles/product-results.css";
 import { useRegion } from "../region/RegionContext";
-import { useCart } from "../cart/CartContext";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
-import { formatPrice, productSubtitle } from "../lib/format";
 import { getProductByEan, getProducts, type Product } from "../services/api";
 
 
@@ -21,14 +19,9 @@ export function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [added, setAdded] = useState<number | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [scanError, setScanError] = useState("");
-  const [missingCode, setMissingCode] = useState("");
-  const cart = useCart();
   const {city} = useRegion();
   const sequence = useRef(0);
-  const navigate = useNavigate();
 
   const load = useCallback(async () => {
     const request = ++sequence.current;
@@ -58,44 +51,21 @@ export function Products() {
     void load();
   }, [load]);
 
-  useEffect(() => {setInput(q);setAdded(null);}, [q]);
+  useEffect(() => {setInput(q);}, [q]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
     setParams({... (input.trim() ? {q:input.trim()} : {}), ...(brandsMode ? {marcas:"1"} : {})});
   }
 
-  async function onBarcodeDetected(ean: string) {
+  function onBarcodeDetected(ean: string) {
     setScanning(false);
-    setScanError("");setMissingCode("");
-    try {
-      setMissingCode(ean);
-      const found = await getProductByEan(ean,city || "__none__");
-      if (found.length) {
-        navigate(`/produtos/${found[0].id}`,{state:{search:params.toString()}});
-      } else {
-        setScanError(`Nenhum produto cadastrado com o código ${ean}.`);
-      }
-    } catch (err) {
-      setMissingCode(ean);
-      setScanError(err instanceof Error ? err.message : "Não foi possível consultar esse código.");
-    }
+    setParams({q:ean,...(brandsMode ? {marcas:"1"} : {})});
   }
 
   const guidedChoices=products.length>0 && products.length<=6 && products.every(p=>produceGuide(p));
   const resultListClass=guidedChoices ? "product-result-list produce-choice-grid" : "product-result-list";
   const createLink = `/produtos/novo?${new URLSearchParams(/^\d{8,14}$/.test(q) ? {ean:q} : {nome:q,categoria:category})}`;
-  function productRow(product: Product, hasPrice: boolean) {
-    const wasAdded=added===product.id;
-    const guide=produceGuide(product);
-    const displayName=productDisplayName(product);
-    return <li className="product-result" key={product.id}>
-      {product.image_url && <ProductPhoto key={product.image_url} url={product.image_url} name={displayName} hint={guide?.hint} source={product.catalog_source_url}/>}
-      <div className="result-description"><Link to={`/produtos/${product.id}`} state={{search:params.toString()}} className="result-name">{displayName}</Link><p>{productSubtitle(product)}</p>{guide && <span className="produce-choice-badge">{guide.badge}</span>}
-      {hasPrice && <div className="result-price"><strong>{formatPrice(product.min_price)} <small>{product.sale_unit==="kg" ? "/ kg" : "/ embalagem ou unidade"}</small></strong><span>Menor preço informado · {product.min_price_market}</span></div>}</div>
-      <div className="result-actions"><button className={hasPrice ? "primary-button" : "outline-button"} type="button" onClick={()=>{if(product.sale_unit==="kg") {navigate(`/produtos/${product.id}`,{state:{search:params.toString()}});return;} cart.add(product);setAdded(product.id);}} aria-label={product.sale_unit==="kg" ? `Escolher peso de ${product.name}` : `Adicionar ${product.name} à lista`}>{wasAdded ? "Adicionar mais uma" : product.sale_unit==="kg" ? "Escolher peso" : "Adicionar à lista"}</button></div>
-    </li>;
-  }
   return (
     <section className="product-search-page">
       <h1>Adicionar produtos</h1>
@@ -109,7 +79,6 @@ export function Products() {
         <Link to={createLink}>Cadastrar produto que não encontrei</Link>
       </div></details>
       {!city && <p className="notice">Escolha a cidade acima para consultar preços. Você pode montar a lista mesmo sem preço cadastrado.</p>}
-      {scanError && <div className="notice" role="alert"><p>{scanError}</p><Link className="outline-button" to={`/produtos/novo?ean=${encodeURIComponent(missingCode)}`}>Cadastrar esse produto</Link></div>}
       {scanning && <BarcodeScanner onDetected={onBarcodeDetected} onClose={() => setScanning(false)} />}
 
       {!q.trim() && !category && <Empty title="O que você precisa comprar?">Digite o nome do produto acima. Depois, escolha o tipo e a quantidade.</Empty>}
@@ -118,7 +87,7 @@ export function Products() {
       {(q.trim() || category) && !loading && !error && <div className="search-results" aria-live="polite">
         {products.length > 0 ? <>
           <p className="search-results-count">{products.length} {products.length===1 ? "produto encontrado" : "produtos encontrados"}{q && <> para <strong>“{q}”</strong></>}</p>
-          <ul className={resultListClass}>{products.map(p=>productRow(p,p.min_price!==null))}</ul>
+          <ul className={resultListClass}>{products.map(product=><ProductSearchItem key={product.id} product={product} search={params.toString()}/>)}</ul>
           {products.some(p=>p.min_price===null) && <p className="form-hint">Os itens sem preço também podem ser adicionados à lista.</p>}
           <p className="search-alternative">Não encontrou? <Link to={createLink}>Cadastrar produto</Link></p>
         </> : <Empty title="Nenhum produto encontrado"><p>Tente outro nome ou <Link to={createLink}>cadastre esse produto</Link>.</p></Empty>}

@@ -7,3 +7,10 @@
 @media(max-width:640px){.product-search-page .produce-choice-grid{grid-template-columns:1fr}.search-options-content{align-items:flex-start;flex-direction:column}.product-search-page .result-actions{width:100%}.product-search-page .result-description{min-width:0}.product-search-page .result-name{font-size:1.1rem}}
 
 .product-extra-details{margin:22px 0}.product-extra-details>summary,.list-more-actions>summary{cursor:pointer;min-height:48px;align-content:center;color:#29466c}.list-more-actions{position:relative}.list-more-actions>button{margin:8px 0}
+
+/* Choose quantities in the results, without a separate weight screen. */
+.product-search-page .result-actions.inline-add-controls{display:grid;grid-template-columns:1fr;gap:10px;width:220px;min-width:0;flex:0 0 220px}
+.inline-add-controls .quantity-control{width:100%;min-width:0}.inline-add-controls .quantity-buttons{gap:6px}.inline-add-controls .quantity-buttons input{width:76px;box-sizing:border-box;min-height:44px}.inline-add-controls .quantity-buttons button{width:44px;min-height:44px}.inline-add-controls .quantity-buttons strong{font-size:.85rem}.inline-add-controls .quantity-control>span{font-size:.87rem}.inline-add-controls .quantity-control>small{font-size:.78rem}.inline-add-controls>.primary-button{width:100%;min-height:48px}
+.product-search-page .produce-choice-grid{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}.product-search-page .produce-choice-grid .result-actions.inline-add-controls{width:100%;flex-basis:auto}
+@media(max-width:640px){.product-search-page .result-actions.inline-add-controls{width:100%;flex-basis:100%;grid-template-columns:minmax(0,1fr) auto;align-items:end}.product-search-page .result-actions.inline-add-controls>*{min-width:0;width:auto;flex:none}.product-search-page .result-actions.inline-add-controls>.primary-button{padding:10px 14px}.product-search-page .produce-choice-grid{grid-template-columns:1fr}}
+@media(max-width:420px){.product-search-page .result-actions.inline-add-controls{grid-template-columns:1fr}.product-search-page .result-actions.inline-add-controls>.primary-button{width:100%}}

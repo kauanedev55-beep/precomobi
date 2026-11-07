@@ -17,3 +17,7 @@ Usa o diálogo nativo para foco, navegação por teclado, Escape e bloqueio do c
 A API aceita `is_purchased` no salvamento e expõe `PUT /api/shopping-lists/{id}` para atualizar uma lista da própria conta. Usa tabelas e campos já existentes; não há migração de estrutura nem serviço adicional. IDs de produtos, preços e mercados não são modificados pela atualização.
 
 Testes verificam quantidades fracionárias, marcações, desmarcação ao adicionar mais, envio das marcações, salvamento sem cidade, atualização sem duplicar listas, validação antes de alterar e bloqueio entre contas. Verificação de tipos e build do frontend também foram executados. O navegador conectado não estava disponível nesta sessão, portanto gestos e aparência em aparelho físico não foram verificados.
+
+## Seleção direta nos resultados
+
+Cada resultado da pesquisa permite informar peso ou quantidade e tocar em “Adicionar”, sem abrir uma tela intermediária. Produtos por quilo aceitam vírgula e até três casas decimais; embalagens/unidades exigem inteiros. O cartão mostra confirmação breve e bloqueia toques repetidos por 1,2 segundo. O nome continua abrindo os detalhes como ação opcional. O código de barras preenche a pesquisa e usa o mesmo controle de quantidade. A cesta acompanha as adições sem trocar a busca.
