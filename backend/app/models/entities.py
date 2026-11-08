@@ -86,6 +86,8 @@ class PriceReport(Base):
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     reported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     source_type: Mapped[str] = mapped_column(String(30), default="development")
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    source_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
@@ -119,6 +121,8 @@ class ShoppingList(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    status: Mapped[str] = mapped_column(String(20), default="preparation", server_default="preparation")
+    revision: Mapped[int] = mapped_column(default=1, server_default="1")
     owner: Mapped[User] = relationship(back_populates="shopping_lists")
     items: Mapped[list["ShoppingListItem"]] = relationship(back_populates="shopping_list", cascade="all, delete-orphan")
 

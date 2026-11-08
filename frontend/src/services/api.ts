@@ -3,6 +3,7 @@ const API_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
 // ---------- tipos (espelham os schemas do backend) ----------
 export type Product = {
+  min_price_expires_at?:string|null;min_price_source_url?:string|null;
   id: number;
   ean: string | null;
   name: string;
@@ -21,6 +22,7 @@ export type Product = {
 };
 
 export type ProductPrice = {
+  expires_at?:string|null;source_url?:string|null;
   report_id: number | null;
   market_id: number;
   market_name: string;
@@ -46,6 +48,7 @@ export type Market = {
 };
 
 export type ComparisonItem = {
+  expires_at?:string|null;source_url?:string|null;
   product_id: number;
   product_name: string;
   sale_unit: "unit" | "kg";
@@ -93,6 +96,9 @@ export type ShoppingListItem = {
 };
 
 export type ShoppingList = {
+  owner_id:number;
+  status: "preparation" | "shopping" | "completed";
+  revision:number;
   id: number;
   name: string;
   created_at: string;
@@ -180,6 +186,7 @@ export const getProductByEan = (ean: string, city?: string) => request<Product[]
 export const getProduct = (id: number, city?: string) => request<ProductDetail>(`/products/${id}${city ? `?city=${encodeURIComponent(city)}` : ""}`);
 export const getMarkets = () => request<Market[]>("/markets");
 export type Offer = {
+  source_url?:string|null;source_label?:string|null;
   id: number; product_id: number; product_name: string; sale_unit: "unit" | "kg"; image_url: string | null;
   market: Market; price: string; conditions: string; observed_at: string; expires_at: string;
   state: "active" | "expired" | "ended"; confirmations: number; changed_reports: number;
@@ -206,7 +213,7 @@ export type MarketCreate = {
 };
 export const createMarket = (payload: MarketCreate) => request<Market>("/markets", { method: "POST", body: JSON.stringify(payload) });
 
-export const createShoppingList = (payload: { name: string; items: { product_id: number; quantity: number; is_purchased?: boolean }[] }) =>
+export const createShoppingList = (payload: { name: string; revision?:number; items: { product_id: number; quantity: number; is_purchased?: boolean }[] }) =>
   request<ShoppingList>("/shopping-lists", { method: "POST", body: JSON.stringify(payload) });
 export const updateShoppingList = (id: number, payload: Parameters<typeof createShoppingList>[0]) =>
   request<ShoppingList>(`/shopping-lists/${id}`, { method: "PUT", body: JSON.stringify(payload) });
@@ -250,3 +257,13 @@ export const resendVerification = (email: string) => request<{message: string}>(
 
 export const getFeatures = () => request<{demo_mode: boolean; region: string | null}>("/features");
 export const startDemoSession = () => request<AuthApiResponse>("/auth/demo-session", {method: "POST"}).then(toAuthResult);
+
+export type FamilyList={list:ShoppingList;is_owner:boolean;participants:{id:number;name:string;owner:boolean}[]};
+export const getFamilyList=(id:number)=>request<FamilyList>(`/family-lists/${id}`);
+export const changeFamilyList=(id:number,payload:{revision:number;name?:string;status?:"preparation"|"shopping"|"completed";complete_with_pending?:boolean})=>request<FamilyList>(`/family-lists/${id}`,{method:"PATCH",body:JSON.stringify(payload)});
+export const changeFamilyItem=(id:number,payload:{revision:number;product_id:number;action:"add"|"set"|"remove"|"check";quantity?:number;is_purchased?:boolean})=>request<FamilyList>(`/family-lists/${id}/items`,{method:"PATCH",body:JSON.stringify(payload)});
+export const createListInvite=(id:number)=>request<{token:string;expires_at:string}>(`/family-lists/${id}/invite`,{method:"POST"});
+export const previewListInvite=(token:string)=>request<{name:string;owner_name:string;expires_at:string}>(`/family-lists/invites/${encodeURIComponent(token)}`);
+export const acceptListInvite=(token:string)=>request<FamilyList>(`/family-lists/invites/${encodeURIComponent(token)}/accept`,{method:"POST"});
+export const revokeListInvites=(id:number)=>request<void>(`/family-lists/${id}/invites`,{method:"DELETE"});
+export const removeListMember=(id:number,userId:number)=>request<void>(`/family-lists/${id}/members/${userId}`,{method:"DELETE"});

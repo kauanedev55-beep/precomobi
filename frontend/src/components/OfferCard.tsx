@@ -31,12 +31,13 @@ export function OfferCard({offer, onUpdated}: {offer: Offer; onUpdated?: (offer:
     finally {setPending(false);}
   }
   return <article className={`offer-card ${warning ? "offer-needs-review" : ""}`}>
-    <div className="offer-card-top"><span className={`offer-status ${offer.state!=="active" ? "offer-inactive" : ""}`}><Icon name="tag" size={16}/>{offer.state==="active" ? "Promoção · informada por usuário" : offer.state==="expired" ? "Validade encerrada" : "Promoção encerrada"}</span>{inList && <span className="offer-list-tag">Na sua lista</span>}</div>
+    <div className="offer-card-top"><span className={`offer-status ${offer.state!=="active" ? "offer-inactive" : ""}`}><Icon name="tag" size={16}/>{offer.state==="active" ? (offer.source_url ? "Oferta · catálogo oficial" : "Promoção · informada por usuário") : offer.state==="expired" ? "Validade encerrada" : "Promoção encerrada"}</span>{inList && <span className="offer-list-tag">Na sua lista</span>}</div>
     <div className="offer-product"><ProductArt category={null} imageUrl={offer.image_url} name={offer.product_name} size={64}/><div><Link to={`/produtos/${offer.product_id}`} className="offer-product-name">{offer.product_name}</Link><span className="offer-market"><Icon name="pin" size={16}/>{offer.market.name}</span></div></div>
     <strong className="offer-price">{formatPrice(offer.price)} <small>/ {saleLabel(offer.sale_unit)}</small></strong>
     <p className="offer-conditions">{offer.conditions}</p>
     <p className="offer-validity">Válida até <strong>{formatDateTime(offer.expires_at)}</strong></p>
-    <p className="offer-observed">Vista em {formatDateTime(offer.observed_at)} · {offer.is_mine ? "Você compartilhou" : "Informada por outro usuário"}</p>
+    <p className="offer-observed">Vista em {formatDateTime(offer.observed_at)} · {offer.source_label || (offer.is_mine ? "Você compartilhou" : "Informada por outro usuário")}</p>
+    {offer.source_url && <p><a href={offer.source_url} target="_blank" rel="noopener noreferrer">Conferir folheto e condições na fonte</a></p>}
     <div className="offer-trust"><Icon name="people" size={18}/><span>{offer.confirmations ? `${offer.confirmations} ${offer.confirmations===1 ? "pessoa encontrou" : "pessoas encontraram"} esse preço` : "Ainda sem confirmação de outras pessoas"}</span></div>
     {warning && <p className="offer-warning" role="status">Atenção: {offer.changed_reports} {offer.changed_reports===1 ? "aviso de preço alterado" : "avisos de preço alterado"} e {offer.ended_reports} {offer.ended_reports===1 ? "aviso de oferta encerrada" : "avisos de oferta encerrada"}. Confira na loja antes de ir.</p>}
     {offer.state==="active" && <>

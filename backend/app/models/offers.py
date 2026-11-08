@@ -16,6 +16,8 @@ class Offer(Base):
     market_id: Mapped[int] = mapped_column(ForeignKey("markets.id"), index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    source_label: Mapped[str | None] = mapped_column(String(120), nullable=True)
     conditions: Mapped[str] = mapped_column(String(500))
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

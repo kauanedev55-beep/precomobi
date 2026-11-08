@@ -68,7 +68,7 @@ export function ProductDetail() {
           <h1>{displayName}</h1>
           <p className="product-meta">{productSubtitle(product)}{product.category ? ` · ${product.category}` : ""}</p>
           {product.min_price !== null ? (
-            <p className="hero-price">{formatPrice(product.min_price)}{product.sale_unit==="kg" ? " / kg" : " por embalagem / unidade"}<small>a partir de, em {product.min_price_market}</small></p>
+            <p className="hero-price">{formatPrice(product.min_price)}{product.sale_unit==="kg" ? " / kg" : " por embalagem / unidade"}<small>a partir de, em {product.min_price_market}</small>{product.min_price_expires_at && <small>Sem clube · válido até {formatDate(product.min_price_expires_at)}</small>}</p>
           ) : (
             <p className="hero-price muted">Sem preço informado ainda</p>
           )}
@@ -110,8 +110,8 @@ export function ProductDetail() {
               <tr key={price.market_id} className={price.price !== null && Number(price.price) === cheapest ? "best-row" : undefined}>
                 <td>{price.market_name}</td>
                 <td className="num">{price.price !== null ? `${formatPrice(price.price)} / ${saleLabel(product.sale_unit)}` : "Sem preço informado"}{price.price !== null && Number(price.price) === cheapest && withPrice.length > 1 ? " ★" : ""}</td>
-                <td>{formatDate(price.reported_at)}</td>
-                <td>{price.source_type ? <SourceBadge sourceType={price.source_type} /> : "—"}</td>
+                <td>{formatDate(price.reported_at)}{price.expires_at && <small className="block">Válido até {formatDate(price.expires_at)}</small>}</td>
+                <td>{price.source_type ? <><SourceBadge sourceType={price.source_type} />{price.source_url && <small className="block"><a href={price.source_url} target="_blank" rel="noopener noreferrer">Ver folheto</a></small>}</> : "—"}</td>
                 <td>
                   {price.report_id ? (
                     <ConfirmPriceButton

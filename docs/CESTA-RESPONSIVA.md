@@ -8,7 +8,7 @@ Dentro da cesta há fotos, nome e apresentação, controle de quantidade/peso, r
 
 “Salvar lista” funciona sem escolher cidade ou comparar preços. Guarda produtos, quantidades e marcações na conta; mantém a cesta em edição para continuar buscando. Durante a mesma sessão da cesta, novos salvamentos atualizam a mesma lista, evitando cópias repetidas. Depois de sair das telas de pesquisa/detalhes, um novo salvamento inicia uma nova lista. As listas anteriores não são alteradas automaticamente.
 
-“Comparar mercados” é opcional e continua usando a região selecionada e os preços das lojas cadastradas. A cesta não calcula total em reais. A lista temporária continua apenas em memória: recarregar ou fechar o app descarta o que ainda não foi salvo.
+“Comparar mercados” é opcional e continua usando a região selecionada e os preços das lojas cadastradas. A cesta não calcula total em reais. O rascunho agora é recuperável neste aparelho, com a opção de continuar ou criar outra lista; veja `LISTAS-FAMILIA-E-FOLHETOS.md`. Salvar na conta permite acessar em outros aparelhos.
 
 ## Implementação e validação
 

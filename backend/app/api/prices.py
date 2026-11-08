@@ -2,7 +2,7 @@ from app.core.config import get_settings
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import func, select,or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
@@ -19,7 +19,7 @@ def _base_query():
     return (
         select(PriceReport)
         .options(joinedload(PriceReport.product), joinedload(PriceReport.market))
-        .where(PriceReport.is_active.is_(True), True if get_settings().demo_mode else PriceReport.source_type != "development")
+        .where(PriceReport.is_active.is_(True), or_(PriceReport.expires_at.is_(None), PriceReport.expires_at>func.now()), True if get_settings().demo_mode else PriceReport.source_type != "development")
     )
 
 
@@ -55,6 +55,8 @@ def _to_read(report: PriceReport, counts: dict[int, int] | None = None, confirme
         "market_name": report.market.name,
         "price": report.price,
         "reported_at": report.reported_at,
+        "expires_at": report.expires_at,
+        "source_url": report.source_url,
         "source_type": report.source_type,
         "notes": report.notes,
         "confirmations_count": (counts or {}).get(report.id, 0),

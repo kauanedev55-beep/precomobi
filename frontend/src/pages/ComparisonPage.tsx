@@ -140,7 +140,7 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
                       <td className="num">{quantityLabel(item.quantity,item.sale_unit)}</td>
                       <td className="num">{item.unit_price !== null ? `${formatPrice(item.unit_price)} / ${saleLabel(item.sale_unit)}` : "Sem preço"}</td>
                       <td className="num">{formatPrice(item.subtotal)}</td>
-                      <td>{item.source_type ? <><SourceBadge sourceType={item.source_type} /><small className="block">{formatDate(item.reported_at)}</small></> : "—"}</td>
+                      <td>{item.source_type ? <><SourceBadge sourceType={item.source_type} /><small className="block">{formatDate(item.reported_at)}{item.expires_at && <> · até {formatDate(item.expires_at)}</>}</small>{item.source_url && <small className="block"><a href={item.source_url} target="_blank" rel="noopener noreferrer">Ver folheto</a></small>}</> : "—"}</td>
                     </tr>
                   ))}
                 </tbody>

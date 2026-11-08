@@ -22,7 +22,7 @@ export function ShoppingListPage() {
   const alerts = useOffers();
   const listOffers = alerts.offers.filter(o => cart.items.some(i => i.product.id===o.product_id));
   const navigate = useNavigate();
-  const [name, setName] = useState("Minha compra");
+  const {name,setName}=cart;
   const [invalidQuantities,setInvalidQuantities]=useState<number[]>([]);
   const quantitiesValid=!invalidQuantities.some(id=>cart.items.some(i=>i.product.id===id));
   const [saving, setSaving] = useState(false);
@@ -128,8 +128,9 @@ export function ShoppingListPage() {
         </>
       )}
 
+      {cart.archivedDrafts.length>0 && <details className="list-more-actions"><summary>Rascunhos anteriores neste aparelho ({cart.archivedDrafts.length})</summary>{cart.archivedDrafts.map(d=><p key={d.id}>{d.name} · {d.items.length} produtos <button className="outline-button" onClick={()=>cart.restoreArchive(d.id)}>Continuar este rascunho</button></p>)}</details>}
       <h2 id="listas-salvas">Minhas listas salvas</h2>
-      <p className="form-hint">A lista em edição é temporária: fica disponível enquanto você navega, mas não volta depois de fechar ou recarregar o aplicativo. Só fica guardada na conta quando você toca em Salvar lista. Só você tem acesso às suas listas. Informar um preço na comunidade não compartilha sua lista de compras.</p>
+      <p className="form-hint">O rascunho fica neste aparelho. Ao voltar, você pode continuar ou criar outra lista. Salve na conta para acessar em outros aparelhos. Só você tem acesso às suas listas. Informar um preço na comunidade não compartilha sua lista de compras.</p>
       {!user && <Empty title="Entre para ver suas listas"><Link to="/login" state={{ from: "/lista" }}>Fazer login</Link> ou <Link to="/cadastro" state={{ from: "/lista" }}>criar conta</Link>. Cada pessoa vê somente as próprias listas.</Empty>}
       {user && listsLoading && <Loading text="Carregando suas listas..." />}
       {user && listsError && <ErrorBox message={listsError} onRetry={loadLists} />}
@@ -139,13 +140,13 @@ export function ShoppingListPage() {
           {lists.map((list) => (
             <li className="list-card" key={list.id}>
               <div>
-                <span className="card-title">{list.name}</span>
-                <small>{list.items.length} {list.items.length === 1 ? "item" : "itens"} · criada em {formatDate(list.created_at)}</small>
+                <Link className="card-title" to={`/listas/${list.id}`}>{list.name}</Link>
+                <small>{({preparation:"Em preparação",shopping:"Em compras",completed:"Concluída"})[list.status || "preparation"]} · {list.items.length} {list.items.length === 1 ? "item" : "itens"} · criada em {formatDate(list.created_at)}</small>
               </div>
               <div className="card-actions">
-                <Link className="primary-button small" to={`/comparacao/${list.id}`}>Comparar</Link>
-                <button className="outline-button" type="button" onClick={() => cart.replaceAll(list.items.map((item) => ({ product: item.product, quantity: Number(item.quantity), isPurchased:item.is_purchased })))}>Editar como nova</button>
-                <button className="text-button danger" type="button" onClick={() => remove(list)}>Excluir</button>
+                <Link className="primary-button small" to={`/listas/${list.id}`}>Abrir lista</Link>
+                <button className="outline-button" type="button" onClick={() => {cart.setName(list.name);cart.replaceAll(list.items.map((item) => ({ product: item.product, quantity: Number(item.quantity), isPurchased:false })));}}>Editar como nova</button>
+                {list.owner_id===user?.id && <button className="text-button danger" type="button" onClick={() => remove(list)}>Excluir</button>}
               </div>
             </li>
           ))}

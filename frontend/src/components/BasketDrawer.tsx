@@ -29,12 +29,14 @@ export function BasketDrawer() {
   const [open,setOpen]=useState(false);
   const [announcement,setAnnouncement]=useState("");
   const [invalid,setInvalid]=useState<number[]>([]);
-  const [name,setName]=useState("Minha compra");
+  const {name,setName}=cart;
   const [saving,setSaving]=useState(false);
   const [saveError,setSaveError]=useState("");
   const [savedSignature,setSavedSignature]=useState("");
   const [savedId,setSavedId]=useState<number|null>(null);
+  const [savedRevision,setSavedRevision]=useState<number|undefined>();
   const saveLock=useRef(false);
+  useEffect(()=>{setSavedId(null);setSavedRevision(undefined);setSavedSignature("");},[cart.draftVersion]);
   const signature=JSON.stringify({name:name.trim() || "Minha compra",items:cartItemsPayload(cart.items)});
   const valid=!invalid.some(id=>cart.items.some(item=>item.product.id===id));
   const picked=cart.items.filter(item=>item.isPurchased).length;
@@ -65,9 +67,9 @@ export function BasketDrawer() {
     saveLock.current=true;setSaving(true);setSaveError("");
     const snapshot=signature;
     try {
-      const payload={name:name.trim() || "Minha compra",items:cartItemsPayload(cart.items)};
+      const payload={name:name.trim() || "Minha compra",items:cartItemsPayload(cart.items),revision:savedRevision};
       const saved=await (savedId===null ? createShoppingList(payload) : updateShoppingList(savedId,payload));
-      setSavedId(saved.id);
+      setSavedId(saved.id);setSavedRevision(saved.revision);
       setSavedSignature(snapshot);refresh();
     } catch(error) {
       setSaveError(error instanceof Error ? error.message : "Não foi possível salvar sua lista. Tente novamente.");

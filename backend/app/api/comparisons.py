@@ -3,13 +3,14 @@ from decimal import Decimal, ROUND_HALF_UP
 from types import SimpleNamespace
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import select,or_,func
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.core.region import matches_city
 from app.models import Market, PriceReport, Product, ShoppingList, ShoppingListItem, User
+from app.core.family_lists import can_access
 from app.schemas.mvp import ComparisonRead, ShoppingListCreate
 
 router = APIRouter(prefix="/comparisons", tags=["comparisons"])
@@ -27,7 +28,7 @@ def compare_shopping_list(
         .options(selectinload(ShoppingList.items).selectinload(ShoppingListItem.product))
         .where(ShoppingList.id == shopping_list_id)
     )
-    if not shopping_list or shopping_list.user_id != current_user.id:
+    if not can_access(db,shopping_list,current_user.id):
         raise HTTPException(status_code=404, detail="Lista não encontrada")
 
     return build_comparison(db, shopping_list, city)
@@ -59,7 +60,7 @@ def build_comparison(db, shopping_list, city):
     reports = list(
         db.scalars(
             select(PriceReport)
-            .where(PriceReport.product_id.in_(product_ids), PriceReport.market_id.in_([m.id for m in markets]), PriceReport.is_active.is_(True), True if get_settings().demo_mode else PriceReport.source_type != "development")
+            .where(PriceReport.product_id.in_(product_ids), PriceReport.market_id.in_([m.id for m in markets]), PriceReport.is_active.is_(True), or_(PriceReport.expires_at.is_(None), PriceReport.expires_at>func.now()), True if get_settings().demo_mode else PriceReport.source_type != "development")
             .order_by(PriceReport.reported_at.desc(), PriceReport.id.desc())
         )
     ) if product_ids else []
@@ -102,6 +103,8 @@ def build_comparison(db, shopping_list, city):
                 "unit_price": unit_price,
                 "subtotal": subtotal,
                 "reported_at": report.reported_at if report else None,
+                "expires_at": report.expires_at if report else None,
+                "source_url": report.source_url if report else None,
                 "source_type": report.source_type if report else None,
             })
         results.append({

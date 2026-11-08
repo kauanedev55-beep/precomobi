@@ -90,3 +90,7 @@ def add_general_retail_catalog(engine):
 
 def add_dairy_deli_hygiene_catalog(engine):
     add_daily_products(engine, manifest='daily_dairy_deli_hygiene.json', migration_key='daily-dairy-deli-hygiene-2026-11-06')
+
+
+def add_family_retail_catalog(engine):
+    add_daily_products(engine, manifest='daily_family_catalog.json', migration_key='family-retail-expansion-2026-11-07')

@@ -21,6 +21,7 @@ export function formatDateTime(value: string | null | undefined): string {
 }
 
 export function sourceLabel(sourceType: string | null | undefined): string {
+  if (sourceType === "official_flyer") return "Folheto oficial · sem clube";
   if (sourceType === "community") return "Informado pela comunidade";
   if (sourceType === "development") return "Dados de desenvolvimento";
   return "Origem não informada";

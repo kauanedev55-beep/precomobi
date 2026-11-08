@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "test": "tsc --skipLibCheck --target ES2022 --module ES2022 --moduleResolution bundler --outDir .test-build src/lib/navigation.ts src/lib/scannedCode.ts src/lib/purchase.ts src/lib/quantities.ts src/lib/validation.ts src/lib/produceGuides.ts src/lib/cartItems.ts && node --test tests/*.test.mjs"
+    "test": "tsc --skipLibCheck --target ES2022 --module ES2022 --moduleResolution bundler --outDir .test-build src/lib/navigation.ts src/lib/scannedCode.ts src/lib/purchase.ts src/lib/quantities.ts src/lib/validation.ts src/lib/produceGuides.ts src/lib/cartItems.ts src/lib/draftLists.ts src/lib/authReturn.ts && node --test tests/*.test.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

@@ -2,6 +2,7 @@ import "./login.css";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import {loginReturnPath} from "../lib/authReturn";
 import { getFeatures } from "../services/api";
 import { useAuth } from "../auth/AuthContext";
 import { supabaseResend, supabaseRecover } from "../services/supabase";
@@ -31,7 +32,7 @@ export function Login() {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      navigate(state.from ?? "/lista", { replace: true });
+      navigate(loginReturnPath(state.from), { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível entrar. Tente novamente.");
     } finally {

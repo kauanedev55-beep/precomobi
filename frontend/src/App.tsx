@@ -7,6 +7,8 @@ import { RegionProvider } from "./region/RegionContext";
 import { OffersProvider } from "./offers/OffersContext";
 import { Layout } from "./components/Layout";
 import { RequireAuth } from "./components/RequireAuth";
+const FamilyListPage = lazy(()=>import("./pages/FamilyListPage").then(m=>({default:m.FamilyListPage})));
+const ListInvitePage = lazy(()=>import("./pages/FamilyListPage").then(m=>({default:m.ListInvitePage})));
 const ComparisonPage = lazy(() => import("./pages/ComparisonPage").then(m => ({ default: m.ComparisonPage })));
 const Contribute = lazy(() => import("./pages/Contribute").then(m => ({ default: m.Contribute })));
 const Offers = lazy(() => import("./pages/Offers").then(m => ({ default: m.Offers })));
@@ -48,6 +50,8 @@ export default function App() {
               <Route path="produtos" element={<RequireAuth><Products /></RequireAuth>} />
               <Route path="produtos/novo" element={<RequireAuth><ProductCreatePage /></RequireAuth>} />
               <Route path="produtos/:id" element={<RequireAuth><ProductDetail /></RequireAuth>} />
+              <Route path="listas/:id" element={<RequireAuth><FamilyListPage/></RequireAuth>}/>
+              <Route path="convite/:token" element={<RequireAuth><ListInvitePage/></RequireAuth>}/>
               <Route path="lista" element={<RequireAuth><ShoppingListPage /></RequireAuth>} />
               <Route path="comparacao/atual" element={<RequireAuth><ComparisonPage preview /></RequireAuth>} />
               <Route path="comparacao/:id" element={<RequireAuth><ComparisonPage /></RequireAuth>} />

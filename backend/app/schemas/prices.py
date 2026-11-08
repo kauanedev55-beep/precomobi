@@ -17,6 +17,8 @@ class PriceReportCreate(BaseModel):
 
 
 class PriceReportRead(BaseModel):
+    expires_at: datetime | None = None
+    source_url: str | None = None
     id: int
     product_id: int
     product_name: str
@@ -37,6 +39,8 @@ class PriceConfirmationCreate(BaseModel):
 
 
 class ProductPriceRead(BaseModel):
+    expires_at: datetime | None = None
+    source_url: str | None = None
     """Preço mais recente de um produto em um mercado (price = None quando não há registro)."""
 
     report_id: int | None = None

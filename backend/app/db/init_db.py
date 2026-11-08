@@ -56,6 +56,17 @@ PRICES = [
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    list_columns = {c["name"] for c in inspect(engine).get_columns("shopping_lists")}
+    with engine.begin() as conn:
+        for column, definition in {"status":"VARCHAR(20) NOT NULL DEFAULT 'preparation'", "revision":"INTEGER NOT NULL DEFAULT 1"}.items():
+            if column not in list_columns:
+                conn.execute(text(f"ALTER TABLE shopping_lists ADD COLUMN {column} {definition}"))
+    for table, additions in {"price_reports":{"expires_at":"TIMESTAMP WITH TIME ZONE" if engine.dialect.name=="postgresql" else "TIMESTAMP", "source_url":"VARCHAR(500)"},"offers":{"source_url":"VARCHAR(500)","source_label":"VARCHAR(120)"}}.items():
+        existing={c["name"] for c in inspect(engine).get_columns(table)}
+        with engine.begin() as conn:
+            for column,definition in additions.items():
+                if column not in existing:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {definition}"))
     # Novos campos em bancos publicados: contas antigas continuam confirmadas.
     columns = {c["name"] for c in inspect(engine).get_columns("users")}
     migrations = {
@@ -85,6 +96,8 @@ def init_db() -> None:
         add_daily_cleaning_products(engine)
         add_general_retail_catalog(engine)
         add_dairy_deli_hygiene_catalog(engine)
+        from app.db.daily_products import add_family_retail_catalog
+        add_family_retail_catalog(engine)
         from app.db.requested_markets import add_requested_markets
         add_requested_markets(engine)
         from app.db.greater_vitoria_markets import add_greater_vitoria_markets
@@ -93,6 +106,8 @@ def init_db() -> None:
         add_cariacica_markets(engine)
         from app.db.chain_markets import add_chain_markets
         add_chain_markets(engine)
+        from app.db.official_flyers import seed_official_flyers
+        seed_official_flyers(engine)
         return
     with Session(engine) as db:
         user = db.scalar(select(User).where(User.email == "demo@precomobi.local"))

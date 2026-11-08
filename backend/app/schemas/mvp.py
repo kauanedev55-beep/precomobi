@@ -21,6 +21,8 @@ class ProductRead(BaseModel):
     sale_unit: Literal["unit", "kg"] = "unit"
     packaging: str | None = None
     description: str | None = None
+    min_price_expires_at: datetime | None = None
+    min_price_source_url: str | None = None
     min_price: Decimal | None = None
     min_price_market: str | None = None
 
@@ -93,6 +95,7 @@ class ShoppingListItemCreate(BaseModel):
 
 
 class ShoppingListCreate(BaseModel):
+    revision: int | None = Field(default=None, ge=1)
     name: str = Field(min_length=1, max_length=160)
     items: list[ShoppingListItemCreate] = Field(min_length=1, max_length=200)
 
@@ -122,6 +125,9 @@ class ShoppingListItemRead(BaseModel):
 
 
 class ShoppingListRead(BaseModel):
+    owner_id: int = Field(validation_alias="user_id")
+    status: Literal["preparation", "shopping", "completed"] = "preparation"
+    revision: int = 1
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -132,6 +138,8 @@ class ShoppingListRead(BaseModel):
 
 
 class ComparisonItemRead(BaseModel):
+    expires_at: datetime | None = None
+    source_url: str | None = None
     product_id: int
     product_name: str
     quantity: Decimal

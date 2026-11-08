@@ -16,6 +16,7 @@ from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.core.region import region_market_ids
 from app.models import Market, Product, ShoppingList, ShoppingListItem, User
+from app.models.family import ListMember
 from app.models.offers import Offer, OfferCheck
 from app.models.alerts import AlertPreference, FavoriteMarket
 from app.schemas.mvp import MarketRead
@@ -65,6 +66,8 @@ class CheckCreate(BaseModel):
 
 
 class OfferRead(BaseModel):
+    source_url: str | None = None
+    source_label: str | None = None
     id: int
     product_id: int
     product_name: str
@@ -97,7 +100,7 @@ def to_reads(db, offers, user):
         own = dict(db.execute(select(OfferCheck.offer_id, OfferCheck.status)
                    .where(OfferCheck.offer_id.in_(ids), OfferCheck.user_id == user.id)).all())
     now = datetime.now(timezone.utc)
-    return [dict(id=o.id, product_id=o.product_id, product_name=o.product.name, sale_unit=o.product.sale_unit,
+    return [dict(source_url=o.source_url,source_label=o.source_label,id=o.id, product_id=o.product_id, product_name=o.product.name, sale_unit=o.product.sale_unit,
         image_url=o.product.image_url, market=MarketRead.model_validate(o.market),
         price=o.price, conditions=o.conditions, observed_at=utc(o.observed_at), expires_at=utc(o.expires_at),
         state="ended" if o.ended_at else "expired" if utc(o.expires_at) <= now else "active",
@@ -124,7 +127,7 @@ def list_offers(for_my_lists: bool = False, mine: bool = False, for_alerts: bool
             return []
         filters=[]
         if pref.scope in ("lists","both"):
-            saved_ids=select(ShoppingListItem.product_id).join(ShoppingList).where(ShoppingList.user_id==user.id)
+            saved_ids=select(ShoppingListItem.product_id).join(ShoppingList).where(or_(ShoppingList.user_id==user.id,ShoppingList.id.in_(select(ListMember.list_id).where(ListMember.user_id==user.id))))
             filters.append(and_(or_(Offer.product_id.in_(saved_ids),Offer.product_id.in_(ids)),
                 True if city is None else Offer.market_id.in_(region_market_ids(db,city))))
         if pref.scope in ("markets","both"):
@@ -136,7 +139,7 @@ def list_offers(for_my_lists: bool = False, mine: bool = False, for_alerts: bool
     else:
         query = query.where(Offer.ended_at.is_(None), Offer.expires_at > datetime.now(timezone.utc))
     if for_my_lists and not for_alerts:
-        saved = select(ShoppingListItem.product_id).join(ShoppingList).where(ShoppingList.user_id == user.id)
+        saved = select(ShoppingListItem.product_id).join(ShoppingList).where(or_(ShoppingList.user_id==user.id,ShoppingList.id.in_(select(ListMember.list_id).where(ListMember.user_id==user.id))))
         query = query.where(or_(Offer.product_id.in_(saved), Offer.product_id.in_(ids)))
     elif ids and not for_alerts:
         query = query.where(Offer.product_id.in_(ids))

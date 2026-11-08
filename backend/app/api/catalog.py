@@ -159,7 +159,7 @@ def _cheapest_price_by_product(
         .join(Market)
         .where(
             PriceReport.product_id.in_(product_ids),
-            PriceReport.is_active.is_(True),
+            PriceReport.is_active.is_(True), or_(PriceReport.expires_at.is_(None), PriceReport.expires_at>func.now()),
             (True if get_settings().demo_mode else PriceReport.source_type != "development"),
             Market.is_active.is_(True),
             True if city is None else PriceReport.market_id.in_(region_market_ids(db, city)),
@@ -190,6 +190,8 @@ def _cheapest_price_by_product(
         product_id: {
             "min_price": report.price,
             "min_price_market": report.market.name,
+            "min_price_expires_at": report.expires_at,
+            "min_price_source_url": report.source_url,
         }
         for product_id, report in cheapest.items()
     }
@@ -355,7 +357,7 @@ def get_product(
         .where(
             PriceReport.product_id == product_id,
             PriceReport.market_id.in_([m.id for m in markets]),
-            PriceReport.is_active.is_(True),
+            PriceReport.is_active.is_(True), or_(PriceReport.expires_at.is_(None), PriceReport.expires_at>func.now()),
             (True if get_settings().demo_mode else PriceReport.source_type != "development"),
         )
         .order_by(
@@ -412,6 +414,8 @@ def get_product(
                 latest[market.id].id in confirmed
                 if market.id in latest else False
             ),
+            "expires_at": latest[market.id].expires_at if market.id in latest else None,
+            "source_url": latest[market.id].source_url if market.id in latest else None,
             "is_mine": bool(current_user and market.id in latest and latest[market.id].user_id == current_user.id),
         }
         for market in markets

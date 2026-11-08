@@ -5,6 +5,7 @@ import { useCart } from "../cart/CartContext";
 import { useOffers } from "../offers/OffersContext";
 import { getFeatures } from "../services/api";
 import { CitySelector } from "./CitySelector";
+import {DraftRecovery} from "./DraftRecovery";
 import { BasketDrawer } from "./BasketDrawer";
 import { Icon } from "./Icon";
 
@@ -25,7 +26,7 @@ export function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const shopping = pathname === "/produtos" || /^\/produtos\/\d+$/.test(pathname);
-  const selected = (to: string) => to === "/lista" ? pathname === "/lista" || pathname.startsWith("/comparacao/")
+  const selected = (to: string) => to === "/lista" ? pathname === "/lista" || pathname.startsWith("/listas/") || pathname.startsWith("/comparacao/")
     : to === "/ofertas" ? pathname === "/ofertas" || pathname === "/avisos"
     : to === "/comunidade" ? ["/comunidade", "/contribuir", "/minhas-contribuicoes"].includes(pathname)
     : pathname === "/produtos" || pathname.startsWith("/produtos/");
@@ -66,6 +67,7 @@ export function Layout() {
       </aside>
       <div className="pm-content">{!["/perfil", "/produtos/novo", "/minhas-contribuicoes"].includes(pathname) && <CitySelector/>}<main className="page" id="main-content" tabIndex={-1}>{demo && <div className="demo-banner" role="status"><strong>Demonstração acadêmica</strong><span>Preços simulados, identificados como demonstração.</span></div>}<Outlet/></main><footer className="site-footer">Feito para ajudar na sua próxima compra. Confira os preços e as condições na loja.</footer></div>
     </div>
+    <DraftRecovery/>
     {shopping && <BasketDrawer/>}
     <nav className="mobile-bottom-nav" aria-label="Navegação rápida">{bottom.map(item => <Link key={item.to} to={item.to} onClick={close} aria-current={selected(item.to) ? "page" : undefined} className={selected(item.to) ? "active" : ""}><Icon name={item.icon}/><span>{item.label}</span></Link>)}</nav>
   </div>;

@@ -25,7 +25,7 @@ export function Register() {
     setError("");
     try {
       await register(form.name.trim(), form.email.trim(), form.password);
-      navigate("/login", { replace: true, state: { reason: "Cadastro criado! Enviamos um link de confirmação para seu e-mail. Confirme antes de entrar." } });
+      navigate("/login", { replace: true, state: { from:state.from, reason: "Cadastro criado! Enviamos um link de confirmação para seu e-mail. Confirme antes de entrar." } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível criar a conta.");
     } finally {
