@@ -67,6 +67,17 @@ def init_db() -> None:
             for column,definition in additions.items():
                 if column not in existing:
                     conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {definition}"))
+    if engine.dialect.name == "postgresql":
+        # Supabase also exposes database tables through its REST API. These
+        # private tables are served only through authenticated FastAPI routes.
+        # The backend table-owner connection bypasses RLS; public roles do not.
+        with engine.begin() as conn:
+            public_roles = list(conn.scalars(text("SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated')")))
+            for table in ("shopping_lists", "shopping_list_items", "shopping_list_members", "shopping_list_invites"):
+                conn.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
+                conn.execute(text(f"REVOKE ALL ON TABLE {table} FROM PUBLIC"))
+                for role in public_roles:
+                    conn.execute(text(f'REVOKE ALL ON TABLE {table} FROM "{role}"'))
     # Novos campos em bancos publicados: contas antigas continuam confirmadas.
     columns = {c["name"] for c in inspect(engine).get_columns("users")}
     migrations = {

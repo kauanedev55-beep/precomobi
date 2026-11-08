@@ -8,7 +8,7 @@ Os participantes veem nome, produtos, quantidades e marcações. Podem renomear 
 
 Há três situações: Em preparação, Em compras e Concluída. A conclusão com pendências exige escolha explícita; os produtos pendentes continuam no histórico. Uma lista concluída precisa ser reaberta para editar. Editar como nova copia os produtos para um novo rascunho, desmarcados, preservando a compra anterior. Comparar continua opcional e está disponível aos participantes.
 
-Somente o responsável cria ou encerra convites, remove participantes e exclui a lista. Remover um participante também invalida os links antigos, evitando que ele volte pelo mesmo convite. Os tokens são aleatórios e apenas seus hashes ficam no banco. A listagem e a comparação respeitam a participação; listas pessoais não passam a ser públicas.
+Somente o responsável cria ou encerra convites, remove participantes e exclui a lista. Remover um participante também invalida os links antigos, evitando que ele volte pelo mesmo convite. Os tokens são aleatórios e apenas seus hashes ficam no banco. As tabelas privadas de listas e convites usam Row Level Security no PostgreSQL/Supabase; o acesso direto é revogado para PUBLIC e para os papéis anon e authenticated quando presentes. O backend acessa pelo proprietário das tabelas e aplica as permissões por conta. A listagem e a comparação respeitam a participação; listas pessoais não passam a ser públicas.
 
 ## Recuperação
 
