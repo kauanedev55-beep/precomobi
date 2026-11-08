@@ -2,7 +2,7 @@
 
 A pesquisa de produtos e os detalhes agora têm uma barra fixa que acompanha a lista em edição. Ela informa o número de produtos diferentes, sem somar embalagens com quilos e sem mostrar um total de preços. Após adicionar ou aumentar uma quantidade, mostra por quatro segundos o produto alterado e a quantidade que está na lista.
 
-No celular (até 760 px), tocar na barra abre a cesta pela parte inferior, acima do conteúdo. Recolher pela alça, arrastar a alça para baixo ou tocar em “Continuar buscando” devolve à mesma pesquisa e mantém a rolagem. A barra fica acima do menu inferior e considera a área segura do aparelho. No computador, a cesta abre pela direita. A parte dos produtos tem rolagem própria e as ações ficam no rodapé. Em telas baixas, o rodapé fica mais compacto.
+No celular (até 820 px), tocar na barra abre a cesta pela parte inferior, acima do conteúdo. Recolher pela alça, arrastar a alça para baixo ou tocar em “Continuar buscando” devolve à mesma pesquisa e mantém a rolagem. A barra fica acima do menu inferior e considera a área segura do aparelho. No computador, a cesta abre pela direita. A parte dos produtos tem rolagem própria e as ações ficam no rodapé. Em telas baixas, o rodapé fica mais compacto.
 
 Dentro da cesta há fotos, nome e apresentação, controle de quantidade/peso, remoção e “Já peguei”. Fotos indisponíveis têm um ícone de apoio, mantendo o nome legível. A lista principal também permite marcar produtos. Adicionar novamente um produto já marcado aumenta sua quantidade e desmarca “Já peguei”, indicando que há mais a buscar.
 

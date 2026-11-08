@@ -186,6 +186,7 @@ export const getProductByEan = (ean: string, city?: string) => request<Product[]
 export const getProduct = (id: number, city?: string) => request<ProductDetail>(`/products/${id}${city ? `?city=${encodeURIComponent(city)}` : ""}`);
 export const getMarkets = () => request<Market[]>("/markets");
 export type Offer = {
+  related_offers?:Offer[];
   source_url?:string|null;source_label?:string|null;
   id: number; product_id: number; product_name: string; sale_unit: "unit" | "kg"; image_url: string | null;
   market: Market; price: string; conditions: string; observed_at: string; expires_at: string;
@@ -194,6 +195,7 @@ export type Offer = {
 };
 export const getOffers = (options: { forAlerts?: boolean; forMyLists?: boolean; productIds?: number[]; mine?: boolean; city?: string } = {}) => {
   const query = new URLSearchParams();
+  if (!options.mine) query.set("grouped", "true");
   if (options.forAlerts) query.set("for_alerts", "true");
   if (options.forMyLists) query.set("for_my_lists", "true");
   if (options.mine) query.set("mine", "true");

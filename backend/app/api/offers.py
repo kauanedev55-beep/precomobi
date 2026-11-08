@@ -68,6 +68,7 @@ class CheckCreate(BaseModel):
 class OfferRead(BaseModel):
     source_url: str | None = None
     source_label: str | None = None
+    related_offers: list["OfferRead"] = Field(default_factory=list)
     id: int
     product_id: int
     product_name: str
@@ -109,8 +110,27 @@ def to_reads(db, offers, user):
         for o in offers]
 
 
+def group_offers(rows):
+    groups = {}
+    for row in rows:
+        key = (row['source_url'], row['source_label'], row['product_id'], str(row['price']), row['conditions'], row['expires_at'], row['state']) if row.get('source_url') else ('community', row['id'])
+        if key not in groups:
+            groups[key] = {**row, 'related_offers': []}
+        else:
+            groups[key]['related_offers'].append(row)
+    # Preserve recency within a chain, while keeping different chains visible.
+    chains = {}
+    for group in groups.values():
+        chain = group['source_label'].split(' · ')[0] if group.get('source_url') and group.get('source_label') else 'Comunidade'
+        chains.setdefault(chain, []).append(group)
+    result = []
+    for index in range(max((len(items) for items in chains.values()), default=0)):
+        result.extend(items[index] for items in chains.values() if index < len(items))
+    return result
+
+
 @router.get("", response_model=list[OfferRead])
-def list_offers(for_my_lists: bool = False, mine: bool = False, for_alerts: bool = False,
+def list_offers(for_my_lists: bool = False, mine: bool = False, for_alerts: bool = False, grouped: bool = False,
         product_ids: str = Query(default="", max_length=2200),
     city: str | None = Query(default=None, min_length=1, max_length=100),
         db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -145,8 +165,14 @@ def list_offers(for_my_lists: bool = False, mine: bool = False, for_alerts: bool
         query = query.where(Offer.product_id.in_(ids))
     if city is not None and not for_alerts:
         query = query.where(Offer.market_id.in_(region_market_ids(db, city)))
-    offers = list(db.scalars(query.order_by(Offer.created_at.desc(), Offer.id.desc()).limit(100)).unique())
-    return to_reads(db, offers, user)
+    ordered = query.order_by(Offer.created_at.desc(), Offer.id.desc())
+    if not grouped or mine:
+        offers = list(db.scalars(ordered.limit(100)).unique())
+        return to_reads(db, offers, user)
+    # A store-level cutoff can hide entire chains behind repeated leaflet rows.
+    # Filter first, then group verified identical offers, then cap display cards.
+    offers = list(db.scalars(ordered).unique())
+    return group_offers(to_reads(db, offers, user))[:100]
 
 
 @router.post("", response_model=OfferRead, status_code=201)

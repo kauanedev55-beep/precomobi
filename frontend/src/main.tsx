@@ -8,6 +8,7 @@ import "./styles/palette.css";
 import "./styles/grocery.css";
 import "./styles/photos.css";
 import "./styles/produce.css";
+import "./styles/responsive.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

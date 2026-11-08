@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useCart } from "../cart/CartContext";
@@ -25,6 +25,33 @@ export function Layout() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const headerRef=useRef<HTMLElement>(null);
+  const bottomRef=useRef<HTMLElement>(null);
+  const [keyboardOpen,setKeyboardOpen]=useState(false);
+  useEffect(()=>{
+    if(!user || checking)return;
+    const root=document.documentElement;
+    let active=true;
+    const measure=()=>{
+      if(!active)return;
+      root.style.setProperty("--pm-header-height",`${headerRef.current?.getBoundingClientRect().height || 68}px`);
+      root.style.setProperty("--pm-bottom-nav-height",`${bottomRef.current?.getBoundingClientRect().height || 0}px`);
+      const viewport=window.visualViewport;
+      root.style.setProperty("--pm-visual-height",`${viewport?.height || window.innerHeight}px`);
+      const element=document.activeElement;
+      const editing=element instanceof HTMLTextAreaElement || (element instanceof HTMLInputElement && !["checkbox","radio","button","submit"].includes(element.type));
+      setKeyboardOpen(Boolean(editing && viewport && viewport.scale<1.1 && window.innerHeight-viewport.height>120));
+    };
+    const observer=typeof ResizeObserver!=="undefined" ? new ResizeObserver(measure) : null;
+    if(headerRef.current)observer?.observe(headerRef.current);
+    if(bottomRef.current)observer?.observe(bottomRef.current);
+    measure();
+    window.addEventListener("resize",measure);
+    window.visualViewport?.addEventListener("resize",measure);
+    document.addEventListener("focusin",measure);document.addEventListener("focusout",measure);
+    void document.fonts?.ready.then(measure);
+    return()=>{active=false;observer?.disconnect();window.removeEventListener("resize",measure);window.visualViewport?.removeEventListener("resize",measure);document.removeEventListener("focusin",measure);document.removeEventListener("focusout",measure);};
+  },[user?.id,checking]);
   const shopping = pathname === "/produtos" || /^\/produtos\/\d+$/.test(pathname);
   const selected = (to: string) => to === "/lista" ? pathname === "/lista" || pathname.startsWith("/listas/") || pathname.startsWith("/comparacao/")
     : to === "/ofertas" ? pathname === "/ofertas" || pathname === "/avisos"
@@ -48,9 +75,9 @@ export function Layout() {
     <main className="pm-public-main" id="main-content" tabIndex={-1}><Outlet/></main>
     <footer className="pm-public-footer">PreçoMobi · Sua lista, boas descobertas e escolhas mais conscientes.</footer>
   </div>;
-  return <div className={`app-shell pm-shell pm-private experience-shell${shopping && items.length ? " has-basket-peek" : ""}`}>
+  return <div className={`app-shell pm-shell pm-private experience-shell${keyboardOpen ? " keyboard-open" : ""}${shopping && items.length ? " has-basket-peek" : ""}`}>
     <a className="skip-link" href="#main-content">Pular para o conteúdo</a>
-    <header className="topbar pm-topbar">
+    <header ref={headerRef} className="topbar pm-topbar">
       <button className="menu-toggle pm-menu-button" type="button" aria-controls="pm-sidebar" aria-expanded={open} aria-label="Abrir ou fechar menu" onClick={() => setOpen(!open)}>☰</button>
       <Link className="brand" to="/lista" onClick={close}>{brand}</Link><div className="pm-top-spacer"/>
       <Link className="header-alerts" to="/avisos" onClick={close} aria-label={`Avisos: ${offers.length} ofertas do seu interesse`}><Icon name="bell"/><span>Avisos</span>{offers.length>0 && <b>{offers.length}</b>}</Link>
@@ -69,6 +96,6 @@ export function Layout() {
     </div>
     <DraftRecovery/>
     {shopping && <BasketDrawer/>}
-    <nav className="mobile-bottom-nav" aria-label="Navegação rápida">{bottom.map(item => <Link key={item.to} to={item.to} onClick={close} aria-current={selected(item.to) ? "page" : undefined} className={selected(item.to) ? "active" : ""}><Icon name={item.icon}/><span>{item.label}</span></Link>)}</nav>
+    <nav ref={bottomRef} className="mobile-bottom-nav" aria-label="Navegação rápida">{bottom.map(item => <Link key={item.to} to={item.to} onClick={close} aria-current={selected(item.to) ? "page" : undefined} className={selected(item.to) ? "active" : ""}><Icon name={item.icon}/><span>{item.label}</span></Link>)}</nav>
   </div>;
 }
