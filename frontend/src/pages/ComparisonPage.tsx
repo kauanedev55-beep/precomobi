@@ -94,7 +94,7 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
       <div className="comparison-heading"><h1>Comparação: {comparison.list_name}</h1><button type="button" className="outline-button" disabled={loading} onClick={() => void load()}>{loading ? "Atualizando..." : "Atualizar preços"}</button></div>
       {preview && <div className="preview-actions"><p>Você está comparando sem salvar. Para usar esta lista em outra compra ou dispositivo, escolha Salvar lista.</p><div className="button-row"><button className="outline-button" type="button" onClick={() => void saveDraft()} disabled={isSaving}>{isSaving ? "Salvando..." : "Salvar lista"}</button><button className="primary-button" type="button" disabled={isSaving} onClick={() => {cart.clear();navigate("/lista",{replace:true});}}>Concluir sem salvar</button></div>{saveError && <p className="error-message" role="alert">{saveError}</p>}</div>}
       {comparison.results.length === 0 && <div className="notice">Não há mercados cadastrados na cidade escolhida. Você pode mudar a cidade acima.</div>}
-      <p className="form-hint">Comparando {comparison.results.length} mercados {city === "*" ? "nas cidades cadastradas no ES" : `em ${city}`}. Mostramos primeiro os que têm preços para sua lista.</p>
+      <p className="form-hint">Comparando {comparison.results.length} mercados {city === "*" ? "nas cidades cadastradas no ES" : `em ${city}`}. Listas completas são ordenadas pelo total. Nas incompletas, mostramos primeiro os mercados com mais itens com preço.</p>
       {decisionMarkets.length >= 2 && <PurchaseDecision markets={decisionMarkets} partial={partialDecision} commonCount={comparison.common_items_count} />}
       {complete.length === 1 && <p className="notice">Só um mercado tem a lista completa. Não há outro total completo para medir a economia.</p>}
 
@@ -128,7 +128,7 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
                 <strong>{result.total !== null ? formatPrice(result.total) : "Total indisponível"}</strong>
               </div>
             </header>
-            {!result.complete && <p>Subtotal dos {result.found_items} itens disponíveis: <strong>{formatPrice(result.available_total)}</strong>. Faltam {result.total_items - result.found_items} itens.</p>}
+            {!result.complete && <p>Subtotal dos {result.found_items} itens com preço conhecido: <strong>{formatPrice(result.available_total)}</strong>. Faltam os preços de {result.total_items - result.found_items} itens.</p>}
             {result.comparable_total !== null && !result.complete && <p className="form-hint">Itens em comum entre mercados: {formatPrice(result.comparable_total)} ({comparison.common_items_count} produtos).</p>}
             <div className="table-wrap">
               <table>

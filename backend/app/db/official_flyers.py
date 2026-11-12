@@ -10,12 +10,12 @@ from app.models.offers import Offer
 from app.core.security import hash_password
 
 KEY='official-reviewed-leaflets-2026-11-07'
-def seed_official_flyers(engine,manifest=None,now=None):
+def seed_official_flyers(engine,manifest=None,now=None,*,migration_key=KEY):
     now=now or datetime.now(timezone.utc)
     entries=manifest if manifest is not None else json.loads(Path(__file__).with_name('official_flyers_20261107.json').read_text())
     with engine.begin() as connection:
         connection.execute(text('CREATE TABLE IF NOT EXISTS app_data_migrations (migration_key VARCHAR(100) PRIMARY KEY)'))
-        marker=connection.execute(text('INSERT INTO app_data_migrations (migration_key) VALUES (:key) ON CONFLICT (migration_key) DO NOTHING RETURNING migration_key'),{'key':KEY}).scalar()
+        marker=connection.execute(text('INSERT INTO app_data_migrations (migration_key) VALUES (:key) ON CONFLICT (migration_key) DO NOTHING RETURNING migration_key'),{'key':migration_key}).scalar()
         if marker is None:return
         with Session(bind=connection) as db:
             actor=db.scalar(select(User).where(User.email=='catalogos-oficiais@precomobi.invalid'))
@@ -39,3 +39,8 @@ def seed_official_flyers(engine,manifest=None,now=None):
                     # a more recent community observation keeps precedence.
                     db.add(PriceReport(product_id=product.id,market_id=market.id,user_id=actor.id,price=Decimal(entry['regular_price']),reported_at=start,expires_at=end,source_type='official_flyer',source_url=entry['source_url'],notes=f"Sem clube. {entry['conditions']} Conferido em {now.isoformat()}.",is_active=True))
             db.flush()
+
+
+def seed_official_flyers_nov12(engine,now=None):
+    entries=json.loads(Path(__file__).with_name('official_flyers_20261112.json').read_text())
+    seed_official_flyers(engine,entries,now,migration_key='official-reviewed-leaflets-2026-11-12')

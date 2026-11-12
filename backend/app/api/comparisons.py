@@ -125,7 +125,9 @@ def build_comparison(db, shopping_list, city):
             "items": comparison_items,
         })
 
-    results.sort(key=lambda result: (not result["complete"], result["total"] is None, result["total"] if result["total"] is not None else Decimal("Infinity")))
+    # Partial subtotals are not comparable: show coverage, never cheap missing baskets.
+    results.sort(key=lambda result: (not result["complete"],
+        result["total"] if result["complete"] else -result["found_items"], result["market_name"]))
     return {
         "shopping_list_id": shopping_list.id, "list_name": shopping_list.name,
         "results": results,
