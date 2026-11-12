@@ -23,3 +23,9 @@ Atualizações da interface vêm pelo site; fechar e abrir carrega novamente a p
 ## Verificação
 
 23 testes frontend, verificação TypeScript e build de produção. Os três novos testes verificam os tamanhos reais dos ícones, o escopo do manifesto, o isolamento de tráfego privado/API e o fallback sem cache de dados pessoais. A verificação de publicação confere manifesto, service worker, página offline, ícones e rota de instalação. A checagem visual usa o navegador disponível; instalação em Android/iPhone físico deve ser concluída pelo usuário no aparelho, sem afirmar que esse teste físico já ocorreu.
+
+## Escolha depois do cadastro
+
+Após o cadastro bem-sucedido, a rota `/comecar` pergunta Como você quer continuar?, com somente dois botões: Continuar pelo site (login) ou Instalar no celular (instruções em `/instalar`). O aviso de criação de conta só aparece quando a navegação vem do cadastro; abrir a rota diretamente não afirma que uma conta foi criada. A confirmação de e-mail continua obrigatória. Não há login automático por instalar. O destino de retorno, inclusive convite de lista familiar, é repassado na navegação ao login. Nenhuma senha ou e-mail é colocado na URL da escolha.
+
+A escolha não aparece em cada login. Na janela instalada, o segundo caminho é ocultado. A instalação também está no menu público e em Mais opções do menu da conta, sem criar uma quinta aba na navegação inferior nem modificar as telas de compras. A página com os passos de instalação é aberta ao escolher instalar.

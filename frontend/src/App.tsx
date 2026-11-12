@@ -7,6 +7,7 @@ import { RegionProvider } from "./region/RegionContext";
 import { OffersProvider } from "./offers/OffersContext";
 import { Layout } from "./components/Layout";
 import { RequireAuth } from "./components/RequireAuth";
+const AccessChoice = lazy(()=>import("./pages/AccessChoice").then(m=>({default:m.AccessChoice})));
 const InstallApp = lazy(()=>import("./pages/InstallApp").then(m=>({default:m.InstallApp})));
 const FamilyListPage = lazy(()=>import("./pages/FamilyListPage").then(m=>({default:m.FamilyListPage})));
 const ListInvitePage = lazy(()=>import("./pages/FamilyListPage").then(m=>({default:m.ListInvitePage})));
@@ -44,6 +45,7 @@ export default function App() {
             <Route element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="instalar" element={<InstallApp />} />
+              <Route path="comecar" element={<AccessChoice />} />
               <Route path="painel" element={<RequireAuth><Navigate replace to="/lista" /></RequireAuth>} />
               <Route path="login" element={<Login />} />
               <Route path="cadastro" element={<Register />} />

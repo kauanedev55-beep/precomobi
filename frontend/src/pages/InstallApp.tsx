@@ -1,8 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { usePwa } from "../pwa/PwaContext";
 
 export function InstallApp() {
   const pwa = usePwa();
+  const location = useLocation();
+  const state = (location.state ?? {}) as { registered?: boolean; from?: string };
   return <section className="install-page" aria-labelledby="install-title">
     <img className="install-icon" src="/icons/precomobi-192.png" width="80" height="80" alt="" />
     <h1 id="install-title">PreçoMobi no seu celular</h1>
@@ -17,6 +19,6 @@ export function InstallApp() {
     </>}
     {pwa.message && <p className="notice" role="status">{pwa.message}</p>}
     <div className="install-details"><h2>Depois de instalar</h2><p>Procure o ícone PreçoMobi no celular. Entre com a mesma conta para acessar as listas salvas. No iPhone, talvez seja necessário entrar novamente na primeira abertura.</p><p>Você precisa de internet para consultar preços, comparar mercados, usar listas compartilhadas e salvar alterações na conta. O app não guarda preços offline como se estivessem atualizados.</p><p>As melhorias chegam pelo site. Feche e abra o app para carregar uma nova versão; não é necessário reinstalar a cada atualização.</p></div>
-    <Link className="outline-button" to="/lista">Continuar para minha lista</Link>
+    {state.registered ? <><p className="form-hint">Já confirmou o link enviado ao seu e-mail? Você pode entrar agora pelo site ou abrir o ícone do app para entrar.</p><Link className="outline-button" to="/login" state={{ from: state.from, reason: "Confirme seu e-mail antes de entrar. Sua conta é a mesma no site e no app." }}>Continuar para o login</Link></> : <Link className="outline-button" to="/lista">Continuar para minha lista</Link>}
   </section>;
 }
