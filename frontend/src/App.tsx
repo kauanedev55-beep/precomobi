@@ -7,6 +7,7 @@ import { RegionProvider } from "./region/RegionContext";
 import { OffersProvider } from "./offers/OffersContext";
 import { Layout } from "./components/Layout";
 import { RequireAuth } from "./components/RequireAuth";
+const InstallApp = lazy(()=>import("./pages/InstallApp").then(m=>({default:m.InstallApp})));
 const FamilyListPage = lazy(()=>import("./pages/FamilyListPage").then(m=>({default:m.FamilyListPage})));
 const ListInvitePage = lazy(()=>import("./pages/FamilyListPage").then(m=>({default:m.ListInvitePage})));
 const ComparisonPage = lazy(() => import("./pages/ComparisonPage").then(m => ({ default: m.ComparisonPage })));
@@ -42,6 +43,7 @@ export default function App() {
           <Suspense fallback={<div className="pm-session-loading" role="status">Carregando...</div>}><Routes>
             <Route element={<Layout />}>
               <Route index element={<Home />} />
+              <Route path="instalar" element={<InstallApp />} />
               <Route path="painel" element={<RequireAuth><Navigate replace to="/lista" /></RequireAuth>} />
               <Route path="login" element={<Login />} />
               <Route path="cadastro" element={<Register />} />

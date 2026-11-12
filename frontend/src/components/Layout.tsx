@@ -8,6 +8,7 @@ import { CitySelector } from "./CitySelector";
 import {DraftRecovery} from "./DraftRecovery";
 import { BasketDrawer } from "./BasketDrawer";
 import { Icon } from "./Icon";
+import { usePwa } from "../pwa/PwaContext";
 
 const links = [
   { to: "/lista", label: "Minha lista", icon: "list" },
@@ -19,6 +20,7 @@ const bottom = links;
 
 export function Layout() {
   const { user, logout, checking, sessionExpired } = useAuth();
+  const { installed } = usePwa();
   const { items } = useCart();
   const { offers } = useOffers();
   const [demo, setDemo] = useState(false);
@@ -73,7 +75,7 @@ export function Layout() {
     <header className="pm-public-header"><Link className="brand" to="/">{brand}</Link><nav className="pm-public-nav" aria-label="Navegação pública"><Link to="/#como-funciona">Como funciona</Link><Link to="/#beneficios">Benefícios</Link></nav><div className="pm-public-actions"><Link className="outline-button" to="/login">Entrar</Link><Link className="primary-button" to="/cadastro">Criar conta</Link></div></header>
     {sessionExpired && <div className="notice" role="status">Sua sessão expirou. Entre novamente.</div>}
     <main className="pm-public-main" id="main-content" tabIndex={-1}><Outlet/></main>
-    <footer className="pm-public-footer">PreçoMobi · Sua lista, boas descobertas e escolhas mais conscientes.</footer>
+    <footer className="pm-public-footer">PreçoMobi · Sua lista, boas descobertas e escolhas mais conscientes.{!installed && <Link className="install-link" to="/instalar">Instalar PreçoMobi no celular</Link>}</footer>
   </div>;
   return <div className={`app-shell pm-shell pm-private experience-shell${keyboardOpen ? " keyboard-open" : ""}${shopping && items.length ? " has-basket-peek" : ""}`}>
     <a className="skip-link" href="#main-content">Pular para o conteúdo</a>
@@ -92,7 +94,7 @@ export function Layout() {
         <details className="pm-more-menu"><summary>Mais opções</summary><nav className="pm-nav"><NavLink className="side-link" to="/mercados" onClick={close}>Mercados</NavLink><NavLink className="side-link" to="/perfil" onClick={close}>Meu perfil{user.is_admin ? " · master" : ""}</NavLink></nav></details>
         <div className="sidebar-account"><span className="pm-account-name">{user.name}</span><button className="side-link side-action" onClick={() => {logout();close();navigate("/");}}>Sair da conta ↗</button></div>
       </aside>
-      <div className="pm-content">{!["/perfil", "/produtos/novo", "/minhas-contribuicoes"].includes(pathname) && <CitySelector/>}<main className="page" id="main-content" tabIndex={-1}>{demo && <div className="demo-banner" role="status"><strong>Demonstração acadêmica</strong><span>Preços simulados, identificados como demonstração.</span></div>}<Outlet/></main><footer className="site-footer">Feito para ajudar na sua próxima compra. Confira os preços e as condições na loja.</footer></div>
+      <div className="pm-content">{!["/perfil", "/produtos/novo", "/minhas-contribuicoes"].includes(pathname) && <CitySelector/>}<main className="page" id="main-content" tabIndex={-1}>{demo && <div className="demo-banner" role="status"><strong>Demonstração acadêmica</strong><span>Preços simulados, identificados como demonstração.</span></div>}<Outlet/></main><footer className="site-footer">Feito para ajudar na sua próxima compra. Confira os preços e as condições na loja.{!installed && <Link className="install-link" to="/instalar">Instalar PreçoMobi no celular</Link>}</footer></div>
     </div>
     <DraftRecovery/>
     {shopping && <BasketDrawer/>}

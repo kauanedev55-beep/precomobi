@@ -32,6 +32,7 @@ export function Profile() {
       <div className="button-row">
         <Link className="outline-button" to="/avisos">Configurar avisos de ofertas</Link>
         <Link className="outline-button" to="/lista">Minhas listas</Link>
+        <Link className="outline-button" to="/instalar">Instalar PreçoMobi no celular</Link>
         <Link className="outline-button" to="/minhas-contribuicoes">Minhas contribuições</Link>
         {user.is_admin && <Link className="outline-button" to="/mercados">Cadastrar mercados</Link>}
         <button className="primary-button" type="button" onClick={() => { logout(); navigate("/"); }}>Sair</button>
