@@ -12,7 +12,7 @@ Abra no Safari > Compartilhar > Adicionar à Tela de Início > Adicionar. Se hou
 
 ## Funcionamento
 
-O manifesto usa ID e escopo /, abertura em /lista, display standalone e ícones PNG 192/512, um ícone maskable com margem segura e apple-touch-icon de 180 px. A marca existente foi adaptada, sem mudar a identidade. A instalação não desativa a verificação de e-mail nem muda permissões.
+O manifesto público `/manifest.json` usa ID e escopo /, abertura em /lista, display standalone e ícones PNG 192/512, um ícone maskable com margem segura e apple-touch-icon de 180 px. A marca existente foi adaptada, sem mudar a identidade. A instalação não desativa a verificação de e-mail nem muda permissões.
 
 Um service worker é registrado somente no build de produção e em contexto seguro. Guarda exclusivamente a página pública de falta de conexão e um ícone. Não armazena HTML da aplicação, respostas de autenticação, API, preços ou listas. Navegações usam a rede com no-store; se a conexão falhar, mostram uma tela sem dados pessoais. A página de fallback nunca é gravada como uma lista nem apresentada como resultado de comparação. Requisições da API e de outros domínios não são interceptadas.
 

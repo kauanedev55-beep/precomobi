@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const read=p=>readFileSync(new URL('../public/'+p,import.meta.url));
 
 test('installed app stays in its own scope with correctly sized Android and iPhone icons',()=>{
- const m=JSON.parse(read('manifest.webmanifest'));
+ const m=JSON.parse(read('manifest.json'));
  assert.equal(m.id,'/');assert.equal(m.start_url,'/lista');assert.equal(m.scope,'/');assert.equal(m.display,'standalone');
  assert(m.icons.some(i=>i.sizes==='192x192' && i.purpose==='any'));
  assert(m.icons.some(i=>i.sizes==='512x512' && i.purpose==='any'));
