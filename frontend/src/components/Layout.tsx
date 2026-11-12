@@ -81,7 +81,7 @@ export function Layout() {
     <a className="skip-link" href="#main-content">Pular para o conteúdo</a>
     <header ref={headerRef} className="topbar pm-topbar">
       <button className="menu-toggle pm-menu-button" type="button" aria-controls="pm-sidebar" aria-expanded={open} aria-label="Abrir ou fechar menu" onClick={() => setOpen(!open)}>☰</button>
-      <Link className="brand" to="/lista" onClick={close}>{brand}</Link><div className="pm-top-spacer"/>
+      <Link className="brand" to="/" onClick={close}>{brand}</Link><div className="pm-top-spacer"/>
       <Link className="header-alerts" to="/avisos" onClick={close} aria-label={`Avisos: ${offers.length} ofertas do seu interesse`}><Icon name="bell"/><span>Avisos</span>{offers.length>0 && <b>{offers.length}</b>}</Link>
       <Link className="pm-header-list" to="/lista" onClick={close}>Minha lista <span>{items.length}</span></Link>
       <Link className="pm-user-pill" to="/perfil" aria-label="Meu perfil" onClick={close}>{user.name.slice(0,1).toUpperCase()}</Link>

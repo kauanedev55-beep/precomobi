@@ -1,9 +1,14 @@
+import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { usePwa } from "../pwa/PwaContext";
 
 export function InstallApp() {
   const pwa = usePwa();
   const location = useLocation();
+  useEffect(() => {
+    const id = location.hash === "#android" ? "android" : location.hash === "#iphone" ? "iphone" : null;
+    if (id) document.getElementById(id)?.scrollIntoView({ block: "start" });
+  }, [location.hash]);
   const state = (location.state ?? {}) as { registered?: boolean; from?: string };
   return <section className="install-page" aria-labelledby="install-title">
     <img className="install-icon" src="/icons/precomobi-192.png" width="80" height="80" alt="" />
@@ -12,8 +17,8 @@ export function InstallApp() {
     {pwa.installed ? <div className="notice good" role="status">O PreçoMobi já está instalado ou aberto como aplicativo.</div> : <>
       {pwa.canInstall && <button className="primary-button" type="button" disabled={pwa.pending} onClick={() => void pwa.install()}>{pwa.pending ? "Abrindo instalação…" : "Instalar PreçoMobi"}</button>}
       <div className="install-guides">
-        <section><h2>Android</h2><ol><li>Abra este site no Chrome.</li><li>Toque em <strong>Instalar PreçoMobi</strong>, se o botão aparecer, ou no menu <strong>⋮</strong> do navegador.</li><li>Escolha <strong>Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong> e confirme.</li></ol></section>
-        <section><h2>iPhone</h2><ol><li>Abra este site no Safari.</li><li>Toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong>.</li><li>Se aparecer <strong>Abrir como App</strong>, deixe ativado. Toque em <strong>Adicionar</strong>.</li></ol></section>
+        <section id="android" style={{ scrollMarginTop: "calc(var(--pm-header-height, 76px) + 16px)" }}><h2>Android</h2><ol><li>Abra este site no Chrome.</li><li>Toque em <strong>Instalar PreçoMobi</strong>, se o botão aparecer, ou no menu <strong>⋮</strong> do navegador.</li><li>Escolha <strong>Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong> e confirme.</li></ol></section>
+        <section id="iphone" style={{ scrollMarginTop: "calc(var(--pm-header-height, 76px) + 16px)" }}><h2>iPhone</h2><ol><li>Abra este site no Safari.</li><li>Toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong>.</li><li>Se aparecer <strong>Abrir como App</strong>, deixe ativado. Toque em <strong>Adicionar</strong>.</li></ol></section>
       </div>
       <p className="form-hint">Os nomes das opções podem variar. Se estiver no navegador do WhatsApp ou Instagram, abra o link no Chrome ou Safari primeiro. A instalação é opcional.</p>
     </>}

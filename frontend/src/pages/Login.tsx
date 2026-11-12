@@ -92,7 +92,7 @@ export function Login() {
           <button className="pm-login-resend" type="button" onClick={() => void sendEmail("resend")}>Não recebeu o e-mail de confirmação?</button>
           {demo && <button className="outline-button" type="button" disabled={loading} onClick={async () => {
             setLoading(true); setError("");
-            try { await demoLogin(); navigate("/lista"); }
+            try { await demoLogin(); navigate("/"); }
             catch (err) { setError(err instanceof Error ? err.message : "Demonstração indisponível."); }
             finally { setLoading(false); }
           }}>Explorar demonstração</button>}

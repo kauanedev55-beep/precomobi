@@ -46,7 +46,7 @@ export default function App() {
               <Route index element={<Home />} />
               <Route path="instalar" element={<InstallApp />} />
               <Route path="comecar" element={<AccessChoice />} />
-              <Route path="painel" element={<RequireAuth><Navigate replace to="/lista" /></RequireAuth>} />
+              <Route path="painel" element={<RequireAuth><Navigate replace to="/" /></RequireAuth>} />
               <Route path="login" element={<Login />} />
               <Route path="cadastro" element={<Register />} />
               <Route path="confirmar-email" element={<VerifyEmail />} />

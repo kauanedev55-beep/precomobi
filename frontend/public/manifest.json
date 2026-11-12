@@ -4,7 +4,7 @@
   "short_name": "PreçoMobi",
   "description": "Sua lista de compras e comparação de preços nos mercados da sua cidade.",
   "lang": "pt-BR",
-  "start_url": "/lista",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f1eae0",

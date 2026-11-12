@@ -4,5 +4,5 @@ export function rememberInvite(path:string){if(isInvite(path))try{sessionStorage
 export function loginReturnPath(from?:string):string {
  let pending="";try{pending=sessionStorage.getItem(KEY)||"";sessionStorage.removeItem(KEY);}catch{/* Continue with router state. */}
  if(from?.startsWith('/') && !from.startsWith('//') && !from.includes('\\'))return from;
- return isInvite(pending) ? pending : '/lista';
+ return isInvite(pending) ? pending : '/';
 }

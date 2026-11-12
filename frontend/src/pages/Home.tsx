@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { PhotoCard } from "../components/PhotoCard";
 import { Icon } from "../components/Icon";
+import { InstallQr } from "../components/InstallQr";
 
 export function Home() {
   const {user}=useAuth();
@@ -16,6 +17,7 @@ export function Home() {
       <PhotoCard src="/photos/alimentos-frescos.jpg" alt="Cesta de vime com tomates, abacates, aspargos e pimentão" title="Uma descoberta que ajuda." eyebrow="03 · COMPARTILHAR" description="Viu um preço ou promoção no mercado? Informe o produto, a unidade e o valor. Promoções têm validade e condições, e outras pessoas podem confirmar ou avisar que acabaram." action="Compartilhar um preço" to={user ? "/contribuir" : "/cadastro"} credit="leonie wise · Unsplash" source="https://unsplash.com/photos/NLU117HCVuc"/>
     </div></section>
     <section id="beneficios" className="photo-community-strip"><span className="photo-community-icon"><Icon name="people" size={32}/></span><div><span className="photo-eyebrow">BOM PARA QUEM COMPRA PERTO</span><h2>Você compartilha um preço.<br/>Outra pessoa faz uma escolha melhor.</h2><p>As listas são privadas. As contribuições ajudam a comunidade a comparar com mais informação.</p></div><Link className="outline-button" to={user ? "/comunidade" : "/cadastro"}>Conhecer a comunidade<Icon name="arrow" size={18}/></Link></section>
+    <InstallQr/>
     <section className="photo-final"><div><h2>O primeiro passo é a sua lista.</h2><p>Organize o que precisa levar para casa.</p></div><Link className="primary-button" to={start}>Começar agora<Icon name="arrow" size={18}/></Link></section>
     <details className="photo-credits"><summary>Sobre as fotografias</summary><p>Imagens ilustrativas de Maria Lin Kim, Nathália Rosa e leonie wise, disponibilizadas no Unsplash. Elas não representam as unidades cadastradas. Créditos: <a href="https://unsplash.com/photos/8RaUEd8zD-U" target="_blank" rel="noopener noreferrer">Maria Lin Kim</a>, <a href="https://unsplash.com/photos/rWMIbqmOxrY" target="_blank" rel="noopener noreferrer">Nathália Rosa</a> e <a href="https://unsplash.com/photos/NLU117HCVuc" target="_blank" rel="noopener noreferrer">leonie wise</a>.</p></details>
   </div>;

@@ -12,7 +12,7 @@ Abra no Safari > Compartilhar > Adicionar à Tela de Início > Adicionar. Se hou
 
 ## Funcionamento
 
-O manifesto público `/manifest.json` usa ID e escopo /, abertura em /lista, display standalone e ícones PNG 192/512, um ícone maskable com margem segura e apple-touch-icon de 180 px. A marca existente foi adaptada, sem mudar a identidade. A instalação não desativa a verificação de e-mail nem muda permissões.
+O manifesto público `/manifest.json` usa ID e escopo /, abertura em /, display standalone e ícones PNG 192/512, um ícone maskable com margem segura e apple-touch-icon de 180 px. A marca existente foi adaptada, sem mudar a identidade. A instalação não desativa a verificação de e-mail nem muda permissões.
 
 Um service worker é registrado somente no build de produção e em contexto seguro. Guarda exclusivamente a página pública de falta de conexão e um ícone. Não armazena HTML da aplicação, respostas de autenticação, API, preços ou listas. Navegações usam a rede com no-store; se a conexão falhar, mostram uma tela sem dados pessoais. A página de fallback nunca é gravada como uma lista nem apresentada como resultado de comparação. Requisições da API e de outros domínios não são interceptadas.
 
@@ -29,3 +29,11 @@ Atualizações da interface vêm pelo site; fechar e abrir carrega novamente a p
 Após o cadastro bem-sucedido, a rota `/comecar` pergunta Como você quer continuar?, com somente dois botões: Continuar pelo site (login) ou Instalar no celular (instruções em `/instalar`). O aviso de criação de conta só aparece quando a navegação vem do cadastro; abrir a rota diretamente não afirma que uma conta foi criada. A confirmação de e-mail continua obrigatória. Não há login automático por instalar. O destino de retorno, inclusive convite de lista familiar, é repassado na navegação ao login. Nenhuma senha ou e-mail é colocado na URL da escolha.
 
 A escolha não aparece em cada login. Na janela instalada, o segundo caminho é ocultado. A instalação também está no menu público e em Mais opções do menu da conta, sem criar uma quinta aba na navegação inferior nem modificar as telas de compras. A página com os passos de instalação é aberta ao escolher instalar.
+
+## QR codes na apresentação
+
+A página principal ganhou somente um bloco adicional antes da chamada final, sem substituir a apresentação existente. Dois QR codes estáticos apontam para `https://precomobi-1.onrender.com/instalar#android` e `https://precomobi-1.onrender.com/instalar#iphone`. São instruções de instalação da PWA, não páginas de lojas. As imagens têm margem branca e correção de erros M e foram decodificadas para conferir os destinos. No celular (até 600 px), os códigos são substituídos pelos mesmos links clicáveis de Android e iPhone, evitando pedir que a pessoa escaneie a própria tela. A página de instalação rola para as instruções da plataforma escolhida.
+
+## Página principal
+
+O login normal retorna à apresentação principal em `/`, e o nome PreçoMobi no cabeçalho aponta para ela. Retornos explícitos a telas protegidas e convites continuam respeitados. A abertura inicial da PWA usa `/`; o manifesto mantém o mesmo ID para evitar uma segunda instalação. Aplicativos já instalados podem depender da atualização de metadados pelo navegador; o nome no cabeçalho permite acessar a principal imediatamente.
