@@ -5,6 +5,7 @@ import { usePwa } from "../pwa/PwaContext";
 export function InstallApp() {
   const pwa = usePwa();
   const location = useLocation();
+  const appleMobile = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   useEffect(() => {
     const id = location.hash === "#android" ? "android" : location.hash === "#iphone" ? "iphone" : null;
     if (id) document.getElementById(id)?.scrollIntoView({ block: "start" });
@@ -15,7 +16,8 @@ export function InstallApp() {
     <h1 id="install-title">PreçoMobi no seu celular</h1>
     <p>Sua lista a um toque. Adicione o ícone à tela inicial e abra o PreçoMobi como um app, sem taxa de instalação.</p>
     {pwa.installed ? <div className="notice good" role="status">O PreçoMobi já está instalado ou aberto como aplicativo.</div> : <>
-      {pwa.canInstall && <button className="primary-button" type="button" disabled={pwa.pending} onClick={() => void pwa.install()}>{pwa.pending ? "Abrindo instalação…" : "Instalar PreçoMobi"}</button>}
+      {(pwa.canInstall || pwa.pending) && <button className="primary-button" type="button" disabled={pwa.pending} onClick={() => void pwa.install()}>{pwa.pending ? "Abrindo instalação…" : "Instalar PreçoMobi"}</button>}
+      {!pwa.canInstall && !pwa.pending && !appleMobile && <div className="install-manual notice" role="status"><strong>Instale pelo menu do navegador</strong><p>No Android, abra no Chrome e toque em <strong>⋮ → Adicionar à tela inicial → Instalar</strong>. A opção também pode se chamar “Instalar aplicativo”.</p><p>No iPhone, continue usando <strong>Compartilhar → Adicionar à Tela de Início</strong>.</p><p>Se abriu pelo WhatsApp ou Instagram, use o menu dessa tela para abrir no Chrome ou Safari.</p><a className="outline-button" href="#android">Ver os passos para Android</a></div>}
       <div className="install-guides">
         <section id="android" style={{ scrollMarginTop: "calc(var(--pm-header-height, 76px) + 16px)" }}><h2>Android</h2><ol><li>Abra este site no Chrome.</li><li>Toque em <strong>Instalar PreçoMobi</strong>, se o botão aparecer, ou no menu <strong>⋮</strong> do navegador.</li><li>Escolha <strong>Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong> e confirme.</li></ol></section>
         <section id="iphone" style={{ scrollMarginTop: "calc(var(--pm-header-height, 76px) + 16px)" }}><h2>iPhone</h2><ol><li>Abra este site no Safari.</li><li>Toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong>.</li><li>Se aparecer <strong>Abrir como App</strong>, deixe ativado. Toque em <strong>Adicionar</strong>.</li></ol></section>

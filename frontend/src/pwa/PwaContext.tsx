@@ -1,40 +1,23 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createInstallPromptStore } from "../lib/installPrompt";
 
-type InstallPrompt = Event & {
-  prompt(): Promise<unknown>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-};
 type PwaState = { installed: boolean; canInstall: boolean; pending: boolean; message: string; install(): Promise<void> };
 const Context = createContext<PwaState | null>(null);
+// This module loads before rendering and before service-worker registration.
+const prompts = createInstallPromptStore(window);
 const standalone = () => window.matchMedia("(display-mode: standalone)").matches ||
   Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
 
 export function PwaProvider({ children }: { children: ReactNode }) {
-  const [installed, setInstalled] = useState(standalone);
-  const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
-  const [pending, setPending] = useState(false);
-  const [message, setMessage] = useState("");
+  const status = useSyncExternalStore(prompts.subscribe, prompts.getSnapshot);
+  const [openedAsApp, setOpenedAsApp] = useState(standalone);
   useEffect(() => {
     const media = window.matchMedia("(display-mode: standalone)");
-    const changed = () => setInstalled(standalone());
-    const ready = (event: Event) => { event.preventDefault(); setPrompt(event as InstallPrompt); };
-    const completed = () => { setInstalled(true); setPrompt(null); setMessage("Instalação concluída. Procure o ícone PreçoMobi no celular."); };
-    window.addEventListener("beforeinstallprompt", ready);
-    window.addEventListener("appinstalled", completed);
+    const changed = () => setOpenedAsApp(standalone());
     media.addEventListener?.("change", changed);
-    return () => { window.removeEventListener("beforeinstallprompt", ready); window.removeEventListener("appinstalled", completed); media.removeEventListener?.("change", changed); };
+    return () => media.removeEventListener?.("change", changed);
   }, []);
-  async function install() {
-    if (!prompt || pending) return;
-    setPending(true); setMessage("");
-    try {
-      await prompt.prompt();
-      const result = await prompt.userChoice;
-      setMessage(result.outcome === "accepted" ? "Pedido aceito. Aguarde o navegador concluir a instalação." : "Tudo bem. Você pode instalar quando quiser ou continuar pelo site.");
-    } catch { setMessage("O navegador não abriu a instalação. Use as orientações abaixo."); }
-    finally { setPrompt(null); setPending(false); }
-  }
-  return <Context.Provider value={{ installed, canInstall: Boolean(prompt), pending, message, install }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ ...status, installed: openedAsApp || status.installed, install: prompts.install }}>{children}</Context.Provider>;
 }
 export function usePwa() {
   const value = useContext(Context);

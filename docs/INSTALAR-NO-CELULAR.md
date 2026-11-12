@@ -37,3 +37,11 @@ A página principal ganhou somente um bloco adicional antes da chamada final, se
 ## Página principal
 
 O login normal retorna à apresentação principal em `/`, e o nome PreçoMobi no cabeçalho aponta para ela. Retornos explícitos a telas protegidas e convites continuam respeitados. A abertura inicial da PWA usa `/`; o manifesto mantém o mesmo ID para evitar uma segunda instalação. Aplicativos já instalados podem depender da atualização de metadados pelo navegador; o nome no cabeçalho permite acessar a principal imediatamente.
+
+## Correção da instalação no Android e do acesso no celular
+
+O menu público era ocultado abaixo de 850 px, levando junto o acesso à instalação. Agora há um link Instalar nas ações do cabeçalho móvel e um item direto no menu da conta, fora de Mais opções. Em telas muito estreitas, as ações ficam em uma linha própria. As quatro abas inferiores permanecem iguais.
+
+O evento de instalação é capturado antes de React montar, evitando perder uma autorização que chegou cedo. O registro do service worker não espera imagens ou fontes terminarem de carregar. O diálogo nativo só é chamado quando há autorização do navegador e diretamente no toque; aceitação não é tratada como instalação concluída até o evento appinstalled. Cancelamento ou falha preservam o uso pelo site e as instruções pelo menu do Chrome. Em iPhone/iPad, o fluxo do Safari permanece como antes.
+
+Nem todo navegador Android dispara beforeinstallprompt: o menu Adicionar à tela inicial/Instalar continua sendo a alternativa. Não há como forçar esse diálogo em navegadores internos do WhatsApp/Instagram. A verificação automática cobre evento antecipado, múltiplos toques, cancelamento, falha e conclusão. A instalação em aparelho Android físico ainda depende de teste no dispositivo.
