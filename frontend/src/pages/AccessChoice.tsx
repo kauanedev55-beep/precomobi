@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { InstallLink } from "../components/InstallLink";
 import { usePwa } from "../pwa/PwaContext";
 
 export function AccessChoice() {
@@ -13,7 +14,7 @@ export function AccessChoice() {
     <p>{installed ? "Entre com seu e-mail e sua senha." : "Sua conta é a mesma no site e no aplicativo."}</p>
     <div className="access-choice-options">
       <Link className="primary-button" to="/login" state={loginState}><strong>{installed ? "Entrar" : "Continuar pelo site"}</strong>{!installed && <span>Não precisa instalar</span>}</Link>
-      {!installed && <Link className="outline-button" to="/instalar" state={state}><strong>Instalar no celular</strong><span>Ícone na tela inicial</span></Link>}
+      {!installed && <InstallLink className="outline-button" to="/instalar" state={state}><strong>Instalar no celular</strong><span>Ícone na tela inicial</span></InstallLink>}
     </div>
     {!installed && <p className="form-hint">Você também pode instalar depois, pelo menu.</p>}
   </section>;

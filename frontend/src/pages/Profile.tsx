@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { InstallLink } from "../components/InstallLink";
 import { useAuth } from "../auth/AuthContext";
 import { getMyPriceReports, getShoppingLists } from "../services/api";
 
@@ -32,7 +33,7 @@ export function Profile() {
       <div className="button-row">
         <Link className="outline-button" to="/avisos">Configurar avisos de ofertas</Link>
         <Link className="outline-button" to="/lista">Minhas listas</Link>
-        <Link className="outline-button" to="/instalar">Instalar PreçoMobi no celular</Link>
+        <InstallLink className="outline-button" to="/instalar">Instalar PreçoMobi no celular</InstallLink>
         <Link className="outline-button" to="/minhas-contribuicoes">Minhas contribuições</Link>
         {user.is_admin && <Link className="outline-button" to="/mercados">Cadastrar mercados</Link>}
         <button className="primary-button" type="button" onClick={() => { logout(); navigate("/"); }}>Sair</button>

@@ -45,3 +45,9 @@ O menu público era ocultado abaixo de 850 px, levando junto o acesso à instala
 O evento de instalação é capturado antes de React montar, evitando perder uma autorização que chegou cedo. O registro do service worker não espera imagens ou fontes terminarem de carregar. O diálogo nativo só é chamado quando há autorização do navegador e diretamente no toque; aceitação não é tratada como instalação concluída até o evento appinstalled. Cancelamento ou falha preservam o uso pelo site e as instruções pelo menu do Chrome. Em iPhone/iPad, o fluxo do Safari permanece como antes.
 
 Nem todo navegador Android dispara beforeinstallprompt: o menu Adicionar à tela inicial/Instalar continua sendo a alternativa. Não há como forçar esse diálogo em navegadores internos do WhatsApp/Instagram. A verificação automática cobre evento antecipado, múltiplos toques, cancelamento, falha e conclusão. A instalação em aparelho Android físico ainda depende de teste no dispositivo.
+
+## Primeiro toque no botão de instalação
+
+As entradas do cabeçalho, menu, perfil, escolha após cadastro usam InstallLink. Se o navegador forneceu beforeinstallprompt, o primeiro toque comum aciona o diálogo nativo sem navegar antes para as instruções. Toques enquanto há solicitação pendente não repetem a chamada. Abrir o link em nova aba continua funcionando. Se o mecanismo não estiver disponível, inclusive Safari/iOS, o link mantém o destino das instruções. Não se usa navigator.share como substituto da instalação, não há download fictício de APK/iOS, nem tentativa de instalar silenciosamente.
+
+No Safari do iPhone, a instalação continua exigindo a opção Adicionar à Tela de Início do menu Compartilhar do navegador. Um botão no site não consegue confirmar essa ação pelo usuário. Os testes de captura e execução do instalador validam a lógica do evento, não comprovam instalação em aparelho físico.
