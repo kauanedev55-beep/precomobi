@@ -55,7 +55,7 @@ export function Layout() {
     void document.fonts?.ready.then(measure);
     return()=>{active=false;observer?.disconnect();window.removeEventListener("resize",measure);window.visualViewport?.removeEventListener("resize",measure);document.removeEventListener("focusin",measure);document.removeEventListener("focusout",measure);};
   },[user?.id,checking]);
-  const shopping = pathname === "/produtos" || /^\/produtos\/\d+$/.test(pathname);
+  const shopping = ["/produtos", "/ofertas", "/avisos"].includes(pathname) || /^\/produtos\/\d+$/.test(pathname);
   const selected = (to: string) => to === "/lista" ? pathname === "/lista" || pathname.startsWith("/listas/") || pathname.startsWith("/comparacao/")
     : to === "/ofertas" ? pathname === "/ofertas" || pathname === "/avisos"
     : to === "/comunidade" ? ["/comunidade", "/contribuir", "/minhas-contribuicoes"].includes(pathname)

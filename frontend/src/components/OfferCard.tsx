@@ -1,5 +1,5 @@
 import {saleLabel} from "../lib/quantities";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../cart/CartContext";
 import { useOffers } from "../offers/OffersContext";
@@ -8,6 +8,7 @@ import { googleMapsUrl } from "../lib/navigation";
 import { formatDateTime, formatPrice } from "../lib/format";
 import { ProductArt } from "./ProductArt";
 import { Icon } from "./Icon";
+import "../styles/offer-info.css";
 
 export function OfferCard({offer:group, onUpdated}: {offer: Offer; onUpdated?: (offer: Offer) => void}) {
   const [selectedId,setSelectedId]=useState(group.id);
@@ -20,6 +21,9 @@ export function OfferCard({offer:group, onUpdated}: {offer: Offer; onUpdated?: (
   const [changing, setChanging] = useState(false);
   const [newPrice, setNewPrice] = useState("");
   const [message, setMessage] = useState("");
+  const [infoOpen, setInfoOpen] = useState(false);
+  const infoId = useId();
+  const requiresClub = /^Exige\s+(?:o\s+)?clube\b/i.test(offer.conditions || "");
   const inList = cart.items.some(i => i.product.id === offer.product_id);
   const groupWarning=stores.some(store=>store.changed_reports+store.ended_reports>0);
   const warning = offer.changed_reports + offer.ended_reports > 0;
@@ -38,11 +42,14 @@ export function OfferCard({offer:group, onUpdated}: {offer: Offer; onUpdated?: (
     <div className="offer-card-top"><span className={`offer-status ${offer.state!=="active" ? "offer-inactive" : ""}`}><Icon name="tag" size={16}/>{offer.state==="active" ? (offer.source_url ? "Oferta · catálogo oficial" : "Promoção · informada por usuário") : offer.state==="expired" ? "Validade encerrada" : "Promoção encerrada"}</span>{inList && <span className="offer-list-tag">Na sua lista</span>}</div>
     <div className="offer-product"><ProductArt category={null} imageUrl={offer.image_url} name={offer.product_name} size={64}/><div><Link to={`/produtos/${offer.product_id}`} className="offer-product-name">{offer.product_name}</Link><span className="offer-market"><Icon name="pin" size={16}/>{offer.market.name}</span></div></div>
     {stores.length>1 && <details className="offer-store-picker"><summary>Mesma oferta em {stores.length} lojas da sua região</summary><label className="field"><span>Loja para a rota e a confirmação do preço</span><select value={offer.id} disabled={pending} onChange={event=>{setSelectedId(Number(event.target.value));setChanging(false);setMessage("");setError("");}}>{stores.map(store=><option key={store.id} value={store.id}>{store.market.name} · {store.market.city}</option>)}</select></label><p className="form-hint">Preço, condições e validade iguais no mesmo folheto. Seus avisos valem para a loja selecionada.</p></details>}
-    <strong className="offer-price">{formatPrice(offer.price)} <small>/ {saleLabel(offer.sale_unit)}</small></strong>
-    <p className="offer-conditions">{offer.conditions}</p>
+    <div className="offer-price-row"><div><strong className="offer-price">{formatPrice(offer.price)} <small>/ {saleLabel(offer.sale_unit)}</small></strong>{requiresClub && <span className="offer-club-badge">Exige clube</span>}</div><button type="button" className="offer-info-toggle" aria-label={`Condições e origem da oferta de ${offer.product_name}`} aria-expanded={infoOpen} aria-controls={infoId} onClick={()=>setInfoOpen(!infoOpen)}><span aria-hidden="true">ⓘ</span></button></div>
     <p className="offer-validity">Válida até <strong>{formatDateTime(offer.expires_at)}</strong></p>
-    <p className="offer-observed">Vista em {formatDateTime(offer.observed_at)} · {offer.source_label || (offer.is_mine ? "Você compartilhou" : "Informada por outro usuário")}</p>
-    {offer.source_url && <p><a href={offer.source_url} target="_blank" rel="noopener noreferrer">Conferir folheto e condições na fonte</a></p>}
+    <div id={infoId} className="offer-info-panel" hidden={!infoOpen}>
+      <strong>Sobre esta oferta</strong>
+      <p className="offer-conditions">{offer.conditions || "Condições não informadas. Confira na loja."}</p>
+      <p className="offer-observed">Vista em {formatDateTime(offer.observed_at)} · {offer.source_label || (offer.is_mine ? "Você compartilhou" : "Informada por outro usuário")}</p>
+      {offer.source_url && <a href={offer.source_url} target="_blank" rel="noopener noreferrer">Conferir folheto e condições ↗</a>}
+    </div>
     <div className="offer-trust"><Icon name="people" size={18}/><span>{offer.confirmations ? `${offer.confirmations} ${offer.confirmations===1 ? "pessoa encontrou" : "pessoas encontraram"} esse preço` : "Ainda sem confirmação de outras pessoas"}</span></div>
     {groupWarning && !warning && <p className="offer-warning" role="status">Há avisos de alteração em algumas lojas. Escolha a sua loja para conferir os avisos antes de ir.</p>}
     {warning && <p className="offer-warning" role="status">Atenção: {offer.changed_reports} {offer.changed_reports===1 ? "aviso de preço alterado" : "avisos de preço alterado"} e {offer.ended_reports} {offer.ended_reports===1 ? "aviso de oferta encerrada" : "avisos de oferta encerrada"}. Confira na loja antes de ir.</p>}
