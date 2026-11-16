@@ -10,10 +10,9 @@ import {produceGuide,productDisplayName} from "../lib/produceGuides";
 import { ShoppingPhoto } from "../components/ShoppingPhoto";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
-import {cartItemsPayload} from "../lib/cartItems";
 import { QuantityPicker } from "../components/QuantityPicker";
 import { formatDate, productSubtitle } from "../lib/format";
-import { createShoppingList, deleteShoppingList, getShoppingLists, type ShoppingList } from "../services/api";
+import { deleteShoppingList, getShoppingLists, type ShoppingList } from "../services/api";
 
 export function ShoppingListPage() {
   const { user } = useAuth();
@@ -25,9 +24,9 @@ export function ShoppingListPage() {
   const {name,setName}=cart;
   const [invalidQuantities,setInvalidQuantities]=useState<number[]>([]);
   const quantitiesValid=!invalidQuantities.some(id=>cart.items.some(i=>i.product.id===id));
-  const [saving, setSaving] = useState(false);
+  const {saving}=cart;
   const [saveError, setSaveError] = useState("");
-  const [savedId,setSavedId] = useState<number | null>(null);
+  const savedId=cart.savedListId;
   const [lists, setLists] = useState<ShoppingList[]>([]);
   const [listsLoading, setListsLoading] = useState(false);
   const [listsError, setListsError] = useState("");
@@ -49,29 +48,19 @@ export function ShoppingListPage() {
     void loadLists();
   }, [loadLists]);
 
-  useEffect(() => {if(cart.items.length) setSavedId(null);}, [cart.items.length]);
 
   async function saveList() {
     if (!user) {
       navigate("/login", { state: { from: "/lista", reason: "Faça login para salvar sua lista e compará-la." } });
       return;
     }
-    setSaving(true);
     setSaveError("");
     try {
-      const created = await createShoppingList({
-        name: name.trim() || "Minha compra",
-        items: cartItemsPayload(cart.items),
-      });
+      const saved = await cart.save();
       alerts.refresh();
-      setLists(current => [created,...current]);
-      setSavedId(created.id);
-      cart.clear();
-      setName("Minha compra");
+      setLists(current => [saved,...current.filter(list=>list.id!==saved.id)]);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Não foi possível salvar a lista.");
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -79,6 +68,7 @@ export function ShoppingListPage() {
     if (!window.confirm(`Excluir a lista “${list.name}”?`)) return;
     try {
       await deleteShoppingList(list.id);
+      cart.detachSavedList(list.id);
       alerts.refresh();
       setLists((current) => current.filter((item) => item.id !== list.id));
     } catch (err) {
@@ -90,7 +80,7 @@ export function ShoppingListPage() {
     <section>
       <div className="grocery-list-heading"><div><span className="grocery-kicker">DA LISTA À SACOLA</span><h1>Minha lista de compras</h1><p>Monte e use sua lista de compras. Compare os mercados quando quiser.</p>{cart.items.length > 0 && <Link className="primary-button" to="/produtos"><Icon name="plus"/>Adicionar produtos</Link>}</div><ShoppingPhoto/></div>
       <ol className="shopping-steps" aria-label="Como organizar sua compra"><li aria-current="step"><b>1</b><span>Monte sua lista</span></li><li><b>2</b><span>Compare os mercados</span></li><li><b>3</b><span>Escolha e abra a rota</span></li></ol>
-      {savedId && <p className="notice good" role="status">Lista salva na sua conta. <Link to={`/comparacao/${savedId}`}>Comparar esta lista</Link>. A lista em edição já está pronta para uma nova compra.</p>}
+      {savedId && <p className="notice good" role="status">{cart.isSaved ? "Lista salva na sua conta. Você pode continuar usando e editando." : "Sua lista tem alterações para salvar."} <Link to={`/listas/${savedId}`}>Abrir lista salva</Link></p>}
       {cart.items.length > 0 && <h2>Produtos da lista</h2>}
       {listOffers.length>0 && <div className="list-offer-notice"><span className="notice-icon"><Icon name="tag"/></span><div><p><strong>{listOffers.length} {listOffers.length===1 ? "promoção encontrada" : "promoções encontradas"}</strong> para produtos desta lista.</p><Link to="/avisos">Conferir condições e validade →</Link></div></div>}
       {cart.items.length === 0 ? (
@@ -118,7 +108,7 @@ export function ShoppingListPage() {
             <label className="field"><span>Nome da lista</span><input value={name} onChange={(event) => setName(event.target.value)} maxLength={160} /></label>
             <div className="button-row">
               <button className="primary-button" type="button" disabled={saving || !city || !quantitiesValid} onClick={() => navigate("/comparacao/atual",{state:{name:name.trim() || "Minha compra"}})}>Comparar mercados</button>
-              <button className="outline-button" type="button" onClick={saveList} disabled={saving || !quantitiesValid}>{saving ? "Salvando..." : "Salvar lista"}</button>
+              <button className="outline-button" type="button" onClick={saveList} disabled={saving || !quantitiesValid || cart.isSaved}>{saving ? "Salvando..." : cart.isSaved ? "Lista salva ✓" : "Salvar lista"}</button>
               <details className="list-more-actions"><summary>Mais opções da lista</summary><button className="text-button danger" type="button" onClick={cart.clear}>Esvaziar lista atual</button></details>
             </div>
             {!quantitiesValid && <p className="error-message" role="alert">Confira o peso ou a quantidade dos produtos antes de continuar.</p>}
@@ -130,6 +120,7 @@ export function ShoppingListPage() {
 
       {cart.archivedDrafts.length>0 && <details className="list-more-actions"><summary>Rascunhos anteriores neste aparelho ({cart.archivedDrafts.length})</summary>{cart.archivedDrafts.map(d=><p key={d.id}>{d.name} · {d.items.length} produtos <button className="outline-button" onClick={()=>cart.restoreArchive(d.id)}>Continuar este rascunho</button></p>)}</details>}
       <h2 id="listas-salvas">Minhas listas salvas</h2>
+      <p className="form-hint">Ao editar uma lista como nova, a lista em edição fica guardada em “Rascunhos anteriores neste aparelho”.</p>
       <p className="form-hint">O rascunho fica neste aparelho. Ao voltar, você pode continuar ou criar outra lista. Salve na conta para acessar em outros aparelhos. Só você tem acesso às suas listas. Informar um preço na comunidade não compartilha sua lista de compras.</p>
       {!user && <Empty title="Entre para ver suas listas"><Link to="/login" state={{ from: "/lista" }}>Fazer login</Link> ou <Link to="/cadastro" state={{ from: "/lista" }}>criar conta</Link>. Cada pessoa vê somente as próprias listas.</Empty>}
       {user && listsLoading && <Loading text="Carregando suas listas..." />}
@@ -145,7 +136,7 @@ export function ShoppingListPage() {
               </div>
               <div className="card-actions">
                 <Link className="primary-button small" to={`/listas/${list.id}`}>Abrir lista</Link>
-                <button className="outline-button" type="button" onClick={() => {cart.setName(list.name);cart.replaceAll(list.items.map((item) => ({ product: item.product, quantity: Number(item.quantity), isPurchased:false })));}}>Editar como nova</button>
+                <button className="outline-button" type="button" onClick={() => {cart.copyAsNew(list.name,list.items.map((item) => ({ product: item.product, quantity: Number(item.quantity), isPurchased:false })));window.scrollTo({top:0,behavior:"smooth"});}}>Editar como nova</button>
                 {list.owner_id===user?.id && <button className="text-button danger" type="button" onClick={() => remove(list)}>Excluir</button>}
               </div>
             </li>
