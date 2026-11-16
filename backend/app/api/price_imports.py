@@ -5,7 +5,7 @@ from typing import Literal
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 from app.api.deps import get_admin_user
@@ -90,6 +90,31 @@ def view(rows):
              "regular_price":str(e.regular_price) if e.regular_price is not None else None,"club_price":str(e.club_price) if e.club_price is not None else None,
              "club_name":e.club_name,"valid_from":e.valid_from,"valid_until":e.valid_until,"conditions":e.conditions,"source_url":e.source_url} for e,p,m in rows]
 
+class SourceBatch(BaseModel):
+    model_config=ConfigDict(extra="forbid")
+    entries:list[dict]=Field(min_length=1,max_length=200)
+
+@router.post("/prepare")
+def prepare_source(batch:SourceBatch,db:Session=Depends(get_db),admin:User=Depends(get_admin_user)):
+    prepared=[]
+    metadata={"product_source_url","market_prefix","cities","excluded_markets","product_name","source_label","evidence_image"}
+    allowed=(set(ImportEntry.model_fields)-{"product_id","market_ids"})|metadata
+    for item in batch.entries:
+        if set(item)-allowed:raise HTTPException(422,"Há campos não reconhecidos no arquivo.")
+        url=item.get("product_source_url");prefix=item.get("market_prefix")
+        if not isinstance(url,str) or len(url)>500 or not isinstance(prefix,str) or prefix not in {"Carone","Sempretem","Extrabom","Supermercados BH"}:raise HTTPException(422,"Informe produto e rede válidos no arquivo.")
+        cities=item.get("cities",[]);excluded=item.get("excluded_markets",[])
+        if any(not isinstance(values,list) or any(not isinstance(v,str) for v in values) for values in (cities,excluded)):raise HTTPException(422,"Cidades e exclusões devem ser listas de nomes.")
+        product=db.scalar(select(Product).where(Product.catalog_source_url==url,Product.is_active.is_(True)))
+        if not product:raise HTTPException(422,"Um produto do arquivo não foi encontrado no catálogo. Nenhum produto foi criado automaticamente.")
+        markets=[m.id for m in db.scalars(select(Market).where(Market.is_active.is_(True),Market.state=="ES")) if m.name.startswith(prefix) and m.name not in excluded and (not cities or m.city in cities)]
+        fields={k:v for k,v in item.items() if k not in metadata}
+        try:prepared.append(ImportEntry.model_validate({**fields,"product_id":product.id,"market_ids":markets}))
+        except ValidationError:raise HTTPException(422,"Há preço, unidade, validade ou fonte inválida no arquivo.")
+    converted=ImportBatch(entries=prepared)
+    rows=plan(db,converted,datetime.now(timezone.utc))
+    return {"batch":converted.model_dump(mode="json"),"rows":view(rows),"published":False}
+
 @router.post("/preview")
 def preview(batch:ImportBatch,db:Session=Depends(get_db),admin:User=Depends(get_admin_user)):
     return {"rows":view(plan(db,batch,datetime.now(timezone.utc))),"published":False}
@@ -108,7 +133,7 @@ def publish(batch:ImportBatch,db:Session=Depends(get_db),admin:User=Depends(get_
                 added_prices+=1
         promo_price=entry.club_price if entry.club_price is not None else entry.regular_price
         terms=(f"Exige {entry.club_name}. "+(f"Sem clube: R$ {entry.regular_price:.2f}. " if entry.regular_price is not None else "Preço sem clube não informado. ") if entry.club_price is not None else "Preço sem exigência de clube. ")+entry.conditions
-        existing=db.scalar(select(Offer.id).where(Offer.product_id==product.id,Offer.market_id==market.id,Offer.price==promo_price,Offer.expires_at==entry.valid_until,Offer.source_url==entry.source_url,Offer.conditions==terms))
+        existing=db.scalar(select(Offer.id).where(Offer.product_id==product.id,Offer.market_id==market.id,Offer.price==promo_price,Offer.expires_at==entry.valid_until,Offer.source_url==entry.source_url))
         if existing is None:
             db.add(Offer(product_id=product.id,market_id=market.id,user_id=admin.id,price=promo_price,conditions=terms,observed_at=now,expires_at=entry.valid_until,source_url=entry.source_url,source_label="Folheto oficial · revisão administrativa"))
             added_offers+=1

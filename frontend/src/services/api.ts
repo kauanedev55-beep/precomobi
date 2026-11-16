@@ -277,3 +277,5 @@ export type PriceImportPreview={rows:PriceImportRow[];published:boolean};
 export const previewPriceImport=(payload:PriceImportBatch)=>request<PriceImportPreview>("/admin/price-import/preview",{method:"POST",body:JSON.stringify(payload)});
 export const publishPriceImport=(payload:PriceImportBatch)=>request<{added_prices:number;added_offers:number;checked_at:string;rows:number}>("/admin/price-import/publish",{method:"POST",body:JSON.stringify(payload)});
 export const getLatestPriceImport=()=>request<{last_import_at:string|null}>("/admin/price-import/latest");
+
+export const preparePriceImport=(entries:Record<string,unknown>[])=>request<PriceImportPreview & {batch:PriceImportBatch}>("/admin/price-import/prepare",{method:"POST",body:JSON.stringify({entries})});

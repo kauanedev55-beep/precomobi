@@ -62,5 +62,37 @@
     "source_label": "Carone · folheto oficial revisado 16/11",
     "conditions": "Válido nas lojas Carone do Espírito Santo, de 16/11/2026 a 28/11/2026, enquanto durarem os estoques. Preço por kg. Clube Carone exige cadastro.",
     "evidence_image": "https://d160aj0mj3npgx.cloudfront.net/9DCCF68F8D6/collections/xt9attvy6z/covers/8A2sfDgPH8tQ6AZJ/medium"
+  },
+  {
+    "product_name": "Carré suíno serrado e congelado (por quilo)",
+    "product_source_url": "https://www.carone.com.br/carre-suino-kg-14250/p",
+    "sale_unit": "kg",
+    "market_prefix": "Carone",
+    "excluded_markets": [],
+    "regular_price": "15.99",
+    "club_price": "14.79",
+    "club_name": "Clube Carone",
+    "valid_from": "2026-11-16T00:00:00-03:00",
+    "valid_until": "2026-11-28T23:59:59-03:00",
+    "source_url": "https://www.flipsnack.com/carone/encarte-quinzenal-esp-rito-santo-16-11-a-28-11",
+    "source_label": "Carone · folheto oficial revisado 16/11",
+    "conditions": "Corte suíno serrado e congelado, sem marca declarada no folheto. Preço por kg. Válido nas lojas Carone ES de 16/11/2026 a 28/11/2026, enquanto durarem os estoques. Clube exige cadastro.",
+    "evidence_image": "https://d160aj0mj3npgx.cloudfront.net/9DCCF68F8D6/collections/xt9attvy6z/covers/8A2sfDgPH8tQ6AZJ/medium"
+  },
+  {
+    "product_name": "Carré suíno serrado e congelado (por quilo)",
+    "product_source_url": "https://www.carone.com.br/carre-suino-kg-14250/p",
+    "sale_unit": "kg",
+    "market_prefix": "Sempretem",
+    "excluded_markets": [],
+    "regular_price": "14.69",
+    "club_price": null,
+    "club_name": null,
+    "valid_from": "2026-11-09T00:00:00-03:00",
+    "valid_until": "2026-11-21T23:59:59-03:00",
+    "source_url": "https://www.flipsnack.com/sempretem/encarte-quinzenal-esp-rito-santo-09-11-a-21-11",
+    "source_label": "Sempretem · folheto oficial revisado 16/11",
+    "conditions": "Carré suíno serrado e congelado, sem marca declarada no folheto. Preço por kg. Oferta sem clube para lojas do ES, de 09/11/2026 a 21/11/2026, enquanto durarem os estoques.",
+    "evidence_image": "https://d160aj0mj3npgx.cloudfront.net/C78A69F6AED/collections/h3erlf91ci/covers/oRTCtXcB26sSI4hD/medium"
   }
 ]

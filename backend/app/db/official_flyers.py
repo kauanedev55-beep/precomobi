@@ -47,5 +47,12 @@ def seed_official_flyers_nov12(engine,now=None):
 
 
 def seed_official_flyers_nov16(engine,now=None):
+    # The store name was imported as a brand on a generic frozen meat cut.
+    # Both leaflets explicitly quote this same unbranded cut per kg.
+    with Session(engine) as db:
+        cut=db.scalar(select(Product).where(Product.catalog_source_url=='https://www.carone.com.br/carre-suino-kg-14250/p',Product.is_active.is_(True)))
+        if cut and cut.name=='Carré Suíno Congelado Bandeja (por quilo)' and cut.brand=='CARONE':
+            cut.name='Carré suíno serrado e congelado (por quilo)';cut.brand=None;cut.is_standard=True
+            db.commit()
     entries=json.loads(Path(__file__).with_name('official_flyers_20261116.json').read_text())
     seed_official_flyers(engine,entries,now,migration_key='official-reviewed-leaflets-2026-11-16')

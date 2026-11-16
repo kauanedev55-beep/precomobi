@@ -13,7 +13,7 @@ def import_setup(client,monkeypatch):
     headers,user=register_user(client)
     monkeypatch.setattr(get_settings(),"admin_emails",user["email"])
     with SessionLocal() as db:
-        p=Product(name="Produto exclusivo para testar importação",sale_unit="unit",is_active=True)
+        p=Product(name="Produto exclusivo para testar importação",sale_unit="unit",catalog_source_url="https://www.carone.com.br/produto-importacao/p",is_active=True)
         m=Market(name="Carone Importação Teste",address="Rua Teste",city="Serra",state="ES",is_active=True)
         wrong=Market(name="Sempretem Importação Teste",address="Rua Teste",city="Serra",state="ES",is_active=True)
         db.add_all([p,m,wrong]);db.commit();ids=(p.id,m.id,wrong.id)
@@ -37,6 +37,7 @@ def test_preview_publish_and_retry_preserve_club_separation(client,import_setup)
     batch["reviewed"]=True
     response=client.post("/api/admin/price-import/publish",headers=headers,json=batch)
     assert response.status_code==200 and response.json()["added_prices"]==1 and response.json()["added_offers"]==1
+    batch["entries"][0]["conditions"]="Mesma edição revisada novamente, sem mudar preço ou abrangência."
     again=client.post("/api/admin/price-import/publish",headers=headers,json=batch)
     assert again.json()["added_prices"]==0 and again.json()["added_offers"]==0
     with SessionLocal() as db:
@@ -72,3 +73,17 @@ def test_wrong_chain_and_club_only_cannot_become_regular_price(client,import_set
     club_only={**entry,"regular_price":None}
     result=client.post("/api/admin/price-import/publish",headers=headers,json={"entries":[club_only],"reviewed":True})
     assert result.status_code==200 and result.json()["added_prices"]==0 and result.json()["added_offers"]==1
+
+def test_prepare_manifest_resolves_actual_catalog_and_explicit_preview(client,import_setup):
+    headers,entry,ids=import_setup
+    source={k:v for k,v in entry.items() if k not in {"product_id","market_ids"}}
+    source.update(product_source_url="https://www.carone.com.br/produto-importacao/p",market_prefix="Carone",cities=["Serra"])
+    result=client.post("/api/admin/price-import/prepare",headers=headers,json={"entries":[source]})
+    assert result.status_code==200,result.text
+    prepared=result.json()
+    assert prepared["published"] is False and prepared["batch"]["reviewed"] is False
+    assert prepared["batch"]["entries"][0]["product_id"]==ids[0]
+    assert ids[1] in prepared["batch"]["entries"][0]["market_ids"]
+    with SessionLocal() as db:assert db.scalar(select(func.count()).select_from(PriceReport).where(PriceReport.product_id==ids[0]))==0
+    source["market_prefix"]=[]
+    assert client.post("/api/admin/price-import/prepare",headers=headers,json={"entries":[source]}).status_code==422
