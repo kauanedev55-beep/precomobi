@@ -24,6 +24,7 @@ import { NotFound } from "./pages/NotFound";
 const ProductDetail = lazy(() => import("./pages/ProductDetail").then(m => ({ default: m.ProductDetail })));
 const ProductCreatePage = lazy(() => import("./pages/ProductCreate").then(m => ({default:m.ProductCreatePage})));
 const Products = lazy(() => import("./pages/Products").then(m => ({ default: m.Products })));
+const AdminPrices = lazy(() => import("./pages/AdminPrices").then(m => ({default:m.AdminPrices})));
 const Profile = lazy(() => import("./pages/Profile").then(m => ({ default: m.Profile })));
 const Register = lazy(() => import("./pages/Register").then(m => ({ default: m.Register })));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail").then(m => ({ default: m.VerifyEmail })));
@@ -63,6 +64,7 @@ export default function App() {
               <Route path="ofertas" element={<RequireAuth><Offers /></RequireAuth>} />
               <Route path="avisos" element={<RequireAuth><Offers alertsOnly /></RequireAuth>} />
               <Route path="minhas-contribuicoes" element={<RequireAuth><MyContributions /></RequireAuth>} />
+              <Route path="administracao/precos" element={<RequireAuth><AdminPrices/></RequireAuth>}/>
               <Route path="perfil" element={<RequireAuth><Profile /></RequireAuth>} />
               <Route path="comunidade" element={<RequireAuth><History /></RequireAuth>} />
               <Route path="historico" element={<RequireAuth><LegacyHistoryRedirect /></RequireAuth>} />
