@@ -14,7 +14,7 @@ from urllib.error import URLError, HTTPError
 SOURCES = [
     {"name":"Carone", "prefix":"Carone", "url":"https://linktr.ee/caroneonline", "publisher":"carone"},
     {"name":"Sempretem", "prefix":"Sempretem", "url":"https://superatacadosempretem.com.br/", "publisher":"sempretem"},
-    {"name":"Extrabom Serra Centro", "prefix":"Extrabom", "city":"Serra", "url":"https://www.extrabom.com.br/lojas/46-serra-centro/folheto/"},
+    {"name":"Extrabom Serra Centro", "prefix":"Extrabom", "city":"Serra", "store_name":"Extrabom Serra Centro", "url":"https://www.extrabom.com.br/lojas/46-serra-centro/folheto/"},
     {"name":"Supermercados BH", "prefix":"Supermercados BH", "url":"https://www.supermercadosbh.com.br/folhetos"},
 ]
 ALLOWED = {"linktr.ee","www.flipsnack.com","flipsnack.com","superatacadosempretem.com.br","www.superatacadosempretem.com.br","www.extrabom.com.br","extrabom.com.br","www.supermercadosbh.com.br","supermercadosbh.com.br","precomobi.onrender.com","precomobi-1.onrender.com"}
@@ -70,12 +70,13 @@ def discover(source,body):
         # Some store pages expose root-relative uploads without a leading slash.
         if value.startswith("uploads/"):url=urljoin(source["url"],"/"+value)
         if safe_url(url) and "/uploads/ofertas/" in url:images.append(url)
-    return {"title":parser.title.strip(),"leaflets":sorted(set(links)),"images":sorted(set(images))}
+    return {"title":parser.title.strip()[:300],"leaflets":sorted(set(links)),"images":sorted(set(images))}
 
 def scoped_markets(source,markets):
     return [{"id":m["id"],"name":m["name"],"city":m["city"]} for m in markets
             if m.get("state")=="ES" and m.get("name","").casefold().startswith(source["prefix"].casefold())
-            and (not source.get("city") or m.get("city")==source["city"])]
+            and (not source.get("city") or m.get("city")==source["city"])
+            and (not source.get("store_name") or m.get("name")==source["store_name"])]
 
 def collect(output,fetcher=fetch,now=None):
     now=now or datetime.now(timezone.utc).isoformat()
