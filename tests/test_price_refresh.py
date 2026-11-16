@@ -4,18 +4,22 @@ from pathlib import Path
 from datetime import datetime, timezone
 from decimal import Decimal
 from types import SimpleNamespace
-from sqlalchemy import create_engine, select, func
+from sqlalchemy import create_engine, select, func, literal
 from sqlalchemy.orm import Session
 from app.db.base import Base
 from app.db.official_flyers import seed_official_flyers, seed_official_flyers_nov12
 from app.models import Product, Market, PriceReport
 from app.models.offers import Offer
 from app.api.comparisons import build_comparison
+import app.api.comparisons as comparison_api
 
 NOW=datetime(2026,11,12,20,tzinfo=timezone.utc)
 ROOT=Path(__file__).resolve().parents[1]/'backend/app/db'
 
-def test_new_edition_preserves_history_and_prices_each_chain_separately(tmp_path):
+def test_new_edition_preserves_history_and_prices_each_chain_separately(tmp_path, monkeypatch):
+    # The fixture represents Nov 12. Freeze the SQL clock too, so real time cannot expire it.
+    clock=SimpleNamespace(now=lambda: literal(NOW.replace(tzinfo=None)))
+    monkeypatch.setattr(comparison_api, "func", clock)
     entries=json.loads((ROOT/'official_flyers_20261112.json').read_text())
     previous=json.loads((ROOT/'official_flyers_20261107.json').read_text())
     mini=next(e for e in previous if e['market_prefix']=='Carone' and 'Mini Chicken' in e['product_name'])
@@ -47,6 +51,10 @@ def test_new_edition_preserves_history_and_prices_each_chain_separately(tmp_path
         assert report.price==Decimal('19.59') and offer.price==Decimal('17.99')
         assert report.expires_at and report.source_url==offer.source_url
         assert all(r.market_id != db.scalar(select(Market.id).where(Market.city=='Fora')) for r in db.scalars(select(PriceReport)))
+        # Expired shelf prices must still disappear; no catalogue validity is extended.
+        clock.now=lambda: literal(datetime(2026,11,22,20))
+        expired=build_comparison(db,draft,'Serra')
+        assert all(row['total'] is None and row['found_items']==0 for row in expired['results'])
     engine.dispose()
 
 
