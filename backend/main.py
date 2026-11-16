@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.price_imports import router as price_import_router
 from app.api.auth import router as auth_router
 from app.api.supabase_auth import router as supabase_auth_router
 from app.api.catalog import router as catalog_router
@@ -49,6 +50,7 @@ async def fresh_api_responses(request, call_next):
     return response
 
 
+app.include_router(price_import_router, prefix=settings.api_prefix)
 app.include_router(health_router, prefix=settings.api_prefix)
 app.include_router(auth_router, prefix=settings.api_prefix)
 app.include_router(supabase_auth_router, prefix=settings.api_prefix)
