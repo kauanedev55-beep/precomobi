@@ -78,7 +78,7 @@ def scoped_markets(source,markets):
             and (not source.get("city") or m.get("city")==source["city"])
             and (not source.get("store_name") or m.get("name")==source["store_name"])]
 
-def collect(output,fetcher=fetch,now=None):
+def collect(output,fetcher=fetch,now=None,verify=False):
     now=now or datetime.now(timezone.utc).isoformat()
     output=Path(output);output.mkdir(parents=True,exist_ok=True)
     state_path=output/"estado.json"
@@ -110,6 +110,16 @@ def collect(output,fetcher=fetch,now=None):
         except (OSError,ValueError,URLError,HTTPError) as exc:
             row.update(status="falha",note="Consulta não concluída: "+type(exc).__name__)
         report["sources"].append(row)
+    if verify:
+        try:
+            products=json.loads(fetcher("https://precomobi.onrender.com/api/products?q=carr%C3%A9&city=Serra&preferred=true&external=false"))
+            cut=next((p for p in products if p.get("catalog_source_url")=="https://www.carone.com.br/carre-suino-kg-14250/p"),None)
+            if cut:
+                detail=json.loads(fetcher("https://precomobi.onrender.com/api/products/"+str(cut["id"])+"?city=Serra"))
+                report["public_price_check"]={"product_id":cut["id"],"product_name":cut["name"],"prices":[{k:r.get(k) for k in ("market_id","market_name","price","reported_at","expires_at","source_type","source_url")} for r in detail.get("prices",[]) if r.get("price") is not None]}
+            else:report["public_price_check"]={"status":"produto_nao_encontrado"}
+        except (OSError,ValueError,URLError,HTTPError,TypeError):
+            report["public_price_check"]={"status":"falha_na_consulta"}
     (output/"consulta.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
     state_path.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding="utf-8")
     sections=[]
@@ -125,8 +135,9 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output",default="atualizacoes")
     parser.add_argument("--abrir",action="store_true")
+    parser.add_argument("--verificar-precos",action="store_true",help="Consulta também as cotações públicas do corte demonstrado.")
     args=parser.parse_args()
-    report=collect(args.output)
+    report=collect(args.output,verify=args.verificar_precos)
     print(json.dumps(report,ensure_ascii=False,indent=2))
     if args.abrir:
         import webbrowser
