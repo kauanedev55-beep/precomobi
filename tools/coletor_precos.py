@@ -84,7 +84,7 @@ def collect(output,fetcher=fetch,now=None):
     state_path=output/"estado.json"
     try:previous=json.loads(state_path.read_text(encoding="utf-8"))
     except (OSError,ValueError):previous={}
-    report={"checked_at":now,"mode":"coleta_assistida","published_prices":0,"sources":[],"warnings":[]}
+    report={"version":1,"checked_at":now,"mode":"coleta_assistida","published_prices":0,"sources":[],"warnings":[]}
     try:markets=json.loads(fetcher("https://precomobi.onrender.com/api/markets"))
     except (OSError,ValueError,URLError,HTTPError):
         markets=[];report["warnings"].append("Não foi possível consultar as lojas do app. Nenhuma abrangência confirmada.")

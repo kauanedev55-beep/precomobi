@@ -23,7 +23,7 @@ jobs:
           import base64,json
           from urllib.request import Request,urlopen
           data=json.load(open('atualizacoes/consulta.json'))
-          for source in data['sources'][:1]:
+          for source in data['sources'][:2]:
               for preview in source.get('previews',[])[:1]:
                   for url in preview.get('images',[])[:1]:
                       if not url.startswith('https://d160aj0mj3npgx.cloudfront.net/'):continue

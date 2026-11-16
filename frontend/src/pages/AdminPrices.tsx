@@ -34,7 +34,8 @@ export function AdminPrices(){
    try{
      const result=await publishPriceImport({...batch,reviewed:true});
      setMessage(`Conferência concluída: ${result.added_prices} preços e ${result.added_offers} promoções adicionados. Registros iguais não foram duplicados.`);
-     setLatest(result.checked_at);setPreview(null);setBatch(null);setReviewed(false);
+     const current=await getLatestPriceImport().catch(()=>null);if(current)setLatest(current.last_import_at);
+     setPreview(null);setBatch(null);setReviewed(false);
    }catch(e){setError((e as Error).message);}finally{setBusy(false);}
  }
  return <section className="form-page"><Link to="/perfil">← Meu perfil</Link><h1>Atualizar preços</h1>

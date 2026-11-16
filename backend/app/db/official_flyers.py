@@ -44,3 +44,8 @@ def seed_official_flyers(engine,manifest=None,now=None,*,migration_key=KEY):
 def seed_official_flyers_nov12(engine,now=None):
     entries=json.loads(Path(__file__).with_name('official_flyers_20261112.json').read_text())
     seed_official_flyers(engine,entries,now,migration_key='official-reviewed-leaflets-2026-11-12')
+
+
+def seed_official_flyers_nov16(engine,now=None):
+    entries=json.loads(Path(__file__).with_name('official_flyers_20261116.json').read_text())
+    seed_official_flyers(engine,entries,now,migration_key='official-reviewed-leaflets-2026-11-16')

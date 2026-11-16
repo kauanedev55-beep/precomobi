@@ -117,9 +117,10 @@ def init_db() -> None:
         add_cariacica_markets(engine)
         from app.db.chain_markets import add_chain_markets
         add_chain_markets(engine)
-        from app.db.official_flyers import seed_official_flyers, seed_official_flyers_nov12
+        from app.db.official_flyers import seed_official_flyers, seed_official_flyers_nov12, seed_official_flyers_nov16
         seed_official_flyers(engine)
         seed_official_flyers_nov12(engine)
+        seed_official_flyers_nov16(engine)
         return
     with Session(engine) as db:
         user = db.scalar(select(User).where(User.email == "demo@precomobi.local"))
