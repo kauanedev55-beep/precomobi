@@ -11,7 +11,7 @@ import { SourceBadge } from "../components/SourceBadge";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { quantityLabel, saleLabel } from "../lib/quantities";
 import { formatDate, formatPrice } from "../lib/format";
-import { compareShoppingList, previewShoppingList, createShoppingList, type Comparison } from "../services/api";
+import { compareShoppingList, previewShoppingList, type Comparison } from "../services/api";
 
 export function ComparisonPage({preview=false}: {preview?: boolean}) {
   const { id } = useParams();
@@ -21,7 +21,7 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
   const navigate = useNavigate();
   const draftName = typeof location.state?.name === "string" ? location.state.name : "Minha compra";
   const draftKey = (preview ? cart.items : []).map(i => `${i.product.id}:${i.quantity}`).join(",");
-  const [isSaving,setSaving] = useState(false);
+  const isSaving=cart.saving;
   const [saveError,setSaveError] = useState("");
   const {city} = useRegion();
   const sequence = useRef(0);
@@ -57,12 +57,11 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
   }, [load]);
 
   async function saveDraft() {
-    setSaving(true);setSaveError("");
+    setSaveError("");
     try {
-      const list=await createShoppingList({name:draftName,items:cartItemsPayload(cart.items)});
-      alerts.refresh();cart.clear();navigate(`/comparacao/${list.id}`,{replace:true});
+      const list=await cart.save();
+      alerts.refresh();navigate(`/comparacao/${list.id}`,{replace:true});
     } catch(err) {setSaveError(err instanceof Error ? err.message : "Não foi possível salvar.");}
-    finally {setSaving(false);}
   }
 
   if (preview && !draftKey) return <Empty title="Não há uma lista em edição"><Link to="/lista">Montar uma nova lista</Link>. Comparações sem salvar não ficam guardadas depois de recarregar o aplicativo.</Empty>;
@@ -95,7 +94,6 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
       {preview && <div className="preview-actions"><p>Você está comparando sem salvar. Para usar esta lista em outra compra ou dispositivo, escolha Salvar lista.</p><div className="button-row"><button className="outline-button" type="button" onClick={() => void saveDraft()} disabled={isSaving}>{isSaving ? "Salvando..." : "Salvar lista"}</button><button className="primary-button" type="button" disabled={isSaving} onClick={() => {cart.clear();navigate("/lista",{replace:true});}}>Concluir sem salvar</button></div>{saveError && <p className="error-message" role="alert">{saveError}</p>}</div>}
       {comparison.results.length === 0 && <div className="notice">Não há mercados cadastrados na cidade escolhida. Você pode mudar a cidade acima.</div>}
       <p className="form-hint">Comparando {comparison.results.length} mercados {city === "*" ? "nas cidades cadastradas no ES" : `em ${city}`}. Listas completas são ordenadas pelo total. Nas incompletas, mostramos primeiro os mercados com mais itens com preço.</p>
-      {decisionMarkets.length >= 2 && <PurchaseDecision markets={decisionMarkets} partial={partialDecision} commonCount={comparison.common_items_count} />}
       {complete.length === 1 && <p className="notice">Só um mercado tem a lista completa. Não há outro total completo para medir a economia.</p>}
 
       {hasDemoPrices && (
@@ -130,28 +128,30 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
             </header>
             {!result.complete && <p>Subtotal dos {result.found_items} itens com preço conhecido: <strong>{formatPrice(result.available_total)}</strong>. Faltam os preços de {result.total_items - result.found_items} itens.</p>}
             {result.comparable_total !== null && !result.complete && <p className="form-hint">Itens em comum entre mercados: {formatPrice(result.comparable_total)} ({comparison.common_items_count} produtos).</p>}
-            <div className="table-wrap">
-              <table>
-                <thead><tr><th>Produto</th><th>Qtd.</th><th>Preço por kg ou embalagem</th><th>Subtotal</th><th>Origem</th></tr></thead>
-                <tbody>
+            <details className="market-item-details"><summary>Ver produtos e preços ({result.found_items} de {result.total_items})</summary><div className="table-wrap">
+              <table role="table" aria-label={`Produtos e preços em ${result.market_name}`}>
+                <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Produto</th><th scope="col" role="columnheader">Qtd.</th><th scope="col" role="columnheader">Preço por kg ou embalagem</th><th scope="col" role="columnheader">Subtotal</th><th scope="col" role="columnheader">Origem</th></tr></thead>
+                <tbody role="rowgroup">
                   {result.items.map((item) => (
-                    <tr key={item.product_id} className={item.unit_price === null ? "missing-row" : undefined}>
-                      <td>{item.product_name}</td>
-                      <td className="num">{quantityLabel(item.quantity,item.sale_unit)}</td>
-                      <td className="num">{item.unit_price !== null ? `${formatPrice(item.unit_price)} / ${saleLabel(item.sale_unit)}` : "Sem preço"}</td>
-                      <td className="num">{formatPrice(item.subtotal)}</td>
-                      <td>{item.source_type ? <><SourceBadge sourceType={item.source_type} /><small className="block">{formatDate(item.reported_at)}{item.expires_at && <> · até {formatDate(item.expires_at)}</>}</small>{item.source_url && <small className="block"><a href={item.source_url} target="_blank" rel="noopener noreferrer">Ver folheto</a></small>}</> : "—"}</td>
+                    <tr role="row" key={item.product_id} className={item.unit_price === null ? "missing-row" : undefined}>
+                      <td role="cell" data-label="Produto">{item.product_name}</td>
+                      <td role="cell" data-label="Quantidade" className="num">{quantityLabel(item.quantity,item.sale_unit)}</td>
+                      <td role="cell" data-label="Preço por kg ou embalagem" className="num">{item.unit_price !== null ? `${formatPrice(item.unit_price)} / ${saleLabel(item.sale_unit)}` : "Sem preço"}</td>
+                      <td role="cell" data-label="Subtotal" className="num">{formatPrice(item.subtotal)}</td>
+                      <td role="cell" data-label="Origem">{item.source_type ? <><SourceBadge sourceType={item.source_type} /><small className="block">{formatDate(item.reported_at)}{item.expires_at && <> · até {formatDate(item.expires_at)}</>}</small>{item.source_url && <small className="block"><a href={item.source_url} target="_blank" rel="noopener noreferrer">Ver folheto</a></small>}</> : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+            </div></details>
             <a className="primary-button market-route-action" target="_blank" rel="noreferrer" href={googleMapsUrl({ ...result, name: result.market_name })}>Abrir no Google Maps ↗</a>
             <Link className="outline-button market-route-action" to={`/mapa?mercado=${result.market_id}&rota=1`}>⌖ Ver distância e rota →</Link>
             {!result.complete && <p className="form-hint">Subtotal parcial não representa o custo da lista completa. A economia parcial considera apenas os mesmos produtos nos mercados comparáveis.</p>}
           </article>
         ))}
       </div>
+
+      {decisionMarkets.length >= 2 && <details className="comparison-trip-details"><summary>Considerar deslocamento na escolha</summary><PurchaseDecision markets={decisionMarkets} partial={partialDecision} commonCount={comparison.common_items_count} /></details>}
 
       {priced.length > 3 && <button className="outline-button" type="button" onClick={() => setShowAll(!showAll)}>{showAll ? "Mostrar apenas os 3 primeiros" : `Ver mais ${priced.length - 3} mercados com preços`}</button>}
       {withoutPrices.length > 0 && <details className="unpriced-markets"><summary>{withoutPrices.length} {withoutPrices.length === 1 ? "mercado ainda sem preço" : "mercados ainda sem preços"} para estes produtos</summary><p>Sem preços cadastrados, não é possível calcular o total. Isso não significa que o produto esteja em falta.</p><ul>{withoutPrices.map(m => <li key={m.market_id}><span>{m.market_name}</span><Link to="/contribuir">Informar preço</Link></li>)}</ul></details>}

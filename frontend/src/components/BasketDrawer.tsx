@@ -3,11 +3,9 @@ import {useNavigate} from "react-router-dom";
 import {useCart} from "../cart/CartContext";
 import {useRegion} from "../region/RegionContext";
 import {useOffers} from "../offers/OffersContext";
-import {cartItemsPayload} from "../lib/cartItems";
 import {productDisplayName} from "../lib/produceGuides";
 import {productSubtitle} from "../lib/format";
 import {quantityLabel} from "../lib/quantities";
-import {createShoppingList,updateShoppingList} from "../services/api";
 import {Icon} from "./Icon";
 import {QuantityPicker} from "./QuantityPicker";
 import "../styles/basket.css";
@@ -30,14 +28,8 @@ export function BasketDrawer() {
   const [announcement,setAnnouncement]=useState("");
   const [invalid,setInvalid]=useState<number[]>([]);
   const {name,setName}=cart;
-  const [saving,setSaving]=useState(false);
+  const {saving}=cart;
   const [saveError,setSaveError]=useState("");
-  const [savedSignature,setSavedSignature]=useState("");
-  const [savedId,setSavedId]=useState<number|null>(null);
-  const [savedRevision,setSavedRevision]=useState<number|undefined>();
-  const saveLock=useRef(false);
-  useEffect(()=>{setSavedId(null);setSavedRevision(undefined);setSavedSignature("");},[cart.draftVersion]);
-  const signature=JSON.stringify({name:name.trim() || "Minha compra",items:cartItemsPayload(cart.items)});
   const valid=!invalid.some(id=>cart.items.some(item=>item.product.id===id));
   const picked=cart.items.filter(item=>item.isPurchased).length;
 
@@ -63,17 +55,10 @@ export function BasketDrawer() {
 
   function close(){setOpen(false);}
   async function save() {
-    if(!valid || !cart.items.length || saveLock.current || savedSignature===signature) return;
-    saveLock.current=true;setSaving(true);setSaveError("");
-    const snapshot=signature;
-    try {
-      const payload={name:name.trim() || "Minha compra",items:cartItemsPayload(cart.items),revision:savedRevision};
-      const saved=await (savedId===null ? createShoppingList(payload) : updateShoppingList(savedId,payload));
-      setSavedId(saved.id);setSavedRevision(saved.revision);
-      setSavedSignature(snapshot);refresh();
-    } catch(error) {
-      setSaveError(error instanceof Error ? error.message : "Não foi possível salvar sua lista. Tente novamente.");
-    } finally {saveLock.current=false;setSaving(false);}
+    if(!valid || !cart.items.length || saving || cart.isSaved) return;
+    setSaveError("");
+    try {await cart.save();refresh();}
+    catch(error) {setSaveError(error instanceof Error ? error.message : "Não foi possível salvar sua lista. Tente novamente.");}
   }
 
   return <>
@@ -101,10 +86,10 @@ export function BasketDrawer() {
       </div>
       <footer className="basket-footer">
         {cart.items.length>0 && <><label className="field basket-name"><span>Nome da lista</span><input value={name} maxLength={160} onChange={event=>setName(event.target.value)}/></label>
-        <div className="basket-footer-actions"><button className="outline-button" type="button" disabled={saving || !valid || signature===savedSignature} onClick={()=>void save()}>{saving ? "Salvando…" : signature===savedSignature ? "Lista salva ✓" : "Salvar lista"}</button><button className="primary-button" type="button" disabled={!city || !valid || saving} onClick={()=>{close();navigate("/comparacao/atual",{state:{name:name.trim() || "Minha compra"}});}}>Comparar mercados</button></div>
+        <div className="basket-footer-actions"><button className="outline-button" type="button" disabled={saving || !valid || cart.isSaved} onClick={()=>void save()}>{saving ? "Salvando…" : cart.isSaved ? "Lista salva ✓" : "Salvar lista"}</button><button className="primary-button" type="button" disabled={!city || !valid || saving} onClick={()=>{close();navigate("/comparacao/atual",{state:{name:name.trim() || "Minha compra"}});}}>Comparar mercados</button></div>
         {!valid && <p className="error-message" role="alert">Confira o peso ou a quantidade antes de continuar.</p>}
         {saveError && <p className="error-message" role="alert">{saveError}</p>}
-        {savedSignature && <p className="basket-save-status" role="status">{savedSignature===signature ? "Lista salva na sua conta. Você pode continuar comprando." : "Você alterou a lista. Salve novamente para guardar as mudanças."}</p>}
+        {cart.savedListId && <p className="basket-save-status" role="status">{cart.isSaved ? "Lista salva na sua conta. Você pode continuar comprando." : "Você alterou a lista. Salve novamente para guardar as mudanças."}</p>}
         <p className="form-hint">{!city ? "Você pode usar e salvar a lista sem escolher mercado. Se quiser comparar, escolha sua cidade na pesquisa." : "Use só como lista ou compare os mercados quando quiser."}</p></>}
       </footer>
     </dialog>

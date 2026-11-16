@@ -8,6 +8,7 @@ import { googleMapsUrl } from "../lib/navigation";
 import { formatDateTime, formatPrice } from "../lib/format";
 import { ProductArt } from "./ProductArt";
 import { Icon } from "./Icon";
+import { QuantityPicker } from "./QuantityPicker";
 import "../styles/offer-info.css";
 
 export function OfferCard({offer:group, onUpdated}: {offer: Offer; onUpdated?: (offer: Offer) => void}) {
@@ -17,6 +18,8 @@ export function OfferCard({offer:group, onUpdated}: {offer: Offer; onUpdated?: (
   const cart = useCart();
   const alerts = useOffers();
   const [pending, setPending] = useState(false);
+  const [quantity,setQuantity]=useState(1);
+  const [quantityValid,setQuantityValid]=useState(true);
   const [error, setError] = useState("");
   const [changing, setChanging] = useState(false);
   const [newPrice, setNewPrice] = useState("");
@@ -28,12 +31,13 @@ export function OfferCard({offer:group, onUpdated}: {offer: Offer; onUpdated?: (
   const groupWarning=stores.some(store=>store.changed_reports+store.ended_reports>0);
   const warning = offer.changed_reports + offer.ended_reports > 0;
   async function act(action: "confirmed" | "changed" | "ended" | "close" | "add") {
+    if(pending || (action==="add" && !quantityValid))return;
     setError(""); setMessage("");
     const value = newPrice.trim().replace(",", ".");
     if(action==="changed" && (!/^\d+(\.\d{1,2})?$/.test(value) || Number(value)<=0)) {setError("Informe o novo preço que você viu."); return;}
     setPending(true);
     try {
-      if(action==="add") {cart.add(await getProduct(offer.product_id)); setMessage("Produto adicionado à sua lista.");}
+      if(action==="add") {cart.add(await getProduct(offer.product_id),quantity); setMessage("Produto adicionado à sua lista.");}
       else {const updated = action==="close" ? await endOffer(offer.id) : await checkOffer(offer.id, action, action==="changed" ? value : undefined); onUpdated?.(updated); alerts.refresh(); setChanging(false); setMessage(action==="close" ? "Promoção encerrada." : "Obrigado! Seu aviso foi registrado.");}
     } catch (err) {setError(err instanceof Error ? err.message : "Não foi possível registrar.");}
     finally {setPending(false);}
@@ -54,7 +58,8 @@ export function OfferCard({offer:group, onUpdated}: {offer: Offer; onUpdated?: (
     {groupWarning && !warning && <p className="offer-warning" role="status">Há avisos de alteração em algumas lojas. Escolha a sua loja para conferir os avisos antes de ir.</p>}
     {warning && <p className="offer-warning" role="status">Atenção: {offer.changed_reports} {offer.changed_reports===1 ? "aviso de preço alterado" : "avisos de preço alterado"} e {offer.ended_reports} {offer.ended_reports===1 ? "aviso de oferta encerrada" : "avisos de oferta encerrada"}. Confira na loja antes de ir.</p>}
     {offer.state==="active" && <>
-      <div className="offer-main-actions"><button className="primary-button" disabled={pending || inList} onClick={() => void act("add")}><Icon name={inList ? "check" : "plus"} size={18}/>{inList ? "Já está na lista" : "Adicionar à lista"}</button><a className="outline-button" href={googleMapsUrl(offer.market)} target="_blank" rel="noopener noreferrer">Ver rota ↗</a></div>
+      <QuantityPicker compact value={quantity} unit={offer.sale_unit} name={offer.product_name} onChange={setQuantity} onValidityChange={setQuantityValid}/>
+      <div className="offer-main-actions"><button className="primary-button" disabled={pending || !quantityValid} onClick={() => void act("add")}><Icon name={inList ? "check" : "plus"} size={18}/>{inList ? "Adicionar mais" : "Adicionar à lista"}</button><a className="outline-button" href={googleMapsUrl(offer.market)} target="_blank" rel="noopener noreferrer">Ver rota ↗</a></div>
       {offer.is_mine ? <button className="text-button" disabled={pending} onClick={() => void act("close")}>Encerrar minha promoção</button> : <div className="offer-feedback"><span>Você conferiu na loja selecionada?</span><div><button disabled={pending || offer.my_check==="confirmed"} onClick={() => void act("confirmed")}>{offer.my_check==="confirmed" ? "✓ Você confirmou" : "Encontrei esse preço"}</button><button disabled={pending} onClick={() => setChanging(!changing)}>O preço mudou</button><button disabled={pending || offer.my_check==="ended"} onClick={() => void act("ended")}>{offer.my_check==="ended" ? "✓ Você avisou que acabou" : "A promoção acabou"}</button></div></div>}
       {changing && <form className="offer-change-form" onSubmit={e => {e.preventDefault(); void act("changed");}}><label className="field"><span>Novo preço que você viu (R$)</span><input autoFocus inputMode="decimal" value={newPrice} onChange={e => setNewPrice(e.target.value)} required/></label><button className="outline-button" disabled={pending}>Enviar aviso</button></form>}
     </>}

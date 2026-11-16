@@ -82,3 +82,23 @@ textarea{resize:vertical}
 
 /* Keep the list name editable when a short viewport is caused by the keyboard. */
 .basket-drawer .basket-name:focus-within{display:grid!important}
+
+/* Keep the decision ahead of optional detail on phones. */
+.market-item-details{margin:16px 0}
+.market-item-details>summary,.comparison-trip-details>summary{min-height:48px;align-content:center;cursor:pointer;color:#29466c;font-weight:650;padding:10px 0}
+.comparison-trip-details{margin:24px 0;border-top:1px solid #d7dfe8}
+.comparison-trip-details .purchase-decision{margin-top:12px}
+@media(max-width:760px){
+ .market-item-details .table-wrap{overflow:visible}
+ .market-item-details table{display:block;min-width:0;width:100%}
+ .market-item-details thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .market-item-details tbody{display:grid;gap:12px;width:100%}
+ .market-item-details tbody tr{display:grid;grid-template-columns:minmax(0,1fr);padding:12px;border:1px solid #d7dfe8;border-radius:12px;background:#fff;min-width:0}
+ .market-item-details td{display:grid;grid-template-columns:minmax(90px,.8fr) minmax(0,1.2fr);gap:5px 10px;min-width:0;border:0;padding:6px 0;text-align:left;white-space:normal;overflow-wrap:anywhere}
+ .market-item-details td::before{content:attr(data-label);font-size:.8rem;font-weight:650;color:#526078;grid-column:1;grid-row:1 / span 10}
+ .market-item-details td>*{grid-column:2}
+ .market-item-details td:first-child{display:block;font-weight:700;border-bottom:1px solid #e7ebf1;padding-bottom:10px;margin-bottom:4px}
+ .market-item-details td:first-child::before{display:none}
+ .market-item-details td a{display:inline-flex;align-items:center;min-height:44px}
+ .offer-card>.quantity-control{margin-top:12px;min-width:0}
+}
