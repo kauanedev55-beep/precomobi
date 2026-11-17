@@ -58,7 +58,7 @@ export function History(){
   }
   function submit(event:FormEvent){event.preventDefault();const next=new URLSearchParams(params);next.delete("produto");if(search.trim())next.set("q",search.trim());else next.delete("q");setParams(next);}
   return <section className="community-page">
-    <div className="experience-heading"><div><h1>Comunidade</h1><p>Veja preços que outras pessoas encontraram e compartilhe os seus.</p></div><Link className="primary-button" to="/contribuir">Informar preço</Link></div>
+    <div className="experience-heading"><div><h1>Comunidade</h1></div><Link className="primary-button" to="/contribuir">Informar preço</Link></div>
     <CommunityNav/>
     <form className="community-filters" onSubmit={submit} role="search" aria-label="Buscar preços da comunidade">
       <label className="field"><span>Qual produto?</span><input type="search" maxLength={100} value={search} placeholder="Ex.: arroz, leite, sabão" onChange={e=>setSearch(e.target.value)}/></label>
@@ -66,7 +66,7 @@ export function History(){
       <label className="field community-store"><span>Mercado / loja</span><select value={market} disabled={loading} onChange={e=>{const next=new URLSearchParams(params);if(e.target.value)next.set("mercado",e.target.value);else next.delete("mercado");setParams(next);}}><option value="">Todas as lojas da cidade</option>{cityMarkets(markets,city).map(m=><option key={m.id} value={m.id}>{m.name}{city==="*"?` · ${m.city}`:""}</option>)}</select></label>
     </form>
     {(query||market||product)&&<button className="text-button" onClick={()=>setParams({})}>Limpar filtros</button>}
-    <p className="form-hint">O preço mais recente informado por pessoas para cada produto e loja aparece primeiro. Confira a data: o valor pode ter mudado. Folhetos ficam em <Link to="/ofertas">Promoções</Link>.</p>
+    <details className="app-help"><summary>Sobre os preços</summary><p>Preços mais recentes por produto e loja. Confira a data: o valor pode ter mudado. Folhetos ficam em <Link to="/ofertas">Promoções</Link>.</p></details>
     {!city&&<Empty title="Escolha sua cidade">Selecione a cidade acima para consultar os preços próximos de você.</Empty>}
     {loading&&<Loading text="Buscando preços da comunidade..."/>}
     {error&&<ErrorBox message={error} onRetry={()=>void(hasMore&&reports.length?loadMore():load())}/>}

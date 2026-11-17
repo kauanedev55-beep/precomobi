@@ -8,6 +8,7 @@ import { useRegion } from "../region/RegionContext";
 import { useOffers } from "../offers/OffersContext";
 import {ProductPhoto} from "../components/ProductPhoto";
 import {produceGuide,productDisplayName} from "../lib/produceGuides";
+import {ShareListButton} from "../components/ShareListButton";
 import { ShoppingPhoto } from "../components/ShoppingPhoto";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
@@ -80,8 +81,8 @@ export function ShoppingListPage() {
   return (
     <section className="shopping-list-page">
       <div className="grocery-list-heading"><div><h1>Minha lista</h1></div><ShoppingPhoto/></div>
-      {cart.items.length>0&&<div className="shopping-list-toolbar"><Link className="outline-button" to="/produtos"><Icon name="plus" size={18}/>Adicionar</Link><button className="primary-button" type="button" disabled={!quantitiesValid} onClick={()=>navigate("/comparacao/atual",{state:{name:name.trim()||"Minha compra"}})}>Comparar preços</button></div>}
-      {savedId && <p className="notice good" role="status">{cart.isSaved ? "Lista salva." : "Alterações ainda não salvas."} <Link to={`/listas/${savedId}`}>Abrir lista salva</Link></p>}
+      {cart.items.length>0&&<div className="shopping-list-toolbar"><Link className="outline-button" to="/produtos"><Icon name="plus" size={18}/>Adicionar</Link><ShareListButton prepare={cart.save} disabled={!quantitiesValid||saving} onPrepared={()=>{alerts.refresh();void loadLists();}}/><button className="primary-button" type="button" disabled={!quantitiesValid} onClick={()=>navigate("/comparacao/atual",{state:{name:name.trim()||"Minha compra"}})}>Comparar preços</button></div>}
+      {savedId&&<p className="list-save-status" role="status">{cart.isSaved?<>Salva · <Link to={`/listas/${savedId}`}>Conferir lista</Link></>:"Alterações por salvar"}</p>}
       {listOffers.length>0&&<Link className="outline-button list-offer-summary" to="/avisos"><Icon name="tag" size={18}/>{listOffers.length} {listOffers.length===1?"oferta nesta lista":"ofertas nesta lista"}</Link>}
       {cart.items.length === 0 ? (
         <div className="grocery-empty"><span><Icon name="basket" size={32}/></span><div><h3>Vamos colocar o primeiro produto?</h3><p>Busque pelo nome ou leia o código de barras da embalagem.</p></div><Link className="outline-button" to="/produtos">Escolher produtos<Icon name="arrow" size={18}/></Link></div>
@@ -124,10 +125,11 @@ export function ShoppingListPage() {
                 <Link className="card-title" to={`/listas/${list.id}`}>{list.name}</Link>
                 <small>{({preparation:"Em preparação",shopping:"Em compras",completed:"Concluída"})[list.status || "preparation"]} · {list.items.length} {list.items.length === 1 ? "item" : "itens"} · criada em {formatDate(list.created_at)}</small>
               </div>
-              <div className="card-actions">
+              <div className="card-actions saved-list-actions">
+                {list.owner_id===user?.id&&<ShareListButton prepare={async()=>list}/>}
                 <Link className="primary-button small" to={`/listas/${list.id}`}>Abrir lista</Link>
-                <button className="outline-button" type="button" onClick={() => {cart.copyAsNew(list.name,list.items.map((item) => ({ product: item.product, quantity: Number(item.quantity), isPurchased:false })));window.scrollTo({top:0,behavior:"smooth"});}}>Editar como nova</button>
-                {list.owner_id===user?.id && <button className="text-button danger" type="button" onClick={() => remove(list)}>Excluir</button>}
+                <details className="saved-list-more"><summary>Mais</summary>                <button className="outline-button" type="button" onClick={() => {cart.copyAsNew(list.name,list.items.map((item) => ({ product: item.product, quantity: Number(item.quantity), isPurchased:false })));window.scrollTo({top:0,behavior:"smooth"});}}>Editar como nova</button>
+                {list.owner_id===user?.id && <button className="text-button danger" type="button" onClick={() => remove(list)}>Excluir</button>}</details>
               </div>
             </li>
           ))}

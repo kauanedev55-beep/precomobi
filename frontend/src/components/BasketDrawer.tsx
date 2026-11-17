@@ -5,6 +5,7 @@ import {useOffers} from "../offers/OffersContext";
 import {productDisplayName} from "../lib/produceGuides";
 import {productSubtitle} from "../lib/format";
 import {quantityLabel} from "../lib/quantities";
+import {ShareListButton} from "./ShareListButton";
 import {Icon} from "./Icon";
 import {QuantityPicker} from "./QuantityPicker";
 import "../styles/basket.css";
@@ -61,7 +62,7 @@ export function BasketDrawer() {
   return <>
     {cart.items.length>0 && <button ref={opener} className="basket-peek" type="button" aria-haspopup="dialog" aria-controls="shopping-basket" aria-expanded={open} onClick={()=>setOpen(true)}>
       <span className="basket-peek-icon"><Icon name="basket"/></span>
-      <span className="basket-peek-copy"><strong>Minha cesta · {cart.items.length} {cart.items.length===1 ? "produto" : "produtos"}</strong><span>{announcement || "Conferir produtos e quantidades"}</span></span>
+      <span className="basket-peek-copy"><strong>Minha cesta · {cart.items.length} {cart.items.length===1 ? "produto" : "produtos"}</strong><span>{announcement || "Conferir itens"}</span></span>
       <span className="basket-peek-arrow" aria-hidden="true">⌃</span>
     </button>}
     <span className="basket-live" role="status" aria-live="polite">{announcement}</span>
@@ -71,7 +72,7 @@ export function BasketDrawer() {
       if(event.clientX<bounds.left || event.clientX>bounds.right || event.clientY<bounds.top || event.clientY>bounds.bottom) close();
     }}>
       <button className="basket-handle" type="button" aria-label="Recolher cesta e continuar pesquisando" onClick={close} onPointerDown={event=>{dragStart.current=event.clientY;event.currentTarget.setPointerCapture(event.pointerId);}} onPointerUp={event=>{if(dragStart.current!==null && event.clientY-dragStart.current>40) close();dragStart.current=null;}} onPointerCancel={()=>{dragStart.current=null;}}><span/></button>
-      <header className="basket-heading"><div><h2 id="basket-title">Minha cesta</h2><p id="basket-description">{cart.items.length} {cart.items.length===1 ? "produto" : "produtos"}</p></div><button autoFocus type="button" className="outline-button" onClick={close}>Continuar buscando <span aria-hidden="true">⌄</span></button></header>
+      <header className="basket-heading"><div><h2 id="basket-title">Minha cesta</h2><p id="basket-description">{cart.items.length} {cart.items.length===1 ? "produto" : "produtos"}</p></div><button autoFocus type="button" className="outline-button" aria-label="Recolher cesta e continuar buscando" onClick={close}>Continuar <span aria-hidden="true">⌄</span></button></header>
       <div className="basket-scroll">
         {cart.items.length===0 ? <p className="basket-empty">Sua cesta está vazia. Recolha a lista para escolher produtos.</p> : <ul className="basket-items">{cart.items.map(item=>{
           const displayName=productDisplayName(item.product);
@@ -82,7 +83,7 @@ export function BasketDrawer() {
         })}</ul>}
       </div>
       <footer className="basket-footer">
-        {cart.items.length>0 && <><button className="primary-button basket-compare" type="button" disabled={!valid} onClick={()=>{close();navigate("/comparacao/atual",{state:{name:name.trim()||"Minha compra"}});}}>Comparar preços</button>
+        {cart.items.length>0 && <><div className="basket-main-actions"><ShareListButton prepare={cart.save} disabled={!valid||saving} onPrepared={refresh}/><button className="primary-button basket-compare" type="button" disabled={!valid} onClick={()=>{close();navigate("/comparacao/atual",{state:{name:name.trim()||"Minha compra"}});}}>Comparar preços</button></div>
         <details className="list-save-options"><summary>Salvar lista (opcional)</summary><label className="field basket-name"><span>Nome</span><input value={name} maxLength={160} onChange={event=>setName(event.target.value)}/></label><button className="outline-button" type="button" disabled={saving||!valid||cart.isSaved} onClick={()=>void save()}>{saving?"Salvando…":cart.isSaved?"Lista salva ✓":"Salvar lista"}</button></details>
 
         {!valid && <p className="error-message" role="alert">Confira o peso ou a quantidade antes de continuar.</p>}

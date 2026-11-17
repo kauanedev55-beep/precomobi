@@ -63,14 +63,14 @@ export function PurchaseDecision({ markets, partial, commonCount }: Props) {
 
   return <section className="purchase-decision" aria-labelledby="decision-title">
     <h2 id="decision-title">Compensa o deslocamento?</h2>
-    {partial && <p className="notice">Comparação apenas dos <strong>{commonCount} produtos em comum</strong>. Os demais itens não entram nesta economia; o custo da lista completa continua desconhecido.</p>}
+    {partial && <p className="notice">Somente <strong>{commonCount} produtos em comum</strong>. A lista completa ainda não tem total.</p>}
     <p><strong>{best.market_name}</strong> tem o menor {partial ? "subtotal dos itens em comum" : "total registrado"} entre as opções comparáveis: <strong>{formatPrice(total(best))}</strong>.</p>
     <label className="field"><span>Comparar com</span><select value={reference.market_id} onChange={e => setReferenceId(e.target.value)}>
       {sorted.filter(m => m.market_id !== best.market_id).map(m => <option key={m.market_id} value={m.market_id}>{m.market_name} · {formatPrice(total(m))}</option>)}
     </select></label>
     <p>Diferença nos produtos: <strong>{formatPrice(saving)}</strong> a favor de {best.market_name}.</p>
-    <button className="outline-button" type="button" onClick={locate}>Usar minha localização para comparar trajetos</button>
-    <p className="form-hint">Com sua permissão, as coordenadas são enviadas ao serviço público OSRM para consultar trajetos de carro. Não usamos distância inventada.</p>
+    <button className="outline-button" type="button" onClick={locate}>Calcular trajetos</button>
+    <p className="form-hint">Suas coordenadas serão enviadas ao OSRM para calcular os trajetos.</p>
     {geoMessage && <p role="status">{geoMessage}</p>}
     {routeMessage && <p role="status">{routeMessage}</p>}
     <div className="trip-options">{[best, reference].map(m => <div key={m.market_id}>
@@ -78,17 +78,17 @@ export function PurchaseDecision({ markets, partial, commonCount }: Props) {
       {routes[m.market_id] ? <p>{routes[m.market_id].km.toFixed(1).replace(".", ",")} km de ida pelas ruas · cerca de {Math.round(routes[m.market_id].minutes)} min de carro</p> : <p>{hasCoordinates(destination(m)) ? "Distância ainda não calculada." : "Sem coordenadas: consulte a localização pelo endereço no Google Maps."}</p>}
       <a href={googleMapsUrl(destination(m), position)} target="_blank" rel="noreferrer">Abrir rota no Google Maps ↗</a>
     </div>)}</div>
-    <label className="field"><span>Como informar o deslocamento</span><select value={costMode} onChange={e => setCostMode(e.target.value)}>
-      <option value="manual">Custo de ida e volta informado por mim</option><option value="km">Estimar de carro com meu custo por km</option>
+    <label className="field"><span>Custo do deslocamento</span><select value={costMode} onChange={e => setCostMode(e.target.value)}>
+      <option value="manual">Informar ida e volta</option><option value="km">Calcular pelo custo por km</option>
     </select></label>
     {costMode === "manual" ? <div className="trip-options">
       <label className="field"><span>Ida e volta até {best.market_name} (R$)</span><input inputMode="decimal" placeholder="Ex.: 0,00 se for a pé" value={bestCost} onChange={e => setBestCost(e.target.value)} /></label>
       <label className="field"><span>Ida e volta até {reference.market_name} (R$)</span><input inputMode="decimal" placeholder="Informe seu custo" value={referenceCost} onChange={e => setReferenceCost(e.target.value)} /></label>
     </div> : <><label className="field"><span>Seu custo por km (R$)</span><input inputMode="decimal" placeholder="Informe o custo do seu veículo" value={perKm} onChange={e => setPerKm(e.target.value)} /></label>
-      <p className="form-hint">Estimativa: duas vezes a distância de ida × custo por km informado. A volta pode ter outro caminho. Pedágio, estacionamento e valor do seu tempo não são incluídos.</p></>}
+      <details className="app-help"><summary>Como calculamos</summary><p>Estimativa: distância de ida × 2 × custo por km. A volta pode ter outro caminho. Não inclui pedágio, estacionamento ou tempo.</p></details></>}
     {net !== null ? <div className={`notice ${net > 0 ? "good" : ""}`} role="status">
       {net > 0 ? <>Considerando os custos informados, {best.market_name} ainda economiza <strong>{formatPrice(net)}</strong>.</> : net < 0 ? <>Com esse deslocamento, {reference.market_name} custa <strong>{formatPrice(-net)}</strong> menos no conjunto.</> : <>Os custos se igualam considerando o deslocamento informado.</>}
       <small className="block">{best.market_name}: {formatPrice(total(best))} + {formatPrice(chosenTrip)} de deslocamento. {reference.market_name}: {formatPrice(total(reference))} + {formatPrice(otherTrip)}.</small>
-    </div> : <p className="form-hint">Preencha os dois custos, ou calcule as rotas e informe seu custo por km, para avaliar a economia após o deslocamento. Sem esses dados, não é possível afirmar se compensa.</p>}
+    </div> : <p className="form-hint">Informe os custos de ida e volta para calcular a economia final.</p>}
   </section>;
 }
