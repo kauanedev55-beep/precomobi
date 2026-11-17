@@ -1,0 +1,11 @@
+# Revisão mobile — 17/11/2026
+
+- Produtos volta a abrir vazio para busca, sem filtro implícito por preço. Ofertas permanecem em Promoções. Ler código e Cadastrar produto usam o mesmo padrão de botão; filtros ficam em uma seção recolhida.
+- A consulta pública de “leite” em Serra retornou 79 apresentações sem restrição por preço e apenas duas com a restrição antiga. Esse filtro ocultava produtos e podia fazer instalações novas parecerem diferentes do computador.
+- Cidade ocupa uma linha. Promoções tem cabeçalho e filtros compactos, sem mensagens repetidas. Fonte, validade, condições de clube e avisos de alteração continuam acessíveis. O ícone de informação usa SVG centralizado, sem depender do glifo da fonte do aparelho.
+- Minha lista e a cesta têm Comparar preços como ação direta para /comparacao/atual. A API de prévia continua calculando sem persistir lista ou itens. Nome e salvamento ficam em Salvar lista (opcional), sem impedir a comparação.
+- A comparação exibe total para listas completas e subtotal para listas parciais, sempre com a contagem de itens com preço e um aviso curto dos preços faltantes. Endereço, produtos, origem e validade ficam nos detalhes. As regras de cálculo não mudaram.
+- A abertura da câmera foi separada do decodificador. O vídeo recebe muted/defaultMuted, playsInline e os atributos WebKit antes do stream. A leitura começa quando há imagem real. Se o Safari bloquear play(), Ativar câmera chama play() diretamente no toque, sem pedir outra permissão. Resolução incompatível tem fallback; fechar o leitor libera seus recursos, inclusive quando a permissão chega atrasada. Inspeção opcional de foco não interrompe o leitor.
+- O processamento dos códigos continua local no navegador, sem enviar imagens da câmera ao servidor. Entrada manual de código continua disponível.
+
+Validação: testes automatizados cobrem fluxo de câmera, gesto de retomada, fallback, espera por imagem e fechamento concorrente; testes existentes verificam comparação sem persistência. A compilação TypeScript/Vite foi conferida. O navegador de teste disponível não acessou o servidor local; não foi realizado teste físico de câmera no iPhone. O retorno da usuária no aparelho permanece necessário para confirmar esse comportamento específico.

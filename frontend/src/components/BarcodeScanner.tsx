@@ -1,5 +1,5 @@
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import type { IScannerControls } from "@zxing/browser";
+import {openCameraPreview,type CameraPreviewState} from "../lib/cameraPreview";
 import { productCode } from "../lib/scannedCode";
 import { BarcodeFormat, DecodeHintType } from "@zxing/library";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -31,8 +31,12 @@ export function BarcodeScanner({
   onClose: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const controlsRef = useRef<IScannerControls | null>(null);
+  const cleanupRef=useRef<()=>void>(()=>undefined);
+  const resumeRef=useRef<()=>void>(()=>undefined);
+  const detectedRef=useRef(onDetected);
+  detectedRef.current=onDetected;
+  const [cameraState,setCameraState]=useState<CameraPreviewState>("opening");
+  const [attempt,setAttempt]=useState(0);
   const [error, setError] = useState("");
   const [manualCode, setManualCode] = useState("");
   const [manualError, setManualError] = useState("");
@@ -41,111 +45,57 @@ export function BarcodeScanner({
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !navigator.mediaDevices?.getUserMedia) {
+      setCameraState("error");
       setError("Câmera indisponível. Digite o código de barras abaixo.");
       return;
     }
-    const videoElement: HTMLVideoElement = video;
-
-    let cancelled = false;
-    let delivered = false;
-    let nativeTimer: ReturnType<typeof setInterval> | undefined;
-    let nativeBusy = false;
-    const hints = new Map<DecodeHintType, unknown>();
-    hints.set(DecodeHintType.POSSIBLE_FORMATS, allowedFormats);
-    hints.set(DecodeHintType.TRY_HARDER, true);
-    const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
-
-    const deliver = (raw: string) => {
-      if (cancelled || delivered) return;
-      const code = productCode(raw);
-      if (!code) {
-        setError("Este código não identifica um produto por EAN. QR de nota fiscal não fornece preços automaticamente; informe o produto e o valor observado.");
-        return;
-      }
-      setError("");
-      delivered = true;
-      if (nativeTimer !== undefined) clearInterval(nativeTimer);
-      controlsRef.current?.stop();
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      onDetected(code);
+    let cancelled=false;
+    let delivered=false;
+    let nativeTimer:ReturnType<typeof setInterval>|undefined;
+    let controls:ReturnType<BrowserMultiFormatReader["scan"]>|null=null;
+    let nativeBusy=false;
+    const hints=new Map<DecodeHintType,unknown>();
+    hints.set(DecodeHintType.POSSIBLE_FORMATS,allowedFormats);
+    hints.set(DecodeHintType.TRY_HARDER,true);
+    const reader=new BrowserMultiFormatReader(hints,{delayBetweenScanAttempts:160});
+    const stopDecoder=()=>{if(nativeTimer!==undefined)clearInterval(nativeTimer);controls?.stop();};
+    const deliver=(raw:string)=>{
+      if(cancelled||delivered)return;
+      const code=productCode(raw);
+      if(!code){setError("Este QR não identifica um produto. Use o código de barras da embalagem ou digite o EAN abaixo.");return;}
+      delivered=true;stopDecoder();preview.stop();detectedRef.current(code);
     };
-
-    async function openCamera() {
-      let stream: MediaStream;
-      try {
-        // Ideal, não obrigatório: notebooks sem câmera HD continuam funcionando.
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        });
-      } catch {
-        if (!cancelled) setError("Não foi possível iniciar a câmera. Verifique a permissão ou digite o EAN abaixo.");
-        return;
-      }
-      if (cancelled) {
-        stream.getTracks().forEach((track) => track.stop());
-        return;
-      }
-      streamRef.current = stream;
-      const track = stream.getVideoTracks()[0];
-      if (track) {
-        const settings = track.getSettings();
-        if (settings.width && settings.height) setCameraDetails(`Câmera: ${settings.width} × ${settings.height}`);
-        // Foco contínuo, somente nos dispositivos que anunciam suporte.
-        const capabilities = track.getCapabilities?.() as CameraCapabilities | undefined;
-        if (capabilities?.focusMode?.includes("continuous")) {
-          void track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }).catch(() => undefined);
-        }
-      }
-
-      // Estratégia 1: BarcodeDetector nativo do Chrome/Edge, quando existir.
-      const Detector = (window as Window & { BarcodeDetector?: NativeDetectorCtor }).BarcodeDetector;
-      if (Detector) {
-        try {
-          const detector = new Detector({ formats: ["qr_code", "ean_13", "ean_8", "upc_a", "upc_e", "code_128"] });
-          nativeTimer = setInterval(() => {
-            if (nativeBusy || cancelled || delivered || videoElement.readyState < 2) return;
-            nativeBusy = true;
-            void detector.detect(videoElement)
-              .then((codes) => {
-                const found = codes.find((item) => productCode(item.rawValue)) ?? codes[0];
-                if (found) deliver(found.rawValue);
-              })
-              .catch(() => undefined)
-              .finally(() => { nativeBusy = false; });
-          }, 250);
-        } catch {
-          // Navegador sem suporte a esses formatos: ZXing permanece ativo.
-        }
-      }
-
-      // Estratégia 2: ZXing, sem depender do suporte nativo.
-      try {
-        const controls = await reader.decodeFromStream(stream, videoElement, (result, _err, ctrl) => {
-          if (result) {
-            controlsRef.current = ctrl;
-            deliver(result.getText());
-          }
-        });
-        if (cancelled || delivered) controls.stop();
-        else controlsRef.current = controls;
-      } catch {
-        if (!cancelled && !delivered) {
-          setError("Não foi possível processar o vídeo. Digite o código de barras abaixo.");
-        }
-      }
-    }
-
-    void openCamera();
-    return () => {
-      cancelled = true;
-      if (nativeTimer !== undefined) clearInterval(nativeTimer);
-      controlsRef.current?.stop();
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-    };
-    // Abrir a câmera uma única vez enquanto o modal estiver visível.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const preview=openCameraPreview(video,navigator.mediaDevices,{
+      onState(state,message){if(cancelled||delivered)return;setCameraState(state);setError(message||"");},
+      onReady(stream){
+        if(cancelled||delivered)return;
+        // Capability inspection is optional: a Safari implementation that throws
+        // here must not stop the actual video or the barcode decoder.
+        try{
+          const track=stream.getVideoTracks()[0];
+          const settings=track?.getSettings?.();
+          if(settings?.width&&settings.height)setCameraDetails(`Câmera: ${settings.width} × ${settings.height}`);
+          const capabilities=track?.getCapabilities?.() as CameraCapabilities|undefined;
+          if(capabilities?.focusMode?.includes("continuous"))void track.applyConstraints({advanced:[{focusMode:"continuous"} as MediaTrackConstraintSet]}).catch(()=>undefined);
+        }catch{/* Optional camera details are not required for scanning. */}
+        const Detector=(window as Window & {BarcodeDetector?:NativeDetectorCtor}).BarcodeDetector;
+        if(Detector){try{
+          const detector=new Detector({formats:["qr_code","ean_13","ean_8","upc_a","upc_e","code_128"]});
+          nativeTimer=setInterval(()=>{
+            if(nativeBusy||cancelled||delivered||video.readyState<2)return;
+            nativeBusy=true;
+            void detector.detect(video).then(codes=>{const found=codes.find(c=>productCode(c.rawValue))??codes[0];if(found)deliver(found.rawValue);}).catch(()=>undefined).finally(()=>{nativeBusy=false;});
+          },250);
+        }catch{/* ZXing handles browsers without native barcode support. */}}
+        controls=reader.scan(video,result=>{if(result)deliver(result.getText());});
+        if(cancelled||delivered)controls.stop();
+      },
+    });
+    resumeRef.current=()=>{void preview.resume();};
+    const cleanup=()=>{cancelled=true;stopDecoder();preview.stop();};
+    cleanupRef.current=cleanup;
+    return cleanup;
+  },[attempt]);
 
   function submitManual(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -154,17 +104,19 @@ export function BarcodeScanner({
       setManualError("Informe um EAN de 8, 12, 13 ou 14 números, ou um QR de produto com EAN.");
       return;
     }
-    controlsRef.current?.stop();
-    streamRef.current?.getTracks().forEach((track) => track.stop());
+    cleanupRef.current();
     onDetected(code);
   }
 
   return (
-    <div className="scanner-overlay" role="presentation" onClick={onClose}>
+    <div className="scanner-overlay" role="presentation" onClick={()=>{cleanupRef.current();onClose();}}>
       <div className="scanner-box" role="dialog" aria-modal="true" aria-label="Ler código de barras ou QR Code" onClick={(event) => event.stopPropagation()}>
-        <button className="auth-close" type="button" aria-label="Fechar" onClick={onClose}>×</button>
+        <button className="auth-close" type="button" aria-label="Fechar" onClick={()=>{cleanupRef.current();onClose();}}>×</button>
         <h2>Ler código de barras ou QR Code</h2>
         <video ref={videoRef} className="scanner-video" muted playsInline autoPlay aria-label="Imagem da câmera" />
+        {cameraState==="opening"&&<p className="form-hint" role="status">Abrindo a câmera…</p>}
+        {cameraState==="blocked"&&<button className="primary-button scanner-resume" type="button" onClick={()=>resumeRef.current()}>Ativar câmera</button>}
+        {cameraState==="error"&&<button className="outline-button" type="button" onClick={()=>{setError("");setCameraDetails("");setAttempt(value=>value+1);}}>Tentar abrir câmera novamente</button>}
         {error ? <p className="error-message" role="alert">{error}</p> : (
           <p className="form-hint">Enquadre o código de barras ou QR do produto, sem reflexos, e mantenha a embalagem parada. {cameraDetails}</p>
         )}

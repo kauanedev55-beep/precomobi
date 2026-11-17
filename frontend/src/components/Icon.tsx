@@ -1,4 +1,7 @@
 const paths = {
+  scan: "M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M7 9v6m3-6v6m3-6v6m4-6v6",
+  info: "M12 11v6m0-10h.01",
+  refresh: "M3 11a9 9 0 0 1 15.5-6L21 8M21 3v5h-5M21 13a9 9 0 0 1-15.5 6L3 16M3 21v-5h5",
   basket: "M3 9h18l-2 12H5L3 9Zm4 0 3-6m7 6-3-6M9 13v4m6-4v4",
   store: "M3 10h18l-2-7H5l-2 7Zm2 0v11h14V10M9 21v-7h6v7M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0",
   home: "m3 10 9-7 9 7M5 9v12h14V9M9 21v-7h6v7",

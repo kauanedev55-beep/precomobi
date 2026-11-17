@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 
+import {Icon} from "../components/Icon";
+import "../styles/mobile-clarity.css";
 import {cartItemsPayload} from "../lib/cartItems";
 import { useCart } from "../cart/CartContext";
 import { useOffers } from "../offers/OffersContext";
@@ -87,15 +89,13 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
   const bestId = complete.length ? [...complete].sort((a, b) => Number(a.total) - Number(b.total))[0].market_id : null;
 
   return (
-    <section>
+    <section className="comparison-page">
       <p className="breadcrumb"><Link to="/lista">← Lista de compras</Link></p>
-      <div className="comparison-heading"><h1>Comparação: {comparison.list_name}</h1><button type="button" className="outline-button" disabled={loading} onClick={() => void load()}>{loading ? "Atualizando..." : "Atualizar preços"}</button></div>
-      {preview && <div className="preview-actions"><p>Você está comparando sem salvar. Para usar esta lista em outra compra ou dispositivo, escolha Salvar lista.</p><div className="button-row"><button className="outline-button" type="button" onClick={() => void saveDraft()} disabled={isSaving}>{isSaving ? "Salvando..." : "Salvar lista"}</button><button className="primary-button" type="button" disabled={isSaving} onClick={() => {cart.clear();navigate("/lista",{replace:true});}}>Concluir sem salvar</button></div>{saveError && <p className="error-message" role="alert">{saveError}</p>}</div>}
-      {priced.length === 0 && <div className="notice">Nenhum mercado tem preço registrado e vigente para os produtos desta lista. Escolha produtos com preço ou use a lista sem comparação.</div>}
-      <p className="form-hint">Comparando {priced.length} mercados com preços {city === "*" ? "nas cidades cadastradas no ES" : `em ${city}`}. Listas completas são ordenadas pelo total. Nas incompletas, mostramos primeiro os mercados com mais itens com preço.</p>
-      {Boolean(comparison.excluded_markets_count)&&<p className="form-hint">Mercados sem preço para os itens escolhidos ficaram fora desta comparação. <Link to="/produtos">Ver produtos com preço</Link>.</p>}
-      {complete.length === 1 && <p className="notice">Só um mercado tem a lista completa. Não há outro total completo para medir a economia.</p>}
-
+      <div className="comparison-heading"><h1>Comparar preços</h1><button type="button" className="comparison-refresh outline-button" aria-label="Atualizar preços" title="Atualizar preços" disabled={loading} onClick={() => void load()}><Icon name="refresh" size={20}/></button></div>
+      {preview&&<details className="list-save-options"><summary>Salvar lista (opcional)</summary><button className="outline-button" type="button" onClick={()=>void saveDraft()} disabled={isSaving}>{isSaving?"Salvando…":"Salvar na minha conta"}</button>{saveError&&<p className="error-message" role="alert">{saveError}</p>}</details>}
+      {priced.length===0&&<div className="notice">Ainda não há preços para estes itens. Sua lista continua disponível.</div>}
+      {priced.length>0&&<p className="comparison-count">{priced.length} {priced.length===1?"mercado com preço":"mercados com preços"}</p>}
+      {complete.length===1&&<p className="notice">Só um mercado tem preço para a lista completa.</p>}
       {hasDemoPrices && (
         <div className="notice" role="status">
           <strong>Modo demonstração:</strong> esta comparação contém preços de exemplo criados para apresentar o funcionamento do PreçoMobi.
@@ -103,13 +103,8 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
         </div>
       )}
 
-      {saving && (
-        <div className="notice good">
-          Entre os mercados com a lista completa, <strong>{saving.best}</strong> tem o menor total {hasDemoPrices ? "nesta simulação" : "registrado"}:{" "}
-          {saving.amount > 0 ? <>economia de <strong>{formatPrice(saving.amount)}</strong> em relação a {saving.worst}.</> : <>o mesmo total dos demais.</>}
-        </div>
-      )}
-      {complete.length === 0 && <div className="notice">Nenhum mercado tem preço para todos os itens da lista, então não há total completo para comparar. Veja abaixo o que falta.</div>}
+      {saving&&<div className="notice good">{saving.amount>0?<>Economize <strong>{formatPrice(saving.amount)}</strong> em {saving.best}, entre as listas completas.</>:"Os totais completos são iguais."}</div>}
+      {priced.length>0&&complete.length===0&&<p className="notice">Faltam preços para fechar a lista. Veja os subtotais abaixo.</p>}
 
       <div className="market-columns">
         {displayed.map((result) => (
@@ -117,18 +112,17 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
             <header>
               <div>
                 <h3>{result.market_name}</h3>
-                <p className="market-address">{fullAddress({ ...result, name: result.market_name })}</p>
-                {result.market_id === bestId && <span className="best-choice-label">✓ Menor total completo disponível</span>}
-                <span className={`status-pill ${result.complete ? "" : "partial"}`}>{result.complete ? "Lista completa" : "Compra parcial"}</span>
+                <p className="market-address">{[result.neighborhood,result.city].filter(Boolean).join(" · ")}</p>
+                {result.market_id === bestId && <span className="best-choice-label">✓ Menor total completo</span>}
+                <span className={`status-pill ${result.complete ? "" : "partial"}`}>{result.complete ? "Lista completa" : "Lista incompleta"}</span>
               </div>
               <div className="market-total">
-                <small>{result.found_items} de {result.total_items} itens com preço</small>
-                <strong>{result.total !== null ? formatPrice(result.total) : "Total indisponível"}</strong>
+                <small>{result.complete?"Total":"Subtotal"} · {result.found_items}/{result.total_items} itens com preço</small>
+                <strong>{formatPrice(result.total??result.available_total)}</strong>
               </div>
             </header>
-            {!result.complete && <p>Subtotal dos {result.found_items} itens com preço conhecido: <strong>{formatPrice(result.available_total)}</strong>. Faltam os preços de {result.total_items - result.found_items} itens.</p>}
-            {result.comparable_total !== null && !result.complete && <p className="form-hint">Itens em comum entre mercados: {formatPrice(result.comparable_total)} ({comparison.common_items_count} produtos).</p>}
-            <details className="market-item-details"><summary>Ver produtos e preços ({result.found_items} de {result.total_items})</summary><div className="table-wrap">
+            {!result.complete&&<p className="comparison-missing">Faltam preços de {result.total_items-result.found_items} {result.total_items-result.found_items===1?"item":"itens"}.</p>}
+            <details className="market-item-details"><summary>Produtos e preços</summary><div className="table-wrap">
               <table role="table" aria-label={`Produtos e preços em ${result.market_name}`}>
                 <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Produto</th><th scope="col" role="columnheader">Qtd.</th><th scope="col" role="columnheader">Preço por kg ou embalagem</th><th scope="col" role="columnheader">Subtotal</th><th scope="col" role="columnheader">Origem</th></tr></thead>
                 <tbody role="rowgroup">
@@ -143,10 +137,9 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
                   ))}
                 </tbody>
               </table>
-            </div></details>
-            <a className="primary-button market-route-action" target="_blank" rel="noreferrer" href={googleMapsUrl({ ...result, name: result.market_name })}>Abrir no Google Maps ↗</a>
-            <Link className="outline-button market-route-action" to={`/mapa?mercado=${result.market_id}&rota=1`}>⌖ Ver distância e rota →</Link>
-            {!result.complete && <p className="form-hint">Subtotal parcial não representa o custo da lista completa. A economia parcial considera apenas os mesmos produtos nos mercados comparáveis.</p>}
+            </div><p className="form-hint">{fullAddress({...result,name:result.market_name})}</p>{result.comparable_total!==null&&!result.complete&&<p className="form-hint">{comparison.common_items_count} itens em comum: {formatPrice(result.comparable_total)}.</p>}</details>
+            <div className="comparison-route-actions"><a className="primary-button" target="_blank" rel="noreferrer" href={googleMapsUrl({...result,name:result.market_name})}>Ir ao mercado ↗</a><Link className="outline-button" to={`/mapa?mercado=${result.market_id}&rota=1`}>Ver distância</Link></div>
+
           </article>
         ))}
       </div>
@@ -155,8 +148,8 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
 
       {priced.length > 3 && <button className="outline-button" type="button" onClick={() => setShowAll(!showAll)}>{showAll ? "Mostrar apenas os 3 primeiros" : `Ver mais ${priced.length - 3} mercados com preços`}</button>}
 
-      {anyMissing && <p className="form-hint">Viu algum desses preços? <Link to="/contribuir">Contribua informando o valor</Link> (é preciso estar logado).</p>}
-      <p className="form-hint">Vale o preço mais recente de cada produto em cada mercado. <Link to="/mercados">Ver mercados</Link> · <Link to="/mapa">Ver no mapa</Link></p>
+      <details className="comparison-help"><summary>Como funciona a comparação</summary><p>Usamos o preço mais recente de cada produto na cidade escolhida. Subtotais incluem apenas os itens com preço; não representam a lista completa. A economia considera listas completas ou os mesmos itens nos mercados comparáveis.</p>{anyMissing&&<Link to="/contribuir">Informar um preço</Link>}</details>
+
     </section>
   );
 }

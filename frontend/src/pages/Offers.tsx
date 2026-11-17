@@ -64,19 +64,18 @@ export function Offers({alertsOnly=false}: {alertsOnly?: boolean}) {
   const busy = alertsOnly ? alerts.loading : loading;
   const failure = alertsOnly ? alerts.error : error;
   return <section className="offers-page">
-    <div className="experience-heading"><div><span className="eyebrow"><Icon name={alertsOnly ? "bell" : "tag"} size={18}/>{alertsOnly ? "DO SEU INTERESSE" : "JUNTOS, A COMPRA RENDE MAIS"}</span><h1>{alertsOnly ? "Meus avisos de ofertas" : mine ? "Minhas promoções" : "Promoções da sua cidade"}</h1><p>{alertsOnly ? "Ofertas dos folhetos e da comunidade conforme os produtos das suas listas e os mercados que você costuma visitar. Você escolhe se quer receber." : mine ? "Somente as promoções que você compartilhou, incluindo as encerradas e vencidas. Encerre aqui uma oferta que acabou antes do prazo." : "Encontre promoções com validade e condições nos mercados da cidade escolhida."}</p></div>{!alertsOnly && <Link className="primary-button" to="/contribuir?tipo=oferta"><Icon name="plus"/>Compartilhar promoção</Link>}</div>
+    <div className="experience-heading"><h1>{alertsOnly ? "Meus avisos" : mine ? "Minhas promoções" : "Promoções"}</h1>{!alertsOnly&&<Link className="outline-button" to="/contribuir?tipo=oferta" aria-label="Compartilhar uma promoção"><Icon name="plus" size={18}/>Contribuir</Link>}</div>
     {alertsOnly && <AlertSettings/>}
     <nav className="offer-tabs" aria-label={alertsOnly ? "Ações dos avisos" : "Consultar promoções"}>
-      {alertsOnly ? <Link to="/ofertas">Ver promoções da cidade</Link> : <><Link className={!mine ? "selected" : ""} aria-current={!mine ? "page" : undefined} to="/ofertas">Promoções da cidade</Link><Link className={mine ? "selected" : ""} aria-current={mine ? "page" : undefined} to="/ofertas?minhas=1">Minhas promoções</Link></>}
-      <button className="text-button" onClick={() => void load()}>Atualizar</button>
+      {alertsOnly ? <Link to="/ofertas">Ver promoções da cidade</Link> : <><Link className={!mine ? "selected" : ""} aria-current={!mine ? "page" : undefined} to="/ofertas">Da cidade</Link><Link className={mine ? "selected" : ""} aria-current={mine ? "page" : undefined} to="/ofertas?minhas=1">Minhas</Link></>}
+      <button className="offers-refresh" type="button" aria-label="Atualizar promoções" title="Atualizar promoções" disabled={busy} onClick={() => void load()}><Icon name="refresh" size={20}/></button>
     </nav>
     {!mine && !alertsOnly && city && <div className="offers-market-filter">
-      <div className="offers-market-fields"><label className="field"><span>Mercado</span><select value={chain} disabled={busy} onChange={event=>chooseMarket(event.target.value,"")}><option value="">Todos os mercados da cidade</option>{chains.map(name=><option key={name} value={name}>{name}</option>)}</select></label>
-      <label className="field"><span>Loja</span><select value={store} disabled={busy} onChange={event=>chooseMarket(chain,event.target.value)}><option value="">Todas as lojas{chain ? " desta rede" : " da cidade"}</option>{stores.map(m=><option key={m.id} value={m.id}>{m.name}{city==="*" ? ` · ${m.city}` : ""}</option>)}</select></label></div>
-      <p className="form-hint">Aqui aparecem os mercados com promoções vigentes na cidade. As ofertas têm validade e lojas participantes.</p>
-      {!busy&&!failure&&rows.length>0&&<p role="status">{rows.length} {rows.length===1 ? "promoção" : "promoções"}{store||chain ? ` em ${chosenName}` : ` em ${city==="*" ? "cidades cadastradas" : city}`}. Ofertas iguais do mesmo folheto aparecem uma vez.</p>}
+      <div className="offers-market-fields"><label className="field"><span>Mercado</span><select value={chain} disabled={busy} onChange={event=>chooseMarket(event.target.value,"")}><option value="">Todos os mercados</option>{chains.map(name=><option key={name} value={name}>{name}</option>)}</select></label>
+      <label className="field"><span>Loja</span><select value={store} disabled={busy} onChange={event=>chooseMarket(chain,event.target.value)}><option value="">Todas as lojas</option>{stores.map(m=><option key={m.id} value={m.id}>{m.name}{city==="*" ? ` · ${m.city}` : ""}</option>)}</select></label></div>
+      {!busy&&!failure&&rows.length>0&&<p role="status">{rows.length} {rows.length===1 ? "oferta" : "ofertas"}</p>}
     </div>}
-    {mine && <p className="form-hint">Seu histórico de promoções inclui todas as cidades.</p>}
+
     {!city&&!mine&&!alertsOnly&&<Empty title="Em qual cidade você quer ver promoções?">Escolha a cidade acima para consultar os mercados cadastrados.</Empty>}
     {busy && <Loading text="Procurando ofertas..."/>}{failure && <ErrorBox message={failure} onRetry={() => void load()}/>}
     {!busy&&!failure&&(Boolean(city)||mine||alertsOnly)&&rows.length===0 && <Empty title={alertsOnly ? "Nenhum aviso de oferta por enquanto" : mine ? "Você ainda não compartilhou promoções" : `Nenhuma promoção válida em ${chosenName}`}><p>{alertsOnly ? "Ative os avisos acima e escolha produtos das listas ou seus mercados habituais. As novas ofertas dos folhetos e da comunidade aparecerão aqui." : "Ainda não há ofertas com validade confirmada para esta seleção. Escolha outro mercado ou compartilhe uma promoção dessa loja."}</p>{!alertsOnly&&!mine&&officialWebsite&&<a className="outline-button" href={officialWebsite} target="_blank" rel="noopener noreferrer">Consultar site do mercado ↗</a>}{alertsOnly && <Link className="outline-button" to="/produtos">Adicionar produtos</Link>}</Empty>}
@@ -84,6 +83,6 @@ export function Offers({alertsOnly=false}: {alertsOnly?: boolean}) {
       const members=[group,...(group.related_offers || [])].map(o=>o.id===updated.id ? updated : o).filter(o=>mine || o.state==="active");
       return members.length ? [{...members[0],related_offers:members.slice(1).map(({related_offers:_,...o})=>o)}] : [];
     }));}}/>)}</div>}
-    <p className="offer-disclaimer">Ofertas dos folhetos revisados e da comunidade. Avisos de alteração não substituem o preço original. Condições de clube ou quantidade não são aplicadas automaticamente ao total da lista.</p>
+    <details className="offers-help"><summary>Sobre as ofertas</summary><p>Ofertas de folhetos revisados e da comunidade, válidas para as lojas indicadas. Ofertas iguais do mesmo folheto aparecem uma vez. Os avisos valem para a loja selecionada. Descontos de clube ou quantidade não entram automaticamente no total da lista.</p></details>
   </section>;
 }
