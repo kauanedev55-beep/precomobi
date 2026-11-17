@@ -2,6 +2,7 @@ export type CameraPreviewState = "opening" | "blocked" | "ready" | "error";
 type Callbacks = {
   onState(state: CameraPreviewState, message?: string): void;
   onReady(stream: MediaStream): void;
+  onInterrupted?(): void;
 };
 
 function errorName(error: unknown): string {
@@ -42,12 +43,15 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
   let stopped = false;
   let playing = false;
   let ready = false;
+  let reattach = false;
+  const trackCleanups: Array<() => void> = [];
   const abort = new AbortController();
   const state = (value: CameraPreviewState, message?: string) => { if (!stopped) callbacks.onState(value, message); };
   function stop() {
     if (stopped) return;
     stopped = true;
     abort.abort();
+    trackCleanups.forEach(clean=>clean());
     stream?.getTracks().forEach(track => track.stop());
     if (stream && video.srcObject === stream) { video.pause(); video.srcObject = null; }
   }
@@ -57,6 +61,10 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
     playing = true;
     state("opening");
     try {
+      // A failed WebKit play may leave its rendering layer attached to a stale
+      // stream. Rebind the SAME stream on the next explicit tap, without a new
+      // permission request or a hidden video. play() stays inside that gesture.
+      if(reattach){video.pause();video.srcObject=null;video.srcObject=stream;reattach=false;}
       await bounded(video.play(),deadlines.playMs??5000,abort.signal);
       if (stopped) return;
       await waitForFrame(video, abort.signal);
@@ -67,14 +75,22 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
     } catch (error) {
       if (stopped) return;
       if (["NotAllowedError", "AbortError", "TimeoutError"].includes(errorName(error))) {
-        state("blocked", "Toque em Ativar câmera ou fotografe o código.");
+        reattach = true;
+        state("blocked", "Toque em Ativar câmera para continuar.");
       } else {
-        state("error", "Não foi possível mostrar a câmera. Tente abrir novamente ou digite o código abaixo.");
+        state("error", "Não foi possível mostrar a câmera. Tente novamente ou digite o código.");
+        callbacks.onInterrupted?.();
+        stop();
       }
     } finally { playing = false; }
   }
   async function acquire() {
     state("opening");
+    video.muted = true;
+    video.defaultMuted = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    for (const attribute of ["muted", "autoplay", "playsinline", "webkit-playsinline"]) video.setAttribute(attribute, "");
     try {
       let acquired: MediaStream;
       try {
@@ -86,17 +102,18 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
       }
       if (stopped) { acquired.getTracks().forEach(track => track.stop()); return; }
       stream = acquired;
-      video.muted = true;
-      video.defaultMuted = true;
-      video.autoplay = true;
-      video.playsInline = true;
-      for (const attribute of ["muted", "autoplay", "playsinline", "webkit-playsinline"]) video.setAttribute(attribute, "");
+      for(const track of stream.getTracks()){
+        const ended=()=>{if(stopped)return;state("error","A câmera foi interrompida. Toque em Tentar novamente.");callbacks.onInterrupted?.();stop();};
+        track.addEventListener?.("ended",ended);
+        trackCleanups.push(()=>track.removeEventListener?.("ended",ended));
+        if(track.readyState==="ended"){ended();return;}
+      }
       video.srcObject = stream;
       await resume();
     } catch (error) {
       if (stopped) return;
       const name = errorName(error);
-      state("error", name === "TimeoutError" ? "A câmera não respondeu. Use Fotografar código ou tente pelo Safari."
+      state("error", name === "TimeoutError" ? "A câmera não respondeu. Tente novamente ou digite o código."
         : name === "NotAllowedError" || name === "SecurityError"
         ? "O acesso à câmera não foi liberado. Verifique a permissão do navegador ou digite o código abaixo."
         : name === "NotReadableError" ? "A câmera está ocupada ou não pôde iniciar. Feche outros apps que usam a câmera e tente novamente."
@@ -106,4 +123,13 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
   }
   void acquire();
   return { resume, stop };
+}
+
+// Never keep a PWA camera session alive while its document is hidden. Resume is
+// deliberately a fresh tap rather than another background permission request.
+export function bindCameraLifecycle(page: EventTarget & {visibilityState:string}, windowEvents:EventTarget, pause:()=>void) {
+  const visibility=()=>{if(page.visibilityState==="hidden")pause();};
+  page.addEventListener("visibilitychange",visibility);
+  windowEvents.addEventListener("pagehide",pause);
+  return ()=>{page.removeEventListener("visibilitychange",visibility);windowEvents.removeEventListener("pagehide",pause);};
 }

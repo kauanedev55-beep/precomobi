@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {openCameraPreview} from '../.test-build/cameraPreview.js';
+import {openCameraPreview,bindCameraLifecycle} from '../.test-build/cameraPreview.js';
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 const named=name=>Object.assign(new Error(name),{name});
 function camera(){let stops=0;return {getTracks:()=>[{stop(){stops++;}}],get stops(){return stops;}};}
@@ -86,10 +86,41 @@ test('a pending play promise leaves opening state and allows an explicit resume'
  await session.resume();assert.equal(seen.streams.length,1);finish();await flush();assert.equal(seen.streams.length,1);session.stop();
 });
 
-test('native-photo mode is limited to the installed Apple app, not normal Safari or Android',async()=>{
- const {isInstalledApple}=await import('../.test-build/photo.js');
- assert.equal(isInstalledApple({userAgent:'iPhone',maxTouchPoints:5,standalone:true},false),true);
- assert.equal(isInstalledApple({userAgent:'iPhone',maxTouchPoints:5},false),false);
- assert.equal(isInstalledApple({userAgent:'Android',maxTouchPoints:5},true),false);
- assert.equal(isInstalledApple({userAgent:'Macintosh',maxTouchPoints:5},true),true);
+
+test('inline attributes are set and capture requested synchronously in the initiating tap',async()=>{
+ const video=new Video();const stream=camera();let requested=false;
+ const session=openCameraPreview(video,{getUserMedia:()=>{
+   requested=true;assert.equal(video.muted,true);assert.equal(video.playsInline,true);
+   for(const attr of ['muted','autoplay','playsinline','webkit-playsinline'])assert.ok(video.attributes.has(attr));
+   return Promise.resolve(stream);
+ }},observer());
+ assert.equal(requested,true);await flush();session.stop();
+});
+
+test('a blocked preview rebinds its existing stream before play without acquiring another camera',async()=>{
+ const video=new Video();const stream=camera();const seen=observer();let requests=0;let rebinds=0;let source=null;
+ Object.defineProperty(video,'srcObject',{get:()=>source,set(value){source=value;rebinds++;}});
+ video.play=function(){this.calls++;if(this.calls===1)return Promise.reject(named('NotAllowedError'));this.paused=false;assert.equal(source,stream);return Promise.resolve();};
+ const session=openCameraPreview(video,{getUserMedia:async()=>{requests++;return stream;}},seen);
+ await flush();assert.equal(rebinds,1);const resumed=session.resume();assert.equal(video.calls,2);assert.equal(rebinds,3);
+ await resumed;assert.equal(requests,1);assert.equal(seen.streams.length,1);session.stop();
+});
+
+test('capture ending in iOS stops decoding, releases tracks, and reports a retry instead of a stale ready screen',async()=>{
+ const track=new EventTarget();track.readyState='live';let stops=0;track.stop=()=>{stops++;};
+ const stream={getTracks:()=>[track]};const video=new Video();const seen=observer();let interrupted=0;
+ const session=openCameraPreview(video,{getUserMedia:async()=>stream},{...seen,onInterrupted:()=>{interrupted++;}});
+ await flush();assert.equal(seen.states.at(-1)[0],'ready');track.readyState='ended';track.dispatchEvent(new Event('ended'));
+ assert.equal(seen.states.at(-1)[0],'error');assert.match(seen.states.at(-1)[1],/interrompida/);assert.equal(interrupted,1);assert.equal(stops,1);assert.equal(video.srcObject,null);
+ track.dispatchEvent(new Event('ended'));session.stop();assert.equal(interrupted,1);assert.equal(stops,1);
+});
+
+test('backgrounding and pagehide release a pending capture; returning does not silently reopen it',async()=>{
+ const page=new EventTarget();page.visibilityState='visible';const win=new EventTarget();const video=new Video();const stream=camera();let grant;let pauses=0;
+ const session=openCameraPreview(video,{getUserMedia:()=>new Promise(resolve=>{grant=resolve;})},observer());
+ const unbind=bindCameraLifecycle(page,win,()=>{pauses++;session.stop();});
+ page.dispatchEvent(new Event('visibilitychange'));assert.equal(pauses,0);
+ page.visibilityState='hidden';page.dispatchEvent(new Event('visibilitychange'));grant(stream);await flush();assert.equal(stream.stops,1);assert.equal(video.srcObject,null);
+ page.visibilityState='visible';page.dispatchEvent(new Event('visibilitychange'));assert.equal(pauses,1);
+ win.dispatchEvent(new Event('pagehide'));assert.equal(pauses,2);unbind();win.dispatchEvent(new Event('pagehide'));assert.equal(pauses,2);
 });
