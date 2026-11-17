@@ -1,0 +1,8 @@
+.offers-market-filter{margin:16px 0 24px;padding:16px;border:1px solid #d8d1c6;border-radius:14px;background:#fffdf9}
+.offers-market-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.offers-market-fields .field{margin:0;min-width:0}
+.offers-market-fields select{width:100%;min-width:0;min-height:48px;font-size:16px}
+.offers-market-filter>p{margin:12px 0 0}
+@media(max-width:640px){.offers-market-fields{grid-template-columns:1fr}}
+.map-market-filter{max-width:600px;margin:16px 0}
+.map-market-filter select{width:100%;min-height:48px;font-size:16px}

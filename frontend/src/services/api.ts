@@ -193,13 +193,14 @@ export type Offer = {
   state: "active" | "expired" | "ended"; confirmations: number; changed_reports: number;
   ended_reports: number; my_check: "confirmed" | "changed" | "ended" | null; is_mine: boolean;
 };
-export const getOffers = (options: { forAlerts?: boolean; forMyLists?: boolean; productIds?: number[]; mine?: boolean; city?: string } = {}) => {
+export const getOffers = (options: { forAlerts?: boolean; forMyLists?: boolean; productIds?: number[]; mine?: boolean; city?: string; marketIds?:number[] } = {}) => {
   const query = new URLSearchParams();
   if (!options.mine) query.set("grouped", "true");
   if (options.forAlerts) query.set("for_alerts", "true");
   if (options.forMyLists) query.set("for_my_lists", "true");
   if (options.mine) query.set("mine", "true");
   if (options.city) query.set("city", options.city);
+  if (options.marketIds?.length) query.set("market_ids", [...new Set(options.marketIds)].slice(0,100).join(","));
   if (options.productIds?.length) query.set("product_ids", [...new Set(options.productIds)].slice(0,200).join(","));
   return request<Offer[]>(`/offers?${query}`);
 };

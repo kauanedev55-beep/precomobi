@@ -132,8 +132,16 @@ def group_offers(rows):
 @router.get("", response_model=list[OfferRead])
 def list_offers(for_my_lists: bool = False, mine: bool = False, for_alerts: bool = False, grouped: bool = False,
         product_ids: str = Query(default="", max_length=2200),
+        market_ids: str = Query(default="", max_length=1100),
+        market_id: int | None = Query(default=None, gt=0),
     city: str | None = Query(default=None, min_length=1, max_length=100),
         db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    store_ids = []
+    if market_ids:
+        parts = market_ids.split(",")
+        if len(parts)>100 or any(not p.isascii() or not p.isdecimal() or len(p)>10 or int(p)<=0 for p in parts):
+            raise HTTPException(422,"Lojas inválidas para filtrar as ofertas")
+        store_ids = [int(p) for p in parts]
     ids = []
     if product_ids:
         parts = product_ids.split(",")
@@ -141,6 +149,10 @@ def list_offers(for_my_lists: bool = False, mine: bool = False, for_alerts: bool
             raise HTTPException(422, "Produtos inválidos para filtrar as ofertas")
         ids = [int(p) for p in parts]
     query = base_query().join(Product).join(Market, Offer.market_id == Market.id).where(Product.is_active.is_(True), Market.is_active.is_(True))
+    if store_ids:
+        query=query.where(Offer.market_id.in_(store_ids))
+    if market_id is not None:
+        query=query.where(Offer.market_id==market_id)
     if for_alerts:
         pref=db.get(AlertPreference,user.id)
         if not pref or not pref.enabled:
