@@ -280,12 +280,12 @@ export const acceptListInvite=(token:string)=>request<FamilyList>(`/family-lists
 export const revokeListInvites=(id:number)=>request<void>(`/family-lists/${id}/invites`,{method:"DELETE"});
 export const removeListMember=(id:number,userId:number)=>request<void>(`/family-lists/${id}/members/${userId}`,{method:"DELETE"});
 
-export type PriceImportEntry={product_id:number;market_ids:number[];sale_unit:"kg"|"unit";regular_price:string|null;club_price?:string|null;club_name?:string|null;conditions:string;valid_from:string;valid_until:string;source_url:string;channel?:"physical_flyer"};
+export type PriceImportEntry={product_id:number;market_ids:number[];sale_unit:"kg"|"unit";regular_price:string|null;club_price?:string|null;club_name?:string|null;conditions:string;valid_from:string;valid_until:string;source_url:string;channel?:"physical_flyer"|"physical_price";publish_offer?:boolean};
 export type PriceImportBatch={entries:PriceImportEntry[];reviewed?:boolean};
 export type PriceImportRow={product_id:number;product_name:string;market_id:number;market_name:string;city:string;sale_unit:"kg"|"unit";regular_price:string|null;club_price:string|null;club_name:string|null;conditions:string;valid_from:string;valid_until:string;source_url:string};
 export type PriceImportPreview={rows:PriceImportRow[];published:boolean};
 export const previewPriceImport=(payload:PriceImportBatch)=>request<PriceImportPreview>("/admin/price-import/preview",{method:"POST",body:JSON.stringify(payload)});
 export const publishPriceImport=(payload:PriceImportBatch)=>request<{added_prices:number;added_offers:number;checked_at:string;rows:number}>("/admin/price-import/publish",{method:"POST",body:JSON.stringify(payload)});
-export const getLatestPriceImport=()=>request<{last_import_at:string|null;last_official_update_at?:string|null}>("/admin/price-import/latest");
+export const getLatestPriceImport=()=>request<{last_import_at:string|null;last_official_update_at?:string|null;last_price_update_at?:string|null}>("/admin/price-import/latest");
 
 export const preparePriceImport=(entries:Record<string,unknown>[])=>request<PriceImportPreview & {batch:PriceImportBatch}>("/admin/price-import/prepare",{method:"POST",body:JSON.stringify({entries})});

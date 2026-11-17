@@ -6,7 +6,7 @@ from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
-from sqlalchemy import select, text
+from sqlalchemy import select, text,func
 from sqlalchemy.orm import Session
 from app.api.deps import get_admin_user
 from app.db.session import get_db
@@ -30,7 +30,8 @@ class ImportEntry(BaseModel):
     valid_from:datetime
     valid_until:datetime
     source_url:str=Field(min_length=8,max_length=500)
-    channel:Literal["physical_flyer"]="physical_flyer"
+    channel:Literal["physical_flyer","physical_price"]="physical_flyer"
+    publish_offer:bool=True
 
     @field_validator("market_ids")
     @classmethod
@@ -52,6 +53,7 @@ class ImportEntry(BaseModel):
     def dates_and_prices(self):
         if any(d.tzinfo is None or d.utcoffset() is None for d in (self.valid_from,self.valid_until)):raise ValueError("Datas precisam indicar o fuso horário.")
         if self.valid_until<=self.valid_from:raise ValueError("A validade final deve ser posterior à inicial.")
+        if not self.publish_offer and self.club_price is not None:raise ValueError("Preços de clube devem ser cadastrados como promoção.")
         if self.regular_price is None and self.club_price is None:raise ValueError("Informe ao menos um preço.")
         if self.club_price is not None and not self.club_name:raise ValueError("Informe o clube exigido.")
         if self.club_price is not None and self.regular_price is not None and self.club_price>self.regular_price:raise ValueError("O preço de clube não pode ser maior que o preço sem clube.")
@@ -128,11 +130,14 @@ def publish(batch:ImportBatch,db:Session=Depends(get_db),admin:User=Depends(get_
     if db.get_bind().dialect.name=="postgresql":db.execute(text("SELECT pg_advisory_xact_lock(73111601)"))
     rows=plan(db,batch,now);added_prices=added_offers=0
     for entry,product,market in rows:
+        source_type="official_flyer" if entry.publish_offer else "admin_verified"
         if entry.regular_price is not None:
-            existing=db.scalar(select(PriceReport.id).where(PriceReport.product_id==product.id,PriceReport.market_id==market.id,PriceReport.price==entry.regular_price,PriceReport.expires_at==entry.valid_until,PriceReport.source_url==entry.source_url,PriceReport.source_type=="official_flyer"))
+            existing=db.scalar(select(PriceReport.id).where(PriceReport.product_id==product.id,PriceReport.market_id==market.id,PriceReport.price==entry.regular_price,PriceReport.expires_at==entry.valid_until,PriceReport.source_url==entry.source_url,PriceReport.source_type==source_type))
             if existing is None:
-                db.add(PriceReport(product_id=product.id,market_id=market.id,user_id=admin.id,price=entry.regular_price,reported_at=now,expires_at=entry.valid_until,source_type="official_flyer",source_url=entry.source_url,notes=f"Importação revisada em {now.isoformat()}. Sem clube. {entry.conditions}",is_active=True))
+                db.add(PriceReport(product_id=product.id,market_id=market.id,user_id=admin.id,price=entry.regular_price,reported_at=now,expires_at=entry.valid_until,source_type=source_type,source_url=entry.source_url,notes=f"Importação revisada em {now.isoformat()}. Sem clube. {entry.conditions}",is_active=True))
                 added_prices+=1
+        if not entry.publish_offer:
+            continue
         promo_price=entry.club_price if entry.club_price is not None else entry.regular_price
         terms=(f"Exige {entry.club_name}. "+(f"Sem clube: R$ {entry.regular_price:.2f}. " if entry.regular_price is not None else "Preço sem clube não informado. ") if entry.club_price is not None else "Preço sem exigência de clube. ")+entry.conditions
         existing=db.scalar(select(Offer.id).where(Offer.product_id==product.id,Offer.market_id==market.id,Offer.price==promo_price,Offer.expires_at==entry.valid_until,Offer.source_url==entry.source_url))
@@ -150,4 +155,6 @@ def publish(batch:ImportBatch,db:Session=Depends(get_db),admin:User=Depends(get_
 def latest(db:Session=Depends(get_db),admin:User=Depends(get_admin_user)):
     observed=db.scalar(select(Offer.observed_at).where(Offer.source_label=="Folheto oficial · revisão administrativa").order_by(Offer.observed_at.desc()).limit(1))
     latest_official=db.scalar(select(Offer.observed_at).where(Offer.source_url.is_not(None)).order_by(Offer.observed_at.desc()).limit(1))
-    return {"last_import_at":observed,"last_official_update_at":latest_official}
+    latest_price=db.scalar(select(func.max(PriceReport.reported_at)).where(PriceReport.source_type.in_(["official_flyer","admin_verified"])))
+    updates=[value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc) for value in (latest_official,latest_price) if value is not None]
+    return {"last_import_at":observed,"last_official_update_at":latest_official,"last_price_update_at":max(updates,default=None)}
