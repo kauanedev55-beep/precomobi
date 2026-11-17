@@ -70,3 +70,26 @@ test('closing while waiting for a frame prevents decoder startup and clears came
  const video=new Video();video.readyState=0;const stream=camera();const seen=observer();
  const session=openCameraPreview(video,{getUserMedia:async()=>stream},seen);await flush();session.stop();video.readyState=2;video.dispatchEvent(new Event('playing'));await flush();assert.equal(seen.streams.length,0);assert.equal(stream.stops,1);assert.equal(video.srcObject,null);
 });
+
+test('a permanently pending camera request times out and releases any late stream',async()=>{
+ const video=new Video();const seen=observer();const stream=camera();let grant;
+ const session=openCameraPreview(video,{getUserMedia:()=>new Promise(resolve=>{grant=resolve;})},seen,{captureMs:5});
+ await new Promise(resolve=>setTimeout(resolve,15));assert.equal(seen.states.at(-1)[0],'error');assert.match(seen.states.at(-1)[1],/não respondeu/);
+ grant(stream);await flush();assert.equal(stream.stops,1);assert.equal(video.srcObject,null);assert.equal(seen.streams.length,0);session.stop();
+});
+
+test('a pending play promise leaves opening state and allows an explicit resume',async()=>{
+ const video=new Video();const seen=observer();const stream=camera();let finish;
+ video.play=function(){this.calls++;if(this.calls===1)return new Promise(resolve=>{finish=resolve;});this.paused=false;return Promise.resolve();};
+ const session=openCameraPreview(video,{getUserMedia:async()=>stream},seen,{playMs:5});
+ await new Promise(resolve=>setTimeout(resolve,15));assert.equal(seen.states.at(-1)[0],'blocked');
+ await session.resume();assert.equal(seen.streams.length,1);finish();await flush();assert.equal(seen.streams.length,1);session.stop();
+});
+
+test('native-photo mode is limited to the installed Apple app, not normal Safari or Android',async()=>{
+ const {isInstalledApple}=await import('../.test-build/photo.js');
+ assert.equal(isInstalledApple({userAgent:'iPhone',maxTouchPoints:5,standalone:true},false),true);
+ assert.equal(isInstalledApple({userAgent:'iPhone',maxTouchPoints:5},false),false);
+ assert.equal(isInstalledApple({userAgent:'Android',maxTouchPoints:5},true),false);
+ assert.equal(isInstalledApple({userAgent:'Macintosh',maxTouchPoints:5},true),true);
+});

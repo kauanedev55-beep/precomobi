@@ -9,3 +9,9 @@
 - O processamento dos códigos continua local no navegador, sem enviar imagens da câmera ao servidor. Entrada manual de código continua disponível.
 
 Validação: testes automatizados cobrem fluxo de câmera, gesto de retomada, fallback, espera por imagem e fechamento concorrente; testes existentes verificam comparação sem persistência. A compilação TypeScript/Vite foi conferida. O navegador de teste disponível não acessou o servidor local; não foi realizado teste físico de câmera no iPhone. O retorno da usuária no aparelho permanece necessário para confirmar esse comportamento específico.
+
+## Complemento: app instalado, fotos e conferência
+
+- Após retorno de que o leitor funciona no Safari mas fica preto no app instalado, o iPhone/iPad instalado abre com **Fotografar código**, usando a captura nativa do sistema. A foto é decodificada localmente; **Ler ao vivo** continua disponível. Captura e play agora têm prazo máximo, com descarte de streams que chegam atrasados. Ainda é necessário validar o fluxo no aparelho físico.
+- Cadastro manual permite foto opcional pela câmera ou galeria. Criador e administrador podem incluir/trocar a foto depois na ficha. Fotos são redimensionadas no navegador e novamente validadas no servidor, sem EXIF; um JPEG de até 128 KiB por produto fica na tabela privada product_photos do banco existente. A API serve apenas a imagem de produtos ativos. Há limite diário de 50 produtos com fotos por usuário comum. Não há serviço de armazenamento pago adicional.
+- Cesta e edição da lista mostram produtos e quantidades, sem “Já peguei”. A conferência permanece na visualização da lista salva/compartilhada, sincronizada entre proprietário e participantes pelos endpoints existentes. Marcas já registradas são preservadas.

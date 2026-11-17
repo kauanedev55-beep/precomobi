@@ -29,7 +29,6 @@ export function BasketDrawer() {
   const {saving}=cart;
   const [saveError,setSaveError]=useState("");
   const valid=!invalid.some(id=>cart.items.some(item=>item.product.id===id));
-  const picked=cart.items.filter(item=>item.isPurchased).length;
 
   useEffect(()=>{
     const added=cart.items.find(item=>item.quantity>(previous.current.find(old=>old.product.id===item.product.id)?.quantity ?? 0));
@@ -62,7 +61,7 @@ export function BasketDrawer() {
   return <>
     {cart.items.length>0 && <button ref={opener} className="basket-peek" type="button" aria-haspopup="dialog" aria-controls="shopping-basket" aria-expanded={open} onClick={()=>setOpen(true)}>
       <span className="basket-peek-icon"><Icon name="basket"/></span>
-      <span className="basket-peek-copy"><strong>Minha cesta · {cart.items.length} {cart.items.length===1 ? "produto" : "produtos"}</strong><span>{announcement || (picked ? `${picked} já ${picked===1 ? "marcado" : "marcados"} · Toque para conferir` : "Conferir produtos e quantidades")}</span></span>
+      <span className="basket-peek-copy"><strong>Minha cesta · {cart.items.length} {cart.items.length===1 ? "produto" : "produtos"}</strong><span>{announcement || "Conferir produtos e quantidades"}</span></span>
       <span className="basket-peek-arrow" aria-hidden="true">⌃</span>
     </button>}
     <span className="basket-live" role="status" aria-live="polite">{announcement}</span>
@@ -72,12 +71,12 @@ export function BasketDrawer() {
       if(event.clientX<bounds.left || event.clientX>bounds.right || event.clientY<bounds.top || event.clientY>bounds.bottom) close();
     }}>
       <button className="basket-handle" type="button" aria-label="Recolher cesta e continuar pesquisando" onClick={close} onPointerDown={event=>{dragStart.current=event.clientY;event.currentTarget.setPointerCapture(event.pointerId);}} onPointerUp={event=>{if(dragStart.current!==null && event.clientY-dragStart.current>40) close();dragStart.current=null;}} onPointerCancel={()=>{dragStart.current=null;}}><span/></button>
-      <header className="basket-heading"><div><h2 id="basket-title">Minha cesta</h2><p id="basket-description">{cart.items.length} {cart.items.length===1 ? "produto" : "produtos"}{picked>0 ? ` · ${picked} já ${picked===1 ? "marcado" : "marcados"}` : " · Sua lista, do seu jeito"}</p></div><button autoFocus type="button" className="outline-button" onClick={close}>Continuar buscando <span aria-hidden="true">⌄</span></button></header>
+      <header className="basket-heading"><div><h2 id="basket-title">Minha cesta</h2><p id="basket-description">{cart.items.length} {cart.items.length===1 ? "produto" : "produtos"}</p></div><button autoFocus type="button" className="outline-button" onClick={close}>Continuar buscando <span aria-hidden="true">⌄</span></button></header>
       <div className="basket-scroll">
         {cart.items.length===0 ? <p className="basket-empty">Sua cesta está vazia. Recolha a lista para escolher produtos.</p> : <ul className="basket-items">{cart.items.map(item=>{
           const displayName=productDisplayName(item.product);
-          return <li key={item.product.id} className={`basket-item${item.isPurchased ? " is-picked" : ""}`}>
-            <div className="basket-item-heading"><BasketThumbnail url={item.product.image_url} name={displayName}/><div><strong>{displayName}</strong><small>{productSubtitle(item.product)}</small><label className="picked-toggle"><input type="checkbox" checked={!!item.isPurchased} onChange={()=>cart.togglePurchased(item.product.id)}/><span>Já peguei<span className="basket-live"> {displayName}</span></span></label></div></div>
+          return <li key={item.product.id} className="basket-item">
+            <div className="basket-item-heading"><BasketThumbnail url={item.product.image_url} name={displayName}/><div><strong>{displayName}</strong><small>{productSubtitle(item.product)}</small></div></div>
             <div className="basket-item-actions"><QuantityPicker value={item.quantity} unit={item.product.sale_unit} name={displayName} onChange={quantity=>cart.setQuantity(item.product.id,quantity)} onValidityChange={isValid=>setInvalid(ids=>isValid ? ids.filter(id=>id!==item.product.id) : [...new Set([...ids,item.product.id])])}/><button type="button" className="text-button danger" aria-label={`Remover ${displayName} da cesta`} onClick={()=>cart.remove(item.product.id)}>Remover</button></div>
           </li>;
         })}</ul>}

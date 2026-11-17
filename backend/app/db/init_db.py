@@ -73,7 +73,7 @@ def init_db() -> None:
         # The backend table-owner connection bypasses RLS; public roles do not.
         with engine.begin() as conn:
             public_roles = list(conn.scalars(text("SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated')")))
-            for table in ("shopping_lists", "shopping_list_items", "shopping_list_members", "shopping_list_invites"):
+            for table in ("shopping_lists", "shopping_list_items", "shopping_list_members", "shopping_list_invites", "product_photos"):
                 conn.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
                 conn.execute(text(f"REVOKE ALL ON TABLE {table} FROM PUBLIC"))
                 for role in public_roles:

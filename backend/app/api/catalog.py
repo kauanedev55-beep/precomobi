@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request as APIRequest
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -308,7 +308,7 @@ def list_products(
 
 
 @router.post("/products", response_model=ProductRead, status_code=201)
-def create_product(payload: ProductCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_product(payload: ProductCreate, request: APIRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     # This catalog is shared. Serialize manual registration to avoid concurrent duplicates.
     if db.get_bind().dialect.name == "postgresql":
         db.execute(text("SELECT pg_advisory_xact_lock(73110528)"))
@@ -320,9 +320,13 @@ def create_product(payload: ProductCreate, db: Session = Depends(get_db), user: 
             and p.sale_unit == payload.sale_unit and p.quantity_value == payload.quantity_value
             and p.quantity_unit == payload.quantity_unit and (p.packaging or "") == payload.packaging):
             raise HTTPException(409, "Este produto, com essa embalagem e quantidade, já está cadastrado. Busque pelo nome.")
-    product = Product(**payload.model_dump(exclude={"no_brand", "no_barcode"}), created_by_id=user.id, is_active=True)
+    from app.core.product_photo import normalize_photo,save_photo
+    content=normalize_photo(payload.photo_data) if payload.photo_data is not None else None
+    product = Product(**payload.model_dump(exclude={"no_brand", "no_barcode","photo_data"}), created_by_id=user.id, is_active=True)
     try:
         db.add(product)
+        db.flush()
+        if content is not None:save_photo(db,product,user,content,request)
         db.commit()
         db.refresh(product)
     except IntegrityError as exc:
@@ -438,6 +442,7 @@ def get_product(
         **ProductRead.model_validate(product).model_dump(),
         **cheapest,
         "prices": prices,
+        "can_edit_photo": bool(current_user and (product.created_by_id==current_user.id or current_user.is_admin)),
     }
 
 
