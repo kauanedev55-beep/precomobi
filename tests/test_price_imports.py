@@ -112,3 +112,20 @@ def test_admin_revision_replaces_offer_card_but_keeps_observation_history(client
         assert offers[1].price==Decimal('7.99')
     detail=client.get(f'/api/products/{ids[0]}?city=Serra').json()
     assert next(r['price'] for r in detail['prices'] if r['market_id']==ids[1])=='8.49'
+
+def test_regular_admin_price_updates_comparison_without_creating_a_promotion(client,import_setup):
+    headers,entry,ids=import_setup
+    regular={**entry,'publish_offer':False,'channel':'physical_price','club_price':None,'club_name':None}
+    result=client.post('/api/admin/price-import/publish',headers=headers,json={'entries':[regular],'reviewed':True})
+    assert result.status_code==200,result.text
+    assert result.json()['added_prices']==1 and result.json()['added_offers']==0
+    with SessionLocal() as db:
+        report=db.scalar(select(PriceReport).where(PriceReport.product_id==ids[0]))
+        assert report.price==Decimal('7.49') and report.source_type=='admin_verified'
+        assert db.scalar(select(func.count()).select_from(Offer).where(Offer.product_id==ids[0]))==0
+    comparison=client.post('/api/comparisons/preview?city=Serra',headers=headers,json={'name':'Preço comum','items':[{'product_id':ids[0],'quantity':2}]}).json()
+    row=next(r for r in comparison['results'] if r['market_id']==ids[1])
+    assert row['total']=='14.98' and row['items'][0]['source_type']=='admin_verified'
+    assert client.get('/api/admin/price-import/latest',headers=headers).json()['last_price_update_at']
+    incompatible={**regular,'club_price':'5.99','club_name':'Clube Carone'}
+    assert client.post('/api/admin/price-import/preview',headers=headers,json={'entries':[incompatible]}).status_code==422
