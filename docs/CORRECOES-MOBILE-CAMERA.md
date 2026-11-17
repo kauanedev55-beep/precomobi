@@ -18,3 +18,14 @@ Validação: testes automatizados cobrem fluxo de câmera, gesto de retomada, fa
 
 
 Validação desta revisão: 45 testes do frontend e compilação TypeScript/Vite aprovados. Inclui solicitação síncrona de captura, atributos antes da solicitação, retomada com reanexação do stream, track encerrada, ocultação da página e decodificação real de pixels de EAN pelo mesmo ZXing usado no vídeo, sem BarcodeDetector. O teste integrado com Chromium e câmera simulada não iniciou devido a bloqueio de socket do processo no ambiente. Não representa validação física no iPhone; esse teste continua pendente.
+
+## Retorno do iPhone e Android instalado
+
+Após a usuária confirmar que a câmera ainda fica em abertura no iPhone e que o Android é aberto pelo ícone instalado:
+
+- Captura traseira é solicitada sem resolução predefinida; restrição incompatível permite câmera padrão. O início da decodificação passa a depender dos pixels de vídeo, em paralelo com play(), para não ficar bloqueado apenas por uma promessa de reprodução pendente. Captura, imagem e leitura têm etapas identificadas em detalhes recolhidos de erro.
+- O leitor usa portal no body, em tela inteira nos celulares, com o restante da aplicação inerte enquanto aberto. Fechar restaura foco e rolagem. O vídeo tem altura explícita e não fica dentro de cartões ou elementos que possam recortá-lo. A fotografia permanece exclusivamente no cadastro/ficha.
+- Em caso de falha no app instalado do iPhone, há um link opcional Usar leitor no navegador. A busca reconhece /produtos?ler=1 para abrir o leitor após acesso à página. A abertura em navegador é uma contingência, não uma confirmação de correção da câmera do PWA; sessão do navegador pode precisar de login.
+- Interface de telefone usa títulos de produto de 18 px, botões de pelo menos 50 px, controles de quantidade de 44 px ou mais, imagens de 96 px e abas inferiores de 14 px nas telas a partir de 360 px. Resultados ocupam a largura disponível, com quantidade e Adicionar próximos; abaixo de 360 px os controles ficam em linhas separadas. A versão instalada dispensa o rodapé institucional. Desktop permanece com suas regras anteriores.
+
+Validação: 47 testes frontend, incluindo pixels disponíveis com play() indefinidamente pendente e ausência de pixels apesar de play() resolvido. A confirmação física do leitor no iPhone e da escala visual no Android permanece pendente. A inspeção da página pública em navegador desktop não substitui teste mobile.

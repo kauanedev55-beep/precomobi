@@ -79,7 +79,7 @@ export function Layout() {
     <main className="pm-public-main" id="main-content" tabIndex={-1}><Outlet/></main>
     <footer className="pm-public-footer">PreçoMobi · Sua lista, boas descobertas e escolhas mais conscientes.{!installed && <InstallLink className="install-link" to="/instalar">Instalar PreçoMobi no celular</InstallLink>}</footer>
   </div>;
-  return <div className={`app-shell pm-shell pm-private experience-shell${keyboardOpen ? " keyboard-open" : ""}${shopping && items.length ? " has-basket-peek" : ""}`}>
+  return <div className={`app-shell pm-shell pm-private experience-shell${installed ? " is-installed" : ""}${keyboardOpen ? " keyboard-open" : ""}${shopping && items.length ? " has-basket-peek" : ""}`}>
     <a className="skip-link" href="#main-content">Pular para o conteúdo</a>
     <header ref={headerRef} className="topbar pm-topbar">
       <button className="menu-toggle pm-menu-button" type="button" aria-controls="pm-sidebar" aria-expanded={open} aria-label="Abrir ou fechar menu" onClick={() => setOpen(!open)}>☰</button>

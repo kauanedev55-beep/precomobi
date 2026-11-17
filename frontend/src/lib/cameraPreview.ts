@@ -3,6 +3,7 @@ type Callbacks = {
   onState(state: CameraPreviewState, message?: string): void;
   onReady(stream: MediaStream): void;
   onInterrupted?(): void;
+  onStage?(stage: "capture" | "playback" | "frames"): void;
 };
 
 function errorName(error: unknown): string {
@@ -22,7 +23,7 @@ function bounded<T>(pending: Promise<T>, milliseconds: number, signal: AbortSign
   });
 }
 
-function waitForFrame(video: HTMLVideoElement, signal: AbortSignal): Promise<void> {
+function waitForFrame(video: HTMLVideoElement, signal: AbortSignal, timeout=6000): Promise<void> {
   return new Promise((resolve, reject) => {
     let timer: ReturnType<typeof setTimeout>;
     const events = ["loadeddata", "canplay", "playing", "resize"];
@@ -31,14 +32,14 @@ function waitForFrame(video: HTMLVideoElement, signal: AbortSignal): Promise<voi
     const abort = () => { clean(); reject(new DOMException("Camera closed", "AbortError")); };
     events.forEach(event => video.addEventListener(event, check));
     signal.addEventListener("abort", abort, { once: true });
-    timer = setTimeout(() => { clean(); reject(new DOMException("No camera frames", "TimeoutError")); }, 6000);
+    timer = setTimeout(() => { clean(); reject(new DOMException("No camera frames", "TimeoutError")); }, timeout);
     if (signal.aborted) abort(); else check();
   });
 }
 
 // Own the preview separately from the barcode decoder. Safari may grant camera
 // access but still require a fresh tap to play the muted inline video.
-export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDevices, "getUserMedia">, callbacks: Callbacks, deadlines: {captureMs?:number;playMs?:number}={}) {
+export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDevices, "getUserMedia">, callbacks: Callbacks, deadlines: {captureMs?:number;playMs?:number;frameMs?:number}={}) {
   let stream: MediaStream | null = null;
   let stopped = false;
   let playing = false;
@@ -59,16 +60,23 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
   async function resume() {
     if (stopped || !stream || playing || ready) return;
     playing = true;
+    const frameAbort=new AbortController();
+    const cancelFrame=()=>frameAbort.abort();
+    abort.signal.addEventListener("abort",cancelFrame,{once:true});
     state("opening");
+    callbacks.onStage?.("playback");
     try {
       // A failed WebKit play may leave its rendering layer attached to a stale
       // stream. Rebind the SAME stream on the next explicit tap, without a new
       // permission request or a hidden video. play() stays inside that gesture.
       if(reattach){video.pause();video.srcObject=null;video.srcObject=stream;reattach=false;}
-      await bounded(video.play(),deadlines.playMs??5000,abort.signal);
+      const playback=video.play();
+      const frames=waitForFrame(video,frameAbort.signal,deadlines.frameMs??6000);
+      // Some WebKit builds keep play() pending even after camera frames arrive.
+      // Real visible pixels, not settlement of play(), determine readiness.
+      await Promise.race([frames,bounded(playback,deadlines.playMs??7000,frameAbort.signal).then(()=>frames)]);
       if (stopped) return;
-      await waitForFrame(video, abort.signal);
-      if (stopped) return;
+      callbacks.onStage?.("frames");
       ready = true;
       callbacks.onReady(stream);
       state("ready");
@@ -82,10 +90,11 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
         callbacks.onInterrupted?.();
         stop();
       }
-    } finally { playing = false; }
+    } finally { frameAbort.abort();abort.signal.removeEventListener("abort",cancelFrame);playing = false; }
   }
   async function acquire() {
     state("opening");
+    callbacks.onStage?.("capture");
     video.muted = true;
     video.defaultMuted = true;
     video.autoplay = true;
@@ -94,11 +103,11 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
     try {
       let acquired: MediaStream;
       try {
-        acquired = await bounded(devices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } }),deadlines.captureMs??12000,abort.signal,late=>late.getTracks().forEach(track=>track.stop()));
+        acquired = await bounded(devices.getUserMedia({ audio: false, video: {facingMode:{ideal:"environment"}} }),deadlines.captureMs??12000,abort.signal,late=>late.getTracks().forEach(track=>track.stop()));
       } catch (error) {
         if (stopped) return;
         if (!["OverconstrainedError", "ConstraintNotSatisfiedError"].includes(errorName(error))) throw error;
-        acquired = await bounded(devices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" } } }),deadlines.captureMs??12000,abort.signal,late=>late.getTracks().forEach(track=>track.stop()));
+        acquired = await bounded(devices.getUserMedia({ audio: false, video: true }),deadlines.captureMs??12000,abort.signal,late=>late.getTracks().forEach(track=>track.stop()));
       }
       if (stopped) { acquired.getTracks().forEach(track => track.stop()); return; }
       stream = acquired;

@@ -39,10 +39,10 @@ test('permission rejection does not retry automatically or pretend a camera open
  await flush();assert.equal(requests,1);assert.equal(seen.states.at(-1)[0],'error');assert.match(seen.states.at(-1)[1],/não foi liberado/);assert.equal(seen.streams.length,0);session.stop();
 });
 
-test('unsupported resolution retries rear camera without resolution constraints',async()=>{
+test('unsupported camera constraints retry with the device default camera',async()=>{
  const video=new Video();const stream=camera();const seen=observer();const requests=[];
  const session=openCameraPreview(video,{getUserMedia:async c=>{requests.push(c);if(requests.length===1)throw named('OverconstrainedError');return stream;}},seen);
- await flush();assert.equal(requests.length,2);assert.equal(requests[1].video.width,undefined);assert.equal(requests[1].video.facingMode.ideal,'environment');assert.equal(seen.streams.length,1);session.stop();
+ await flush();assert.equal(requests.length,2);assert.equal(requests[0].video.width,undefined);assert.equal(requests[1].video,true);assert.equal(seen.streams.length,1);session.stop();
 });
 
 test('closing during permission request disposes a late stream instead of attaching it',async()=>{
@@ -123,4 +123,18 @@ test('backgrounding and pagehide release a pending capture; returning does not s
  page.visibilityState='hidden';page.dispatchEvent(new Event('visibilitychange'));grant(stream);await flush();assert.equal(stream.stops,1);assert.equal(video.srcObject,null);
  page.visibilityState='visible';page.dispatchEvent(new Event('visibilitychange'));assert.equal(pauses,1);
  win.dispatchEvent(new Event('pagehide'));assert.equal(pauses,2);unbind();win.dispatchEvent(new Event('pagehide'));assert.equal(pauses,2);
+});
+
+test('real camera pixels start decoding even when WebKit never settles play()',async()=>{
+ const video=new Video();const stream=camera();const seen=observer();let finish;
+ video.play=function(){this.calls++;this.paused=false;return new Promise(resolve=>{finish=resolve;});};
+ const stages=[];const session=openCameraPreview(video,{getUserMedia:async()=>stream},{...seen,onStage:s=>stages.push(s)},{playMs:20,frameMs:20});
+ await flush();assert.equal(seen.states.at(-1)[0],'ready');assert.equal(seen.streams.length,1);assert.deepEqual(stages,['capture','playback','frames']);
+ await new Promise(resolve=>setTimeout(resolve,30));assert.equal(seen.states.at(-1)[0],'ready');finish();await flush();assert.equal(seen.streams.length,1);session.stop();
+});
+
+test('resolved play with no pixels times out at the video stage, not a false ready state',async()=>{
+ const video=new Video();video.readyState=0;video.videoWidth=0;const seen=observer();const stages=[];const stream=camera();
+ const session=openCameraPreview(video,{getUserMedia:async()=>stream},{...seen,onStage:s=>stages.push(s)},{frameMs:5});
+ await new Promise(resolve=>setTimeout(resolve,15));assert.equal(seen.states.at(-1)[0],'blocked');assert.equal(seen.streams.length,0);assert.deepEqual(stages,['capture','playback']);session.stop();
 });

@@ -12,6 +12,7 @@ import "./styles/photos.css";
 import "./styles/produce.css";
 import "./styles/responsive.css";
 import "./styles/install.css";
+import "./styles/phone-app.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

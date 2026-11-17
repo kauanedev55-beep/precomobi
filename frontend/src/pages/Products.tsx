@@ -21,7 +21,7 @@ export function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [scanning, setScanning] = useState(false);
+  const [scanning, setScanning] = useState(()=>params.get("ler")==="1");
   const {city} = useRegion();
   const sequence = useRef(0);
 
