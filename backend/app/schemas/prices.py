@@ -22,6 +22,8 @@ class PriceReportRead(BaseModel):
     id: int
     product_id: int
     product_name: str
+    image_url: str | None = None
+    market_city: str | None = None
     sale_unit: Literal["unit", "kg"] = "unit"
     market_id: int
     market_name: str

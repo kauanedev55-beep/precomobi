@@ -1,4 +1,5 @@
 from app.core.config import get_settings
+from app.core.price_availability import current_price_conditions,priced_product_ids
 
 import json
 import logging
@@ -210,6 +211,7 @@ def list_products(
     external: bool = True,
     everyday: bool = False,
     preferred: bool = False,
+    priced: bool = False,
     db: Session = Depends(get_db),
 ) -> list[dict]:
 
@@ -217,6 +219,8 @@ def list_products(
         Product.is_active.is_(True)
     )
 
+    if priced:
+        query = query.where(Product.id.in_(priced_product_ids(db,city)))
     if category:
         query = query.where(func.lower(Product.category) == category.strip().lower())
 
@@ -238,6 +242,9 @@ def list_products(
         product = db.scalar(
             query.where(Product.ean == ean)
         )
+
+        if product is None and priced:
+            return []
 
         if (
             product is None
@@ -274,7 +281,7 @@ def list_products(
                 query.order_by(Product.name)
             )
         )
-        if external and not products and not category and q and len(q.strip()) >= 3:
+        if external and not priced and not products and not category and q and len(q.strip()) >= 3:
             by_id = {}
             for item in _search_external_products(q.strip()):
                 code = item.get("code")
@@ -437,6 +444,8 @@ def get_product(
 @router.get("/markets", response_model=list[MarketRead])
 def list_markets(
     city: str | None = Query(default=None, min_length=1, max_length=100),
+    priced: bool = False,
+    with_offers: bool = False,
     db: Session = Depends(get_db),
 ) -> list[Market]:
 
@@ -447,6 +456,13 @@ def list_markets(
             .order_by(Market.name)
         )
     )
+    if priced:
+        ids=set(db.scalars(select(PriceReport.market_id).join(Product).where(*current_price_conditions(),Product.is_active.is_(True))))
+        markets=[m for m in markets if m.id in ids]
+    if with_offers:
+        from app.models import Offer
+        ids=set(db.scalars(select(Offer.market_id).join(Product).where(Offer.ended_at.is_(None),Offer.expires_at>func.now(),Product.is_active.is_(True))))
+        markets=[m for m in markets if m.id in ids]
     return [m for m in markets if matches_city(m, city)]
 
 

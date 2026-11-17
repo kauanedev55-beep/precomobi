@@ -170,6 +170,7 @@ class MarketComparisonRead(BaseModel):
 
 
 class ComparisonRead(BaseModel):
+    excluded_markets_count: int = 0
     shopping_list_id: int | None
     list_name: str
     results: list[MarketComparisonRead]

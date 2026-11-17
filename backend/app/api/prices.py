@@ -50,6 +50,8 @@ def _to_read(report: PriceReport, counts: dict[int, int] | None = None, confirme
         "id": report.id,
         "product_id": report.product_id,
         "product_name": report.product.name,
+        "image_url": report.product.image_url,
+        "market_city": report.market.city,
         "sale_unit": report.product.sale_unit,
         "market_id": report.market_id,
         "market_name": report.market.name,
@@ -159,19 +161,31 @@ def price_history(
     product_id: int | None = Query(default=None),
     market_id: int | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0, le=10000),
+    q: str = Query(default="", max_length=100),
+    community_only: bool = False,
+    latest: bool = False,
     city: str | None = Query(default=None, min_length=1, max_length=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_optional),
 ) -> list[dict]:
     """Histórico público de preços (mais recentes primeiro), com a origem de cada um."""
-    query = _base_query()
+    query = _base_query().join(Product).join(Market, PriceReport.market_id == Market.id).where(Product.is_active.is_(True), Market.is_active.is_(True))
+    if community_only:
+        query = query.where(PriceReport.source_type == "community")
+    if q.strip():
+        term = "%" + q.strip().replace("%", "\\%").replace("_", "\\_") + "%"
+        query = query.where(or_(Product.name.ilike(term, escape="\\"), Product.brand.ilike(term, escape="\\")))
     if product_id is not None:
         query = query.where(PriceReport.product_id == product_id)
     if market_id is not None:
         query = query.where(PriceReport.market_id == market_id)
     if city is not None:
         query = query.where(PriceReport.market_id.in_(region_market_ids(db, city)))
-    reports = list(db.scalars(query.order_by(PriceReport.reported_at.desc(), PriceReport.id.desc()).limit(limit)).unique())
+    if latest:
+        ranked = query.with_only_columns(PriceReport.id.label("report_id"), func.row_number().over(partition_by=(PriceReport.product_id, PriceReport.market_id), order_by=(PriceReport.reported_at.desc(), PriceReport.id.desc())).label("rank")).subquery()
+        query = query.where(PriceReport.id.in_(select(ranked.c.report_id).where(ranked.c.rank == 1)))
+    reports = list(db.scalars(query.order_by(PriceReport.reported_at.desc(), PriceReport.id.desc()).offset(offset).limit(limit)).unique())
     counts = _confirmation_counts(db, [report.id for report in reports])
     confirmed = _confirmed_report_ids(db, [report.id for report in reports], current_user.id) if current_user else set()
     return [_to_read(report, counts, confirmed, current_user.id if current_user else None) for report in reports]

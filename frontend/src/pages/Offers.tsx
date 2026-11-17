@@ -6,7 +6,7 @@ import { AlertSettings } from "../components/AlertSettings";
 import { OfferCard } from "../components/OfferCard";
 import { useRegion } from "../region/RegionContext";
 import { Icon } from "../components/Icon";
-import {cityMarkets,marketNetwork,networkChoices,selectedMarketIds,offersForMarkets} from "../lib/marketScope";
+import {cityMarkets,marketNetwork,networkChoices,selectedMarketIds,offersForMarkets,marketWebsite} from "../lib/marketScope";
 import "../styles/offer-filters.css";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 
@@ -42,7 +42,7 @@ export function Offers({alertsOnly=false}: {alertsOnly?: boolean}) {
     setLoading(true); setError("");setOffers([]);
     try {
       if(mine){const data=await getOffers({mine:true});if(request===sequence.current)setOffers(data);return;}
-      const registered=cityMarkets(await getMarkets(),city);
+      const registered=cityMarkets(await getMarkets(false,true),city);
       if(request!==sequence.current)return;
       setMarkets(registered);
       const ids=selectedMarketIds(registered,chain,store);
@@ -58,6 +58,8 @@ export function Offers({alertsOnly=false}: {alertsOnly?: boolean}) {
   const chains=networkChoices(registered);
   const stores=registered.filter(m=>!chain||marketNetwork(m.name)===chain);
   const rows=alertsOnly ? alerts.offers : offers;
+  const selectedChain=chain || marketNetwork(registered.find(m=>String(m.id)===store)?.name || "");
+  const officialWebsite=marketWebsite(selectedChain);
   const chosenName=registered.find(m=>String(m.id)===store)?.name || chain || city;
   const busy = alertsOnly ? alerts.loading : loading;
   const failure = alertsOnly ? alerts.error : error;
@@ -71,13 +73,13 @@ export function Offers({alertsOnly=false}: {alertsOnly?: boolean}) {
     {!mine && !alertsOnly && city && <div className="offers-market-filter">
       <div className="offers-market-fields"><label className="field"><span>Mercado</span><select value={chain} disabled={busy} onChange={event=>chooseMarket(event.target.value,"")}><option value="">Todos os mercados da cidade</option>{chains.map(name=><option key={name} value={name}>{name}</option>)}</select></label>
       <label className="field"><span>Loja</span><select value={store} disabled={busy} onChange={event=>chooseMarket(chain,event.target.value)}><option value="">Todas as lojas{chain ? " desta rede" : " da cidade"}</option>{stores.map(m=><option key={m.id} value={m.id}>{m.name}{city==="*" ? ` · ${m.city}` : ""}</option>)}</select></label></div>
-      <p className="form-hint">Os filtros incluem os mercados cadastrados na cidade, mesmo quando ainda não há promoções válidas para eles.</p>
+      <p className="form-hint">Aqui aparecem os mercados com promoções vigentes na cidade. As ofertas têm validade e lojas participantes.</p>
       {!busy&&!failure&&rows.length>0&&<p role="status">{rows.length} {rows.length===1 ? "promoção" : "promoções"}{store||chain ? ` em ${chosenName}` : ` em ${city==="*" ? "cidades cadastradas" : city}`}. Ofertas iguais do mesmo folheto aparecem uma vez.</p>}
     </div>}
     {mine && <p className="form-hint">Seu histórico de promoções inclui todas as cidades.</p>}
     {!city&&!mine&&!alertsOnly&&<Empty title="Em qual cidade você quer ver promoções?">Escolha a cidade acima para consultar os mercados cadastrados.</Empty>}
     {busy && <Loading text="Procurando ofertas..."/>}{failure && <ErrorBox message={failure} onRetry={() => void load()}/>}
-    {!busy&&!failure&&(Boolean(city)||mine||alertsOnly)&&rows.length===0 && <Empty title={alertsOnly ? "Nenhum aviso de oferta por enquanto" : mine ? "Você ainda não compartilhou promoções" : `Nenhuma promoção válida em ${chosenName}`}><p>{alertsOnly ? "Ative os avisos acima e escolha produtos das listas ou seus mercados habituais. As novas ofertas dos folhetos e da comunidade aparecerão aqui." : "Ainda não há ofertas com validade confirmada para esta seleção. Escolha outro mercado ou compartilhe uma promoção dessa loja."}</p>{alertsOnly && <Link className="outline-button" to="/produtos">Adicionar produtos</Link>}</Empty>}
+    {!busy&&!failure&&(Boolean(city)||mine||alertsOnly)&&rows.length===0 && <Empty title={alertsOnly ? "Nenhum aviso de oferta por enquanto" : mine ? "Você ainda não compartilhou promoções" : `Nenhuma promoção válida em ${chosenName}`}><p>{alertsOnly ? "Ative os avisos acima e escolha produtos das listas ou seus mercados habituais. As novas ofertas dos folhetos e da comunidade aparecerão aqui." : "Ainda não há ofertas com validade confirmada para esta seleção. Escolha outro mercado ou compartilhe uma promoção dessa loja."}</p>{!alertsOnly&&!mine&&officialWebsite&&<a className="outline-button" href={officialWebsite} target="_blank" rel="noopener noreferrer">Consultar site do mercado ↗</a>}{alertsOnly && <Link className="outline-button" to="/produtos">Adicionar produtos</Link>}</Empty>}
     {!failure && !busy && <div className="offers-grid">{rows.map(offer => <OfferCard key={offer.id} offer={offer} onUpdated={updated => {if(alertsOnly) {alerts.refresh();return;} setOffers(current => current.flatMap(group => {
       const members=[group,...(group.related_offers || [])].map(o=>o.id===updated.id ? updated : o).filter(o=>mine || o.state==="active");
       return members.length ? [{...members[0],related_offers:members.slice(1).map(({related_offers:_,...o})=>o)}] : [];

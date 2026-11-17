@@ -24,6 +24,7 @@ export function MapPage() {
   const selectedId = /^[1-9]\d*$/.test(value)&&Number.isSafeInteger(Number(value)) ? Number(value) : null;
   const routeRequested = params.get("rota") === "1";
   const [markets, setMarkets] = useState<Market[]>([]);
+  const [pricedIds,setPricedIds]=useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [position, setPosition] = useState<Position | null>(null);
@@ -54,7 +55,8 @@ export function MapPage() {
     setLoading(true);
     setError("");
     try {
-      setMarkets(await getMarkets());
+      const [all,priced]=await Promise.all([getMarkets(),getMarkets(true)]);
+      setMarkets(all);setPricedIds(priced.map(m=>m.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível carregar os mercados.");
     } finally {
@@ -66,7 +68,7 @@ export function MapPage() {
     void load();
   }, [load]);
 
-  const cityStores=useMemo(()=>cityMarkets(markets,city),[markets,city]);
+  const cityStores=useMemo(()=>cityMarkets(markets,city).filter(m=>pricedIds.includes(m.id)),[markets,city,pricedIds]);
   const visibleMarkets=useMemo(()=>selected!==null ? mapDestinations(markets,selected) : cityStores,[markets,selected,cityStores]);
   const selectorStores=useMemo(()=>{
     const linked=markets.find(m=>m.id===selected);
@@ -192,9 +194,9 @@ export function MapPage() {
 
   return (
     <section>
-      <p className="form-hint">Mercados carregados da base compartilhada do aplicativo. A rota abre no Google Maps pelo endereço ou pelas coordenadas cadastradas.</p>
+      <p className="form-hint">No mapa geral aparecem os mercados com preços registrados e vigentes. A rota abre no Google Maps pelo endereço ou pelas coordenadas cadastradas.</p>
       <h1>{selectedMarket ? `Como chegar: ${selectedMarket.name}` : "Mapa dos mercados"}</h1>
-      <label className="field map-market-filter"><span>Mercado / loja</span><select value={selected ?? ""} disabled={loading} onChange={event=>chooseMarket(event.target.value ? Number(event.target.value) : null)}><option value="">Todos os mercados da cidade</option>{selectorStores.map(m=><option key={m.id} value={m.id}>{m.name}{city==="*"||!inCity(m,city) ? ` · ${m.city}` : ""}</option>)}</select></label>
+      <label className="field map-market-filter"><span>Mercado / loja</span><select value={selected ?? ""} disabled={loading} onChange={event=>chooseMarket(event.target.value ? Number(event.target.value) : null)}><option value="">Mercados com preços na cidade</option>{selectorStores.map(m=><option key={m.id} value={m.id}>{m.name}{city==="*"||!inCity(m,city) ? ` · ${m.city}` : ""}</option>)}</select></label>
       {selected!==null&&!loading&&!error&&!selectedMarket&&<Empty title="Unidade não encontrada">Escolha uma loja cadastrada no filtro acima.</Empty>}
       {selectedMarket && !inCity(selectedMarket,city) && <p className="notice">O link abriu uma unidade específica em {selectedMarket.city}, fora do filtro atual.</p>}
       {routeRequested && !position && <div className="notice">Para mostrar a distância e o trajeto a partir de onde você está, toque em <strong>Usar minha localização</strong>. A permissão é opcional.</div>}

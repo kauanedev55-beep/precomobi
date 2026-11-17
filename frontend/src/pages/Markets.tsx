@@ -21,7 +21,7 @@ export function Markets() {
     setLoading(true);
     setError("");
     try {
-      setMarkets(await getMarkets());
+      setMarkets(await getMarkets(true));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível carregar os mercados.");
     } finally {
@@ -37,7 +37,7 @@ export function Markets() {
   return (
     <section className="markets-page">
       <div className="markets-heading">
-        <div><span className="pm-kicker">SUA PRÓXIMA COMPRA</span><h1>Mercados</h1><p>Escolha uma unidade e veja como chegar.</p></div>
+        <div><span className="pm-kicker">SUA PRÓXIMA COMPRA</span><h1>Mercados</h1><p>Mercados com preços registrados e vigentes. Escolha uma unidade para ver como chegar.</p></div>
         <div className="markets-toolbar">
           <button className="outline-button" type="button" disabled={loading} onClick={() => void load()}>{loading ? "Atualizando..." : "Atualizar"}</button>
           {user?.is_admin && !creating && <button className="primary-button" type="button" onClick={() => { setCreating(true); setNotice(""); }}>+ Cadastrar mercado</button>}
@@ -48,7 +48,7 @@ export function Markets() {
       {loading && <Loading />}
       {error && <ErrorBox message={error} onRetry={load} />}
       {!loading && !error && visibleMarkets.length === 0 && <Empty title="Escolha uma cidade com mercados cadastrados" />}
-      {!loading && !error && visibleMarkets.length > 0 && <p className="markets-count">{visibleMarkets.length} {visibleMarkets.length === 1 ? "unidade cadastrada" : "unidades cadastradas"}</p>}
+      {!loading && !error && visibleMarkets.length > 0 && <p className="markets-count">{visibleMarkets.length} {visibleMarkets.length === 1 ? "unidade com preços" : "unidades com preços"}</p>}
       <ul className="markets-grid">
         {visibleMarkets.map((market) => (
           <li className="market-card" key={market.id}>

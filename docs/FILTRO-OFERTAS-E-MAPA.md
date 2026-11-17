@@ -1,10 +1,10 @@
 # Filtro por cidade, mercado e unidade
 
-- Promoções obtém as opções do cadastro de lojas, não dos nomes das fontes ou somente das ofertas presentes na tela.
+- Promoções obtém as opções do cadastro de lojas que têm ofertas vigentes, não dos nomes das fontes ou somente das ofertas presentes na página. O recorte por disponibilidade foi solicitado para a apresentação de 17/11.
 - Cidade define quais redes e lojas podem ser escolhidas. Mercado restringe à rede e Loja restringe à unidade.
 - O servidor aplica os IDs de lojas junto com a cidade antes de agrupar ou limitar resultados. O cliente também restringe os membros de cada grupo à seleção.
-- Mercados sem promoções vigentes continuam no filtro e exibem um estado vazio explícito.
-- O mapa geral mostra a cidade. Escolher uma loja mostra apenas essa unidade, inclusive no mapa e na lista abaixo. Links de comparação com mercado=ID abrem uma única unidade.
+- Mercados sem promoções vigentes ficam fora dos filtros de Promoções. Links antigos sem ofertas exibem um estado vazio, sem substituir a seleção por outro mercado.
+- O mapa geral mostra os mercados com preços vigentes na cidade. Escolher uma loja mostra apenas essa unidade, inclusive no mapa e na lista abaixo. Links de comparação com mercado=ID abrem uma única unidade.
 - Ao mudar de cidade, uma seleção anterior de loja é limpa. Uma rota recebida por link para outra cidade mantém apenas a unidade do link e informa a diferença.
 
 ## Dados adicionais revisados

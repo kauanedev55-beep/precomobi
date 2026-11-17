@@ -16,6 +16,8 @@ from app.models.offers import Offer
 router=APIRouter(prefix="/admin/price-import",tags=["admin"])
 HOSTS={"www.carone.com.br":"Carone","carone.com.br":"Carone","www.extrabom.com.br":"Extrabom","extrabom.com.br":"Extrabom","superatacadosempretem.com.br":"Sempretem","www.superatacadosempretem.com.br":"Sempretem","www.supermercadosbh.com.br":"Supermercados BH","supermercadosbh.com.br":"Supermercados BH","stgrsbhprd.blob.core.windows.net":"Supermercados BH"}
 
+HOSTS.update({"www.redecasagrande.com.br":"Casagrande","redecasagrande.com.br":"Casagrande","www.superperim.com.br":"Perim","superperim.com.br":"Perim","www.assai.com.br":"Assaí","assai.com.br":"Assaí","www.atacadao.com.br":"Atacadão","atacadao.com.br":"Atacadão","superbh.app":"Supermercados BH"})
+
 class ImportEntry(BaseModel):
     model_config=ConfigDict(extra="forbid",str_strip_whitespace=True)
     product_id:int=Field(gt=0)
@@ -135,6 +137,10 @@ def publish(batch:ImportBatch,db:Session=Depends(get_db),admin:User=Depends(get_
         terms=(f"Exige {entry.club_name}. "+(f"Sem clube: R$ {entry.regular_price:.2f}. " if entry.regular_price is not None else "Preço sem clube não informado. ") if entry.club_price is not None else "Preço sem exigência de clube. ")+entry.conditions
         existing=db.scalar(select(Offer.id).where(Offer.product_id==product.id,Offer.market_id==market.id,Offer.price==promo_price,Offer.expires_at==entry.valid_until,Offer.source_url==entry.source_url))
         if existing is None:
+            # A revised price from the same leaflet replaces the active card;
+            # observations remain in PriceReport for history and audit.
+            previous=list(db.scalars(select(Offer).where(Offer.product_id==product.id,Offer.market_id==market.id,Offer.source_url==entry.source_url,Offer.ended_at.is_(None),Offer.expires_at>now)))
+            for prior in previous:prior.ended_at=now
             db.add(Offer(product_id=product.id,market_id=market.id,user_id=admin.id,price=promo_price,conditions=terms,observed_at=now,expires_at=entry.valid_until,source_url=entry.source_url,source_label="Folheto oficial · revisão administrativa"))
             added_offers+=1
     db.commit()
@@ -143,4 +149,5 @@ def publish(batch:ImportBatch,db:Session=Depends(get_db),admin:User=Depends(get_
 @router.get("/latest")
 def latest(db:Session=Depends(get_db),admin:User=Depends(get_admin_user)):
     observed=db.scalar(select(Offer.observed_at).where(Offer.source_label=="Folheto oficial · revisão administrativa").order_by(Offer.observed_at.desc()).limit(1))
-    return {"last_import_at":observed}
+    latest_official=db.scalar(select(Offer.observed_at).where(Offer.source_url.is_not(None)).order_by(Offer.observed_at.desc()).limit(1))
+    return {"last_import_at":observed,"last_official_update_at":latest_official}

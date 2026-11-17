@@ -125,12 +125,14 @@ def build_comparison(db, shopping_list, city):
             "items": comparison_items,
         })
 
+    excluded_markets_count=sum(r["found_items"]==0 for r in results)
     # Partial subtotals are not comparable: show coverage, never cheap missing baskets.
     results.sort(key=lambda result: (not result["complete"],
         result["total"] if result["complete"] else -result["found_items"], result["market_name"]))
     return {
         "shopping_list_id": shopping_list.id, "list_name": shopping_list.name,
         "results": results,
+        "excluded_markets_count": excluded_markets_count,
         "common_product_ids": sorted(common_ids),
         "common_items_count": len(common_ids),
         "priced_markets_count": len(priced_sets),

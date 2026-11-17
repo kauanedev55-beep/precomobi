@@ -29,3 +29,18 @@ export function offersForMarkets<T extends {market:Market;related_offers?:T[]}>(
 export function mapDestinations<T extends Market>(markets:T[],selectedId:number|null):T[] {
   return selectedId===null ? [] : markets.filter(m=>m.id===selectedId);
 }
+
+// Public retailer entry points; the retailer still determines local availability.
+export function marketWebsite(network:string):string|null {
+  const sites:Record<string,string>={
+    Carone:"https://www.carone.com.br/",
+    Extrabom:"https://www.extrabom.com.br/",
+    Sempretem:"https://superatacadosempretem.com.br/",
+    "Supermercados BH":"https://www.supermercadosbh.com.br/folhetos",
+    Casagrande:"https://www.redecasagrande.com.br/",
+    "Atacadão":"https://www.atacadao.com.br/institucional/nossas-lojas",
+    "Assaí":"https://www.assai.com.br/ofertas",
+    Perim:"https://www.superperim.com.br/",
+  };
+  return sites[network]??null;
+}

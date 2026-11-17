@@ -79,6 +79,7 @@ export type MarketResult = {
 };
 
 export type Comparison = {
+  excluded_markets_count?: number;
   shopping_list_id: number | null;
   list_name: string;
   results: MarketResult[];
@@ -107,6 +108,8 @@ export type ShoppingList = {
 };
 
 export type PriceReport = {
+  image_url?: string | null;
+  market_city?: string | null;
   id: number;
   product_id: number;
   product_name: string;
@@ -167,13 +170,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 // ---------- endpoints ----------
 export const getApiHealth = () => request<{ status: string; service: string }>("/health");
 
-export const getProducts = (q?: string, city?: string, category?: string, external?: boolean, everyday?: boolean, preferred?: boolean) => {
+export const getProducts = (q?: string, city?: string, category?: string, external?: boolean, everyday?: boolean, preferred?: boolean, priced?: boolean) => {
   const query=new URLSearchParams();
   if(q?.trim()) query.set("q",q.trim());
   if(city) query.set("city",city);
   if(category) query.set("category",category);
   if(external !== undefined) query.set("external",String(external));
   if(preferred !== undefined) query.set("preferred",String(preferred));
+  if(priced !== undefined) query.set("priced",String(priced));
   if(everyday !== undefined) query.set("everyday",String(everyday));
   return request<Product[]>(`/products?${query}`);
 };
@@ -184,7 +188,7 @@ export type ProductCreate = {
 export const createProduct = (payload: ProductCreate) => request<Product>("/products", {method:"POST", body:JSON.stringify(payload)});
 export const getProductByEan = (ean: string, city?: string) => request<Product[]>(`/products?ean=${encodeURIComponent(ean)}${city ? `&city=${encodeURIComponent(city)}` : ""}`);
 export const getProduct = (id: number, city?: string) => request<ProductDetail>(`/products/${id}${city ? `?city=${encodeURIComponent(city)}` : ""}`);
-export const getMarkets = () => request<Market[]>("/markets");
+export const getMarkets = (priced=false,withOffers=false) => request<Market[]>(`/markets?priced=${priced}&with_offers=${withOffers}`);
 export type Offer = {
   related_offers?:Offer[];
   source_url?:string|null;source_label?:string|null;
@@ -225,11 +229,16 @@ export const deleteShoppingList = (id: number) => request<void>(`/shopping-lists
 export const previewShoppingList = (payload: {name: string; items: {product_id: number; quantity: number}[]}, city: string) => request<Comparison>(`/comparisons/preview?city=${encodeURIComponent(city)}`, {method:"POST",body:JSON.stringify(payload)});
 export const compareShoppingList = (listId: number, city?: string) => request<Comparison>(`/comparisons/${listId}${city ? `?city=${encodeURIComponent(city)}` : ""}`);
 
-export const getPriceHistory = (params: { product_id?: number; market_id?: number; city?: string }) => {
+export const getPriceHistory = (params: { product_id?: number; market_id?: number; city?: string; q?: string; community_only?: boolean; latest?: boolean; limit?: number; offset?: number }) => {
   const query = new URLSearchParams();
   if (params.product_id) query.set("product_id", String(params.product_id));
   if (params.market_id) query.set("market_id", String(params.market_id));
   if (params.city) query.set("city", params.city);
+  if (params.q) query.set("q", params.q);
+  if (params.community_only) query.set("community_only", "true");
+  if (params.latest) query.set("latest", "true");
+  if (params.limit) query.set("limit", String(params.limit));
+  if (params.offset) query.set("offset", String(params.offset));
   const suffix = query.toString();
   return request<PriceReport[]>(`/price-reports${suffix ? `?${suffix}` : ""}`);
 };
@@ -277,6 +286,6 @@ export type PriceImportRow={product_id:number;product_name:string;market_id:numb
 export type PriceImportPreview={rows:PriceImportRow[];published:boolean};
 export const previewPriceImport=(payload:PriceImportBatch)=>request<PriceImportPreview>("/admin/price-import/preview",{method:"POST",body:JSON.stringify(payload)});
 export const publishPriceImport=(payload:PriceImportBatch)=>request<{added_prices:number;added_offers:number;checked_at:string;rows:number}>("/admin/price-import/publish",{method:"POST",body:JSON.stringify(payload)});
-export const getLatestPriceImport=()=>request<{last_import_at:string|null}>("/admin/price-import/latest");
+export const getLatestPriceImport=()=>request<{last_import_at:string|null;last_official_update_at?:string|null}>("/admin/price-import/latest");
 
 export const preparePriceImport=(entries:Record<string,unknown>[])=>request<PriceImportPreview & {batch:PriceImportBatch}>("/admin/price-import/prepare",{method:"POST",body:JSON.stringify({entries})});

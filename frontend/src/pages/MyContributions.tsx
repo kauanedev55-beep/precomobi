@@ -1,12 +1,11 @@
 import {CommunityPriceCard} from "../components/CommunityPriceCard";
-import {saleLabel} from "../lib/quantities";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { CommunityNav } from "../components/CommunityNav";
-import { SourceBadge } from "../components/SourceBadge";
+import "../styles/community.css";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
-import { formatDateTime, formatPrice } from "../lib/format";
+
 import { getMyPriceReports, type PriceReport } from "../services/api";
 
 export function MyContributions() {
@@ -39,25 +38,8 @@ export function MyContributions() {
       {loading && <Loading />}
       {error && <ErrorBox message={error} onRetry={load} />}
       {!loading && !error && reports.length === 0 && <Empty title="Você ainda não informou nenhum preço">Use Informar preço para compartilhar o que encontrou no mercado.</Empty>}
-      {!loading && reports.length > 0 && (
-        <><div className="community-mobile-cards">{reports.map(report=><CommunityPriceCard key={report.id} report={report} mine />)}</div><div className="table-wrap community-desktop-table">
-          <table>
-            <thead><tr><th>Produto</th><th>Mercado</th><th>Preço</th><th>Data</th><th>Origem</th><th>Confirmações</th><th>Observação</th></tr></thead>
-            <tbody>
-              {reports.map((report) => (
-                <tr key={report.id}>
-                  <td><Link to={`/produtos/${report.product_id}`}>{report.product_name}</Link></td>
-                  <td>{report.market_name}</td>
-                  <td className="num">{formatPrice(report.price)} / {saleLabel(report.sale_unit)}</td>
-                  <td>{formatDateTime(report.reported_at)}</td>
-                  <td><SourceBadge sourceType={report.source_type} /></td>
-                  <td>{report.confirmations_count} {report.confirmations_count === 1 ? "pessoa confirmou" : "pessoas confirmaram"}</td>
-                  <td>{report.notes ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div></>
+      {!loading && !error && reports.length > 0 && (
+        <div className="community-feed">{reports.map(report=><CommunityPriceCard key={report.id} report={report} mine />)}</div>
       )}
     </section>
   );

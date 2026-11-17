@@ -1,157 +1,77 @@
+import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
+import {Link,useSearchParams} from "react-router-dom";
 import {CommunityPriceCard} from "../components/CommunityPriceCard";
-import {saleLabel} from "../lib/quantities";
-import { useCallback, useEffect, useState, useRef } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import {CommunityNav} from "../components/CommunityNav";
+import {Empty,ErrorBox,Loading} from "../components/StateViews";
+import {useRegion} from "../region/RegionContext";
+import {cityMarkets} from "../lib/marketScope";
+import {getMarkets,getPriceHistory,type Market,type PriceReport} from "../services/api";
+import "../styles/community.css";
+const PAGE_SIZE=20;
 
-import { ConfirmPriceButton } from "../components/ConfirmPriceButton";
-import { useRegion, inCity } from "../region/RegionContext";
-import { CommunityNav } from "../components/CommunityNav";
-import { SourceBadge } from "../components/SourceBadge";
-import { Empty, ErrorBox, Loading } from "../components/StateViews";
-import { formatDate, formatDateTime, formatPrice, parseApiDate } from "../lib/format";
-import { getMarkets, getPriceHistory, getProducts, type Market, type PriceReport, type Product } from "../services/api";
-
-function PriceChart({ reports }: { reports: PriceReport[] }) {
-  const points = [...reports].sort((a, b) => parseApiDate(a.reported_at).getTime() - parseApiDate(b.reported_at).getTime());
-  const prices = points.map((point) => Number(point.price));
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
-  const width = 600;
-  const height = 160;
-  const pad = 24;
-  const x = (index: number) => pad + (index * (width - pad * 2)) / Math.max(points.length - 1, 1);
-  const y = (value: number) => (max === min ? height / 2 : height - pad - ((value - min) * (height - pad * 2)) / (max - min));
-  return (
-    <figure className="chart">
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Evolução do preço ao longo do tempo">
-        <polyline fill="none" stroke="currentColor" strokeWidth="2" points={points.map((point, index) => `${x(index)},${y(Number(point.price))}`).join(" ")} />
-        {points.map((point, index) => (
-          <g key={point.id}>
-            <circle cx={x(index)} cy={y(Number(point.price))} r="4" fill={point.source_type === "community" ? "#dd8f2c" : "currentColor"} />
-            <text x={x(index)} y={y(Number(point.price)) - 8} textAnchor="middle" fontSize="11">{formatPrice(point.price)}</text>
-          </g>
-        ))}
-      </svg>
-      <figcaption>De {formatDate(points[0].reported_at)} a {formatDate(points[points.length - 1].reported_at)} · ponto laranja = informado pela comunidade</figcaption>
-    </figure>
-  );
-}
-
-export function History() {
-  const {city} = useRegion();
-  const [params, setParams] = useSearchParams();
-  const productId = params.get("produto") ?? "";
-  const marketId = params.get("mercado") ?? "";
-  const [products, setProducts] = useState<Product[]>([]);
-  const [markets, setMarkets] = useState<Market[]>([]);
-  const sequence = useRef(0);
-  const [reports, setReports] = useState<PriceReport[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    Promise.all([getProducts(), getMarkets()])
-      .then(([productList, marketList]) => {
-        setProducts(productList);
-        setMarkets(marketList);
-      })
-      .catch(() => undefined); // os filtros são opcionais; o erro principal aparece na busca do histórico
-  }, []);
-
-  const load = useCallback(async () => {
-    const request = ++sequence.current;
-    if (!city) {setReports([]);setLoading(false);setError("");return;}
+export function History(){
+  const {city}=useRegion();
+  const [params,setParams]=useSearchParams();
+  const query=params.get("q")||"";
+  const market=params.get("mercado")||"";
+  const product=params.get("produto")||"";
+  const [search,setSearch]=useState(query);
+  const [markets,setMarkets]=useState<Market[]>([]);
+  const [reports,setReports]=useState<PriceReport[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [moreLoading,setMoreLoading]=useState(false);
+  const [hasMore,setHasMore]=useState(false);
+  const [error,setError]=useState("");
+  const sequence=useRef(0);
+  const previousCity=useRef(city);
+  const pageOffset=useRef(0);
+  useEffect(()=>setSearch(query),[query]);
+  useEffect(()=>{
+    if(previousCity.current===city)return;
+    previousCity.current=city;
+    const next=new URLSearchParams(params);next.delete("mercado");setParams(next,{replace:true});
+  },[city,params,setParams]);
+  const load=useCallback(async()=>{
+    const request=++sequence.current;
+    setReports([]);setHasMore(false);setMoreLoading(false);setError("");pageOffset.current=0;
+    if(!city){setLoading(false);return;}
     setLoading(true);
-    setError("");
-    try {
-      const data = await getPriceHistory({ city, product_id: productId ? Number(productId) : undefined, market_id: marketId ? Number(marketId) : undefined });
-      if(request===sequence.current) setReports(data);
-    } catch (err) {
-      if(request===sequence.current) setError(err instanceof Error ? err.message : "Não foi possível carregar o histórico.");
-    } finally {
-      if(request===sequence.current) setLoading(false);
-    }
-  }, [productId, marketId, city]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const setFilter = (key: "produto" | "mercado") => (event: { target: { value: string } }) => {
-    const next = new URLSearchParams(params);
-    if (event.target.value) next.set(key, event.target.value);
-    else next.delete(key);
-    setParams(next);
-  };
-
-  useEffect(() => {
-    if (city && marketId && markets.length && !markets.some(m => m.id===Number(marketId) && inCity(m,city))) {
-      const next = new URLSearchParams(params); next.delete("mercado"); setParams(next,{replace:true});
-    }
-  }, [city,marketId,markets,params,setParams]);
-
-  const canChart = Boolean(productId && marketId) && reports.length >= 2;
-
-  return (
-    <section>
-      <h1>Preços da comunidade</h1>
-      <p>Aqui estão os preços de todos, inclusive os que você compartilhou. Não é o histórico das suas compras. Confirme somente os valores de outras pessoas que você verificou no mercado.</p>
-
-      <CommunityNav />
-      <div className="button-row">
-        <Link className="primary-button" to="/contribuir">Colaborar com um preço</Link>
-
-      </div>
-      <div className="filters">
-        <label className="field"><span>Produto</span>
-          <select value={productId} onChange={setFilter("produto")}>
-            <option value="">Todos</option>
-            {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
-          </select>
-        </label>
-        <label className="field"><span>Mercado</span>
-          <select value={marketId} onChange={setFilter("mercado")}>
-            <option value="">Todos</option>
-            {markets.filter(m => inCity(m,city)).map((market) => <option key={market.id} value={market.id}>{market.name}</option>)}
-          </select>
-        </label>
-      </div>
-
-      {loading && <Loading text="Carregando histórico..." />}
-      {error && <ErrorBox message={error} onRetry={load} />}
-      {!loading && !error && reports.length === 0 && <Empty title="Nenhum registro de preço para esse filtro" />}
-      {!loading && !error && productId && marketId && reports.length === 1 && <p className="form-hint">Só há um registro para este produto neste mercado; o gráfico aparece quando houver pelo menos dois.</p>}
-      {!loading && !error && !(productId && marketId) && reports.length > 0 && <p className="form-hint">Escolha um produto e um mercado para ver o gráfico de evolução.</p>}
-      {canChart && <PriceChart reports={reports} />}
-      {!loading && reports.length > 0 && (
-        <><div className="community-mobile-cards">{reports.map(report=><CommunityPriceCard key={report.id} report={report} onConfirmed={()=>void load()} />)}</div><div className="table-wrap community-desktop-table">
-          <table>
-            <thead><tr><th>Data</th><th>Produto</th><th>Mercado</th><th>Preço</th><th>Colaboração</th><th>Confirmação</th></tr></thead>
-            <tbody>
-              {reports.map((report) => (
-                <tr key={report.id}>
-                  <td>{formatDateTime(report.reported_at)}</td>
-                  <td>{report.product_name}</td>
-                  <td>{report.market_name}</td>
-                  <td className="num">{formatPrice(report.price)} / {saleLabel(report.sale_unit)}</td>
-                  <td><SourceBadge sourceType={report.source_type} />{report.source_type === "community" && <small className="report-author">{report.is_mine ? "Sua contribuição" : "Informado por outro usuário"}</small>}</td>
-                  <td>
-                    <ConfirmPriceButton
-                      reportId={report.id}
-                      count={report.confirmations_count}
-                      confirmedByMe={report.confirmed_by_me}
-                      isMine={report.is_mine}
-                      onConfirmed={(updated) =>
-                        setReports((current) => current.map((item) => (item.id === report.id ? { ...item, ...updated } : item)))
-                      }
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div></>
-      )}
-    </section>
-  );
+    try{
+      const stores=await getMarkets();
+      if(request!==sequence.current)return;
+      setMarkets(stores);
+      if(market&&!cityMarkets(stores,city).some(m=>String(m.id)===market)){setReports([]);return;}
+      const data=await getPriceHistory({city,q:query,market_id:market?Number(market):undefined,product_id:product?Number(product):undefined,community_only:true,latest:true,limit:PAGE_SIZE+1});
+      if(request===sequence.current){setReports(data.slice(0,PAGE_SIZE));setHasMore(data.length>PAGE_SIZE);pageOffset.current=PAGE_SIZE;}
+    }catch(err){if(request===sequence.current)setError(err instanceof Error?err.message:"Não foi possível carregar os preços.");}
+    finally{if(request===sequence.current)setLoading(false);}
+  },[city,market,product,query]);
+  useEffect(()=>{void load();return()=>{sequence.current+=1;};},[load]);
+  async function loadMore(){
+    if(moreLoading)return;
+    const request=sequence.current;setMoreLoading(true);setError("");
+    try{
+      const data=await getPriceHistory({city,q:query,market_id:market?Number(market):undefined,product_id:product?Number(product):undefined,community_only:true,latest:true,limit:PAGE_SIZE+1,offset:pageOffset.current});
+      if(request===sequence.current){setReports(rows=>[...new Map([...rows,...data.slice(0,PAGE_SIZE)].map(r=>[r.id,r])).values()]);pageOffset.current+=PAGE_SIZE;setHasMore(data.length>PAGE_SIZE);}
+    }catch(err){if(request===sequence.current)setError(err instanceof Error?err.message:"Não foi possível carregar mais preços.");}
+    finally{if(request===sequence.current)setMoreLoading(false);}
+  }
+  function submit(event:FormEvent){event.preventDefault();const next=new URLSearchParams(params);next.delete("produto");if(search.trim())next.set("q",search.trim());else next.delete("q");setParams(next);}
+  return <section className="community-page">
+    <div className="experience-heading"><div><h1>Comunidade</h1><p>Veja preços que outras pessoas encontraram e compartilhe os seus.</p></div><Link className="primary-button" to="/contribuir">Informar preço</Link></div>
+    <CommunityNav/>
+    <form className="community-filters" onSubmit={submit} role="search" aria-label="Buscar preços da comunidade">
+      <label className="field"><span>Qual produto?</span><input type="search" maxLength={100} value={search} placeholder="Ex.: arroz, leite, sabão" onChange={e=>setSearch(e.target.value)}/></label>
+      <button className="primary-button" type="submit">Buscar</button>
+      <label className="field community-store"><span>Mercado / loja</span><select value={market} disabled={loading} onChange={e=>{const next=new URLSearchParams(params);if(e.target.value)next.set("mercado",e.target.value);else next.delete("mercado");setParams(next);}}><option value="">Todas as lojas da cidade</option>{cityMarkets(markets,city).map(m=><option key={m.id} value={m.id}>{m.name}{city==="*"?` · ${m.city}`:""}</option>)}</select></label>
+    </form>
+    {(query||market||product)&&<button className="text-button" onClick={()=>setParams({})}>Limpar filtros</button>}
+    <p className="form-hint">O preço mais recente informado por pessoas para cada produto e loja aparece primeiro. Confira a data: o valor pode ter mudado. Folhetos ficam em <Link to="/ofertas">Promoções</Link>.</p>
+    {!city&&<Empty title="Escolha sua cidade">Selecione a cidade acima para consultar os preços próximos de você.</Empty>}
+    {loading&&<Loading text="Buscando preços da comunidade..."/>}
+    {error&&<ErrorBox message={error} onRetry={()=>void(hasMore&&reports.length?loadMore():load())}/>}
+    {city&&!loading&&!error&&!reports.length&&<Empty title="Ainda não há preços compartilhados para esta seleção"><p>Encontrou um preço no mercado? Sua contribuição ajuda quem compra por perto.</p><Link className="outline-button" to={`/contribuir?${new URLSearchParams(market?{mercado:market}:{})}`}>Informar o primeiro preço</Link></Empty>}
+    {!loading&&<div className="community-feed">{reports.map(report=><CommunityPriceCard key={report.id} report={report} onConfirmed={updated=>setReports(rows=>rows.map(r=>r.id===report.id?{...r,...updated}:r))}/>)}</div>}
+    {hasMore&&<button className="outline-button community-load-more" disabled={moreLoading} onClick={()=>void loadMore()}>{moreLoading?"Carregando...":"Ver mais preços"}</button>}
+  </section>;
 }
