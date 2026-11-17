@@ -1,5 +1,6 @@
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import {openCameraPreview,type CameraPreviewState} from "../lib/cameraPreview";
+import {preparePhoto,isInstalledApple} from "../lib/photo";
 import { productCode } from "../lib/scannedCode";
 import { BarcodeFormat, DecodeHintType } from "@zxing/library";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -35,14 +36,25 @@ export function BarcodeScanner({
   const resumeRef=useRef<()=>void>(()=>undefined);
   const detectedRef=useRef(onDetected);
   detectedRef.current=onDetected;
-  const [cameraState,setCameraState]=useState<CameraPreviewState>("opening");
-  const [attempt,setAttempt]=useState(0);
+  const appleApp=isInstalledApple(navigator,window.matchMedia("(display-mode: standalone)").matches);
+  const startRef=useRef<()=>void>(()=>undefined);
+  const photoInput=useRef<HTMLInputElement|null>(null);
+  const completed=useRef(false);
+  const mounted=useRef(false);
+  const generation=useRef(0);
+  const [liveVisible,setLiveVisible]=useState(!appleApp);
+  const [photoBusy,setPhotoBusy]=useState(false);
+  const [cameraState,setCameraState]=useState<CameraPreviewState|"idle">(appleApp?"idle":"opening");
   const [error, setError] = useState("");
   const [manualCode, setManualCode] = useState("");
   const [manualError, setManualError] = useState("");
   const [cameraDetails, setCameraDetails] = useState("");
 
   useEffect(() => {
+    mounted.current=true;
+    const start=()=>{
+    cleanupRef.current();generation.current+=1;
+    setPhotoBusy(false);setLiveVisible(true);setCameraDetails("");setError("");
     const video = videoRef.current;
     if (!video || !navigator.mediaDevices?.getUserMedia) {
       setCameraState("error");
@@ -60,10 +72,10 @@ export function BarcodeScanner({
     const reader=new BrowserMultiFormatReader(hints,{delayBetweenScanAttempts:160});
     const stopDecoder=()=>{if(nativeTimer!==undefined)clearInterval(nativeTimer);controls?.stop();};
     const deliver=(raw:string)=>{
-      if(cancelled||delivered)return;
+      if(cancelled||delivered||completed.current)return;
       const code=productCode(raw);
       if(!code){setError("Este QR não identifica um produto. Use o código de barras da embalagem ou digite o EAN abaixo.");return;}
-      delivered=true;stopDecoder();preview.stop();detectedRef.current(code);
+      delivered=true;completed.current=true;stopDecoder();preview.stop();detectedRef.current(code);
     };
     const preview=openCameraPreview(video,navigator.mediaDevices,{
       onState(state,message){if(cancelled||delivered)return;setCameraState(state);setError(message||"");},
@@ -94,8 +106,29 @@ export function BarcodeScanner({
     resumeRef.current=()=>{void preview.resume();};
     const cleanup=()=>{cancelled=true;stopDecoder();preview.stop();};
     cleanupRef.current=cleanup;
-    return cleanup;
-  },[attempt]);
+    };
+    startRef.current=start;
+    if(!appleApp)start();
+    return ()=>{mounted.current=false;generation.current+=1;cleanupRef.current();startRef.current=()=>undefined;};
+  },[]);
+
+  function closeScanner(){completed.current=true;generation.current+=1;cleanupRef.current();onClose();}
+  function takePhoto(){
+    cleanupRef.current();generation.current+=1;setLiveVisible(false);setCameraState("idle");setError("");photoInput.current?.click();
+  }
+  async function readPhoto(file:File|undefined){
+    if(!file)return;
+    const request=++generation.current;setPhotoBusy(true);setError("");
+    try{
+      const data=await preparePhoto(file,2048);
+      const hints=new Map<DecodeHintType,unknown>();hints.set(DecodeHintType.POSSIBLE_FORMATS,allowedFormats);hints.set(DecodeHintType.TRY_HARDER,true);
+      const result=await new BrowserMultiFormatReader(hints).decodeFromImageUrl(data);
+      if(!mounted.current||completed.current||request!==generation.current)return;
+      const code=productCode(result.getText());if(!code)throw new Error("Este QR não identifica um produto.");
+      completed.current=true;detectedRef.current(code);
+    }catch(error){if(mounted.current&&request===generation.current)setError(error instanceof Error&&error.message.startsWith("Escolha")?error.message:"Código não reconhecido. Fotografe mais perto, sem reflexos.");}
+    finally{if(mounted.current&&request===generation.current)setPhotoBusy(false);}
+  }
 
   function submitManual(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,22 +137,22 @@ export function BarcodeScanner({
       setManualError("Informe um EAN de 8, 12, 13 ou 14 números, ou um QR de produto com EAN.");
       return;
     }
-    cleanupRef.current();
+    completed.current=true;generation.current+=1;cleanupRef.current();
     onDetected(code);
   }
 
   return (
-    <div className="scanner-overlay" role="presentation" onClick={()=>{cleanupRef.current();onClose();}}>
+    <div className="scanner-overlay" role="presentation" onClick={closeScanner}>
       <div className="scanner-box" role="dialog" aria-modal="true" aria-label="Ler código de barras ou QR Code" onClick={(event) => event.stopPropagation()}>
-        <button className="auth-close" type="button" aria-label="Fechar" onClick={()=>{cleanupRef.current();onClose();}}>×</button>
+        <button className="auth-close" type="button" aria-label="Fechar" onClick={closeScanner}>×</button>
         <h2>Ler código de barras ou QR Code</h2>
-        <video ref={videoRef} className="scanner-video" muted playsInline autoPlay aria-label="Imagem da câmera" />
+        <video ref={videoRef} hidden={!liveVisible} className="scanner-video" muted playsInline autoPlay aria-label="Imagem da câmera" />
+        <input ref={photoInput} type="file" accept="image/*" capture="environment" hidden onChange={event=>{const file=event.target.files?.[0];event.target.value="";void readPhoto(file);}}/>
+        <div className="scanner-photo-actions"><button className={appleApp||cameraState==="error"?"primary-button":"outline-button"} type="button" disabled={photoBusy} onClick={takePhoto}>{photoBusy?"Lendo foto…":"Fotografar código"}</button>{!liveVisible&&<button className="outline-button" type="button" disabled={photoBusy} onClick={()=>startRef.current()}>Ler ao vivo</button>}</div>
         {cameraState==="opening"&&<p className="form-hint" role="status">Abrindo a câmera…</p>}
-        {cameraState==="blocked"&&<button className="primary-button scanner-resume" type="button" onClick={()=>resumeRef.current()}>Ativar câmera</button>}
-        {cameraState==="error"&&<button className="outline-button" type="button" onClick={()=>{setError("");setCameraDetails("");setAttempt(value=>value+1);}}>Tentar abrir câmera novamente</button>}
-        {error ? <p className="error-message" role="alert">{error}</p> : (
-          <p className="form-hint">Enquadre o código de barras ou QR do produto, sem reflexos, e mantenha a embalagem parada. {cameraDetails}</p>
-        )}
+        {cameraState==="blocked"&&<button className="primary-button" type="button" onClick={()=>resumeRef.current()}>Ativar câmera</button>}
+        {cameraState==="error"&&<button className="outline-button" type="button" onClick={()=>startRef.current()}>Tentar novamente</button>}
+        {error?<p className={cameraState==="blocked"?"form-hint":"error-message"} role="status">{error}</p>:<p className="form-hint">{liveVisible?"Enquadre o código da embalagem, sem reflexos.":"Tire uma foto nítida do código de barras."} {cameraDetails}</p>}
         <form className="scanner-manual" onSubmit={submitManual}>
           <label htmlFor="ean-manual">Ou digite o código</label>
           <input

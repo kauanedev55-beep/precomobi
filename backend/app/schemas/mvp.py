@@ -28,6 +28,7 @@ class ProductRead(BaseModel):
 
 
 class ProductCreate(BaseModel):
+    photo_data: str | None = Field(default=None,max_length=350000)
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=3, max_length=180)

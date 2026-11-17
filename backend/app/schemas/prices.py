@@ -57,4 +57,5 @@ class ProductPriceRead(BaseModel):
 
 
 class ProductDetailRead(ProductRead):
+    can_edit_photo: bool = False
     prices: list[ProductPriceRead]

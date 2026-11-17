@@ -34,7 +34,7 @@ export type ProductPrice = {
   is_mine: boolean;
 };
 
-export type ProductDetail = Product & { prices: ProductPrice[] };
+export type ProductDetail = Product & { prices: ProductPrice[]; can_edit_photo?:boolean };
 
 export type Market = {
   id: number;
@@ -183,9 +183,10 @@ export const getProducts = (q?: string, city?: string, category?: string, extern
 };
 export type ProductCreate = {
   name: string; category: string; brand: string | null; no_brand: boolean; ean: string | null; no_barcode: boolean;
-  sale_unit: "unit" | "kg"; packaging: string; quantity_value: string; quantity_unit: string; description: string | null;
+  sale_unit: "unit" | "kg"; packaging: string; quantity_value: string; quantity_unit: string; description: string | null; photo_data?:string|null;
 };
 export const createProduct = (payload: ProductCreate) => request<Product>("/products", {method:"POST", body:JSON.stringify(payload)});
+export const uploadProductPhoto=(id:number,photo_data:string)=>request<Product>(`/products/${id}/photo`,{method:"POST",body:JSON.stringify({photo_data})});
 export const getProductByEan = (ean: string, city?: string) => request<Product[]>(`/products?ean=${encodeURIComponent(ean)}${city ? `&city=${encodeURIComponent(city)}` : ""}`);
 export const getProduct = (id: number, city?: string) => request<ProductDetail>(`/products/${id}${city ? `?city=${encodeURIComponent(city)}` : ""}`);
 export const getMarkets = (priced=false,withOffers=false) => request<Market[]>(`/markets?priced=${priced}&with_offers=${withOffers}`);

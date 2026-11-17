@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 
+import {ProductPhotoEditor} from "../components/ProductPhotoEditor";
 import { useRegion } from "../region/RegionContext";
 import { useCart } from "../cart/CartContext";
 import { ConfirmPriceButton } from "../components/ConfirmPriceButton";
@@ -75,6 +76,7 @@ export function ProductDetail() {
         </div>
       </div>
 
+      {product.can_edit_photo&&<ProductPhotoEditor product={product} onSaved={url=>setProduct(previous=>previous?{...previous,image_url:url}:previous)}/>}
       {guide && <div className="product-guide-box"><strong>Como reconhecer</strong><p>{guide.hint}</p><small>Compare com a etiqueta do mercado. A foto é uma referência visual.</small></div>}
       <div className="product-buy-panel"><QuantityPicker onValidityChange={setQuantityValid} value={quantity} unit={product.sale_unit} name={product.name} onChange={setQuantity}/>{product.min_price!==null && <p>Estimativa para essa quantidade: <strong>{formatPrice(itemSubtotal(product.min_price,quantity))}</strong></p>}{product.sale_unit==="kg" && <p className="form-hint">A estimativa usa o peso informado. Ajuste na lista quando souber o peso real da balança.</p>}
       <div className="button-row">

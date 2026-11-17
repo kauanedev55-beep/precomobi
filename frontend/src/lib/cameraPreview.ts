@@ -8,6 +8,19 @@ function errorName(error: unknown): string {
   return error && typeof error === "object" && "name" in error ? String(error.name) : "";
 }
 
+function bounded<T>(pending: Promise<T>, milliseconds: number, signal: AbortSignal, late?: (value:T)=>void): Promise<T> {
+  return new Promise((resolve,reject)=>{
+    let finished=false;
+    const clean=()=>{clearTimeout(timer);signal.removeEventListener("abort",cancel);};
+    const finish=(error:DOMException)=>{if(finished)return;finished=true;clean();reject(error);};
+    const cancel=()=>finish(new DOMException("Camera closed","AbortError"));
+    const timer=setTimeout(()=>finish(new DOMException("Camera did not respond","TimeoutError")),milliseconds);
+    signal.addEventListener("abort",cancel,{once:true});
+    pending.then(value=>{if(finished){late?.(value);return;}finished=true;clean();resolve(value);},error=>{if(finished)return;finished=true;clean();reject(error);});
+    if(signal.aborted)cancel();
+  });
+}
+
 function waitForFrame(video: HTMLVideoElement, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     let timer: ReturnType<typeof setTimeout>;
@@ -24,7 +37,7 @@ function waitForFrame(video: HTMLVideoElement, signal: AbortSignal): Promise<voi
 
 // Own the preview separately from the barcode decoder. Safari may grant camera
 // access but still require a fresh tap to play the muted inline video.
-export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDevices, "getUserMedia">, callbacks: Callbacks) {
+export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDevices, "getUserMedia">, callbacks: Callbacks, deadlines: {captureMs?:number;playMs?:number}={}) {
   let stream: MediaStream | null = null;
   let stopped = false;
   let playing = false;
@@ -44,7 +57,7 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
     playing = true;
     state("opening");
     try {
-      await video.play();
+      await bounded(video.play(),deadlines.playMs??5000,abort.signal);
       if (stopped) return;
       await waitForFrame(video, abort.signal);
       if (stopped) return;
@@ -54,7 +67,7 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
     } catch (error) {
       if (stopped) return;
       if (["NotAllowedError", "AbortError", "TimeoutError"].includes(errorName(error))) {
-        state("blocked", "A permissão foi recebida. Toque em Ativar câmera para mostrar a imagem.");
+        state("blocked", "Toque em Ativar câmera ou fotografe o código.");
       } else {
         state("error", "Não foi possível mostrar a câmera. Tente abrir novamente ou digite o código abaixo.");
       }
@@ -65,11 +78,11 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
     try {
       let acquired: MediaStream;
       try {
-        acquired = await devices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+        acquired = await bounded(devices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } }),deadlines.captureMs??12000,abort.signal,late=>late.getTracks().forEach(track=>track.stop()));
       } catch (error) {
         if (stopped) return;
         if (!["OverconstrainedError", "ConstraintNotSatisfiedError"].includes(errorName(error))) throw error;
-        acquired = await devices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" } } });
+        acquired = await bounded(devices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" } } }),deadlines.captureMs??12000,abort.signal,late=>late.getTracks().forEach(track=>track.stop()));
       }
       if (stopped) { acquired.getTracks().forEach(track => track.stop()); return; }
       stream = acquired;
@@ -83,7 +96,8 @@ export function openCameraPreview(video: HTMLVideoElement, devices: Pick<MediaDe
     } catch (error) {
       if (stopped) return;
       const name = errorName(error);
-      state("error", name === "NotAllowedError" || name === "SecurityError"
+      state("error", name === "TimeoutError" ? "A câmera não respondeu. Use Fotografar código ou tente pelo Safari."
+        : name === "NotAllowedError" || name === "SecurityError"
         ? "O acesso à câmera não foi liberado. Verifique a permissão do navegador ou digite o código abaixo."
         : name === "NotReadableError" ? "A câmera está ocupada ou não pôde iniciar. Feche outros apps que usam a câmera e tente novamente."
         : name === "NotFoundError" ? "Nenhuma câmera foi encontrada. Digite o código abaixo."

@@ -23,3 +23,4 @@ __all__ = [
 ]
 
 from app.models.family import ListMember,ListInvite
+from app.models.product_photos import ProductPhoto

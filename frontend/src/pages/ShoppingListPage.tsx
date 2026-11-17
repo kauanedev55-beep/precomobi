@@ -89,9 +89,8 @@ export function ShoppingListPage() {
         <>
           <ul className="card-list">
             {cart.items.map((item) => (
-              <li className={`list-card${item.isPurchased ? " is-picked" : ""}`} key={item.product.id}>
+              <li className="list-card" key={item.product.id}>
                 <div className="shopping-produce-title">
-                  <label className="picked-toggle"><input type="checkbox" checked={!!item.isPurchased} onChange={()=>cart.togglePurchased(item.product.id)} aria-label={`Já peguei ${productDisplayName(item.product)}`}/><span>Já peguei</span></label>
                   {produceGuide(item.product) && item.product.image_url && <ProductPhoto url={item.product.image_url} name={productDisplayName(item.product)} hint={produceGuide(item.product)?.hint} source={item.product.catalog_source_url} size={82}/>}
                   <div><Link className="card-title" to={`/produtos/${item.product.id}`}>{productDisplayName(item.product)}</Link>
                   <small>{productSubtitle(item.product)}</small>
