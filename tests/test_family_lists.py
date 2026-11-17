@@ -77,3 +77,29 @@ def test_expired_invite_and_repeated_full_save_cannot_overwrite_shared_changes(c
     assert float(client.get(f'/api/shopping-lists/{lid}',headers=owner).json()['items'][0]['quantity'])==3
     assert client.delete(f'/api/family-lists/{lid}/invites',headers=owner).status_code==204
     assert client.get(f'/api/family-lists/invites/{token}',headers=member).status_code==404
+
+
+def test_list_can_be_invited_during_preparation_and_after_completion(client):
+    owner,member,stranger,p,row=setup_family(client)
+    endpoint=f'/api/family-lists/{row["id"]}'
+    # A freshly saved draft can be shared immediately, without another save.
+    assert row['status']=='preparation'
+    first=client.post(endpoint+'/invite',headers=owner)
+    assert first.status_code==200
+    joined=client.post(f'/api/family-lists/invites/{first.json()["token"]}/accept',headers=member)
+    assert joined.status_code==200
+    assert joined.json()['list']['items'][0]['product_id']==p['id']
+    marked=client.patch(endpoint+'/items',headers=member,json={'revision':row['revision'],'product_id':p['id'],'action':'check','is_purchased':True})
+    assert marked.status_code==200
+    finished=client.patch(endpoint,headers=owner,json={'revision':marked.json()['list']['revision'],'status':'completed'})
+    assert finished.status_code==200
+    # Sharing a completed list does not reopen it or discard shopping progress.
+    second=client.post(endpoint+'/invite',headers=owner)
+    assert second.status_code==200
+    assert client.get(endpoint,headers=stranger).status_code==404
+    accepted=client.post(f'/api/family-lists/invites/{second.json()["token"]}/accept',headers=stranger)
+    assert accepted.status_code==200
+    final=accepted.json()['list']
+    assert final['id']==row['id'] and final['status']=='completed'
+    assert final['items'][0]['is_purchased'] is True
+    assert client.patch(endpoint+'/items',headers=stranger,json={'revision':final['revision'],'product_id':p['id'],'action':'remove'}).status_code==409

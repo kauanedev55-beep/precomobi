@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 
+import {ShareListButton} from "../components/ShareListButton";
+import {useAuth} from "../auth/AuthContext";
 import {Icon} from "../components/Icon";
 import "../styles/mobile-clarity.css";
 import {cartItemsPayload} from "../lib/cartItems";
@@ -13,10 +15,13 @@ import { SourceBadge } from "../components/SourceBadge";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { quantityLabel, saleLabel } from "../lib/quantities";
 import { formatDate, formatPrice } from "../lib/format";
-import { compareShoppingList, previewShoppingList, type Comparison } from "../services/api";
+import { compareShoppingList, previewShoppingList, getFamilyList, type Comparison } from "../services/api";
 
 export function ComparisonPage({preview=false}: {preview?: boolean}) {
   const { id } = useParams();
+  const {user}=useAuth();
+  const [canShare,setCanShare]=useState(false);
+  useEffect(()=>{let active=true;setCanShare(false);if(!preview&&id)void getFamilyList(Number(id)).then(v=>{if(active)setCanShare(v.is_owner);}).catch(()=>undefined);return()=>{active=false;};},[id,preview,user?.id]);
   const cart = useCart();
   const alerts = useOffers();
   const location = useLocation();
@@ -66,8 +71,8 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
     } catch(err) {setSaveError(err instanceof Error ? err.message : "Não foi possível salvar.");}
   }
 
-  if (preview && !draftKey) return <Empty title="Não há uma lista em edição"><Link to="/lista">Montar uma nova lista</Link>. Comparações sem salvar não ficam guardadas depois de recarregar o aplicativo.</Empty>;
-  if (!city) return <Empty title="Onde você quer comparar sua lista?">Escolha a cidade no seletor acima para comparar os mercados disponíveis.</Empty>;
+  if (preview && !draftKey) return <Empty title="Não há uma lista em edição"><Link to="/lista">Montar uma nova lista</Link></Empty>;
+  if (!city) return <Empty title="Onde você quer comparar sua lista?">Escolha a cidade acima.</Empty>;
   if (!error && (!comparison || loadedCity !== city || comparison.shopping_list_id !== (preview ? null : Number(id)))) return <Loading text="Comparando os mercados..." />;
   if (error || !comparison) return <ErrorBox message={error || "Comparação indisponível."} onRetry={load} />;
 
@@ -92,19 +97,18 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
     <section className="comparison-page">
       <p className="breadcrumb"><Link to="/lista">← Lista de compras</Link></p>
       <div className="comparison-heading"><h1>Comparar preços</h1><button type="button" className="comparison-refresh outline-button" aria-label="Atualizar preços" title="Atualizar preços" disabled={loading} onClick={() => void load()}><Icon name="refresh" size={20}/></button></div>
+      {(preview||canShare)&&<div className="comparison-tools"><ShareListButton prepare={preview?cart.save:async()=>(await getFamilyList(Number(id))).list} disabled={isSaving} onPrepared={alerts.refresh}/><Link className="outline-button" to={preview?"/lista":`/listas/${id}`}>Revisar lista</Link></div>}
       {preview&&<details className="list-save-options"><summary>Salvar lista (opcional)</summary><button className="outline-button" type="button" onClick={()=>void saveDraft()} disabled={isSaving}>{isSaving?"Salvando…":"Salvar na minha conta"}</button>{saveError&&<p className="error-message" role="alert">{saveError}</p>}</details>}
       {priced.length===0&&<div className="notice">Ainda não há preços para estes itens. Sua lista continua disponível.</div>}
       {priced.length>0&&<p className="comparison-count">{priced.length} {priced.length===1?"mercado com preço":"mercados com preços"}</p>}
-      {complete.length===1&&<p className="notice">Só um mercado tem preço para a lista completa.</p>}
+      {complete.length===1&&<p className="notice">Só uma loja tem a lista completa.</p>}
       {hasDemoPrices && (
         <div className="notice" role="status">
-          <strong>Modo demonstração:</strong> esta comparação contém preços de exemplo criados para apresentar o funcionamento do PreçoMobi.
-          Não são cotações atuais dos supermercados.
+          <strong>Demonstração:</strong> preços de exemplo, sem validade como cotação.
         </div>
       )}
 
       {saving&&<div className="notice good">{saving.amount>0?<>Economize <strong>{formatPrice(saving.amount)}</strong> em {saving.best}, entre as listas completas.</>:"Os totais completos são iguais."}</div>}
-      {priced.length>0&&complete.length===0&&<p className="notice">Faltam preços para fechar a lista. Veja os subtotais abaixo.</p>}
 
       <div className="market-columns">
         {displayed.map((result) => (
@@ -114,14 +118,13 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
                 <h3>{result.market_name}</h3>
                 <p className="market-address">{[result.neighborhood,result.city].filter(Boolean).join(" · ")}</p>
                 {result.market_id === bestId && <span className="best-choice-label">✓ Menor total completo</span>}
-                <span className={`status-pill ${result.complete ? "" : "partial"}`}>{result.complete ? "Lista completa" : "Lista incompleta"}</span>
+                <span className={`status-pill ${result.complete ? "" : "partial"}`}>{result.found_items}/{result.total_items} itens com preço</span>
               </div>
               <div className="market-total">
-                <small>{result.complete?"Total":"Subtotal"} · {result.found_items}/{result.total_items} itens com preço</small>
+                <small>{result.complete?"Total":"Subtotal · lista incompleta"}</small>
                 <strong>{formatPrice(result.total??result.available_total)}</strong>
               </div>
             </header>
-            {!result.complete&&<p className="comparison-missing">Faltam preços de {result.total_items-result.found_items} {result.total_items-result.found_items===1?"item":"itens"}.</p>}
             <details className="market-item-details"><summary>Produtos e preços</summary><div className="table-wrap">
               <table role="table" aria-label={`Produtos e preços em ${result.market_name}`}>
                 <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Produto</th><th scope="col" role="columnheader">Qtd.</th><th scope="col" role="columnheader">Preço por kg ou embalagem</th><th scope="col" role="columnheader">Subtotal</th><th scope="col" role="columnheader">Origem</th></tr></thead>
@@ -144,11 +147,11 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
         ))}
       </div>
 
-      {decisionMarkets.length >= 2 && <details className="comparison-trip-details"><summary>Considerar deslocamento na escolha</summary><PurchaseDecision markets={decisionMarkets} partial={partialDecision} commonCount={comparison.common_items_count} /></details>}
+      {decisionMarkets.length >= 2 && <details className="comparison-trip-details"><summary>Compensa ir até lá?</summary><PurchaseDecision markets={decisionMarkets} partial={partialDecision} commonCount={comparison.common_items_count} /></details>}
 
-      {priced.length > 3 && <button className="outline-button" type="button" onClick={() => setShowAll(!showAll)}>{showAll ? "Mostrar apenas os 3 primeiros" : `Ver mais ${priced.length - 3} mercados com preços`}</button>}
+      {priced.length > 3 && <button className="outline-button" type="button" onClick={() => setShowAll(!showAll)}>{showAll ? "Ver os 3 primeiros" : `Ver mais ${priced.length - 3} mercados`}</button>}
 
-      <details className="comparison-help"><summary>Como funciona a comparação</summary><p>Usamos o preço mais recente de cada produto na cidade escolhida. Subtotais incluem apenas os itens com preço; não representam a lista completa. A economia considera listas completas ou os mesmos itens nos mercados comparáveis.</p>{anyMissing&&<Link to="/contribuir">Informar um preço</Link>}</details>
+      <details className="comparison-help"><summary>Como funciona a comparação</summary><p>Usamos preços vigentes por loja. Subtotal inclui apenas os itens com preço. A economia compara listas completas ou os mesmos produtos.</p>{anyMissing&&<Link to="/contribuir">Informar um preço</Link>}</details>
 
     </section>
   );

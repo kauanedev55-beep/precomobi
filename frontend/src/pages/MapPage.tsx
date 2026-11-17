@@ -193,30 +193,27 @@ export function MapPage() {
   }
 
   return (
-    <section>
-      <p className="form-hint">No mapa geral aparecem os mercados com preços registrados e vigentes. A rota abre no Google Maps pelo endereço ou pelas coordenadas cadastradas.</p>
-      <h1>{selectedMarket ? `Como chegar: ${selectedMarket.name}` : "Mapa dos mercados"}</h1>
-      <label className="field map-market-filter"><span>Mercado / loja</span><select value={selected ?? ""} disabled={loading} onChange={event=>chooseMarket(event.target.value ? Number(event.target.value) : null)}><option value="">Mercados com preços na cidade</option>{selectorStores.map(m=><option key={m.id} value={m.id}>{m.name}{city==="*"||!inCity(m,city) ? ` · ${m.city}` : ""}</option>)}</select></label>
+    <section className="map-page">
+      <h1>{selectedMarket ? "Como chegar" : "Mercados no mapa"}</h1>
+      <label className="field map-market-filter"><span>Loja</span><select value={selected ?? ""} disabled={loading} onChange={event=>chooseMarket(event.target.value ? Number(event.target.value) : null)}><option value="">Todas as lojas com preços</option>{selectorStores.map(m=><option key={m.id} value={m.id}>{m.name}{city==="*"||!inCity(m,city) ? ` · ${m.city}` : ""}</option>)}</select></label>
       {selected!==null&&!loading&&!error&&!selectedMarket&&<Empty title="Unidade não encontrada">Escolha uma loja cadastrada no filtro acima.</Empty>}
-      {selectedMarket && !inCity(selectedMarket,city) && <p className="notice">O link abriu uma unidade específica em {selectedMarket.city}, fora do filtro atual.</p>}
-      {routeRequested && !position && <div className="notice">Para mostrar a distância e o trajeto a partir de onde você está, toque em <strong>Usar minha localização</strong>. A permissão é opcional.</div>}
-      {selectedMarket && <div className="pm-route-panel"><div><strong>{selectedMarket.name}</strong><small>{fullAddress(selectedMarket)}</small>{roadRoute && <p><b>{roadRoute.km.toFixed(1).replace(".", ",")} km por ruas</b> · aproximadamente {Math.round(roadRoute.minutes)} min de carro</p>}{routeLoading && <p>Calculando caminho pelas ruas...</p>}{routeError && <p role="status">{routeError}</p>}{!position && <p>Ative sua localização para calcular a distância.</p>}{!hasCoordinates(selectedMarket) && <p>Sem coordenadas cadastradas. O Google Maps buscará o endereço; confira a loja antes de iniciar a rota.</p>}</div><a className="primary-button" target="_blank" rel="noreferrer" href={navigationUrl(selectedMarket)}>Abrir no Google Maps ↗</a></div>}
+      {selectedMarket && !inCity(selectedMarket,city) && <p className="notice">Esta loja fica em {selectedMarket.city}, fora da cidade selecionada.</p>}
+      {selectedMarket && <div className="pm-route-panel"><div><strong>{selectedMarket.name}</strong><small>{fullAddress(selectedMarket)}</small>{roadRoute && <p><b>{roadRoute.km.toFixed(1).replace(".", ",")} km por ruas</b> · {Math.round(roadRoute.minutes)} min estimados</p>}{routeLoading && <p>Calculando caminho pelas ruas...</p>}{routeError && <p role="status">{routeError}</p>}{!hasCoordinates(selectedMarket) && <p>Rota pelo endereço. Confira a loja no Google Maps.</p>}</div><a className="primary-button" target="_blank" rel="noreferrer" href={navigationUrl(selectedMarket)}>Ir pelo Google Maps ↗</a></div>}
       <div className="button-row">
         <button className="primary-button" type="button" onClick={locate}>Usar minha localização</button>
         {position && <button className="outline-button" type="button" onClick={() => setPosition(null)}>Limpar localização</button>}
         {geoMessage && <span className="form-hint">{geoMessage}</span>}
       </div>
 
-      {!position && <div className="manual-origin"><label className="field"><span>Ou informe seu endereço de saída</span><input placeholder="Rua, número e cidade" value={manualOrigin} onChange={e => setManualOrigin(e.target.value)} /></label><p className="form-hint">O endereço será usado ao abrir a navegação no Google Maps.</p></div>}
-      <p className="form-hint">Ao consultar uma rota, as coordenadas são enviadas ao serviço público OSRM. Sua localização não é gravada no cadastro.</p>
+      {!position && <div className="manual-origin"><label className="field"><span>Ou digite o endereço de saída</span><input placeholder="Rua, número e cidade" value={manualOrigin} onChange={e => setManualOrigin(e.target.value)} /></label></div>}
+      <p className="form-hint">Localização opcional. Ao calcular a rota, suas coordenadas são enviadas ao OSRM; não são salvas na conta.</p>
       <div className="map-box" ref={container} aria-label="Mapa OpenStreetMap" />
-      {selectedMarket && <p className="form-hint">Rota em azul: trajeto estimado pelas vias, quando o serviço estiver disponível. O botão de navegação abre o Google Maps.</p>}
 
       {loading && <Loading text="Carregando mercados..." />}
       {error && <ErrorBox message={error} onRetry={load} />}
       {!loading && !error && visibleMarkets.length>0 && located.length === 0 && (
         <Empty title="Nenhum marcador disponível neste filtro">
-          Os marcadores dependem de coordenadas cadastradas. As lojas com endereço continuam listadas abaixo e podem ser abertas no Google Maps. <Link to="/mercados">Ver todos os mercados</Link>.
+          Lojas sem marcador podem ser abertas pelo endereço no Google Maps. <Link to="/mercados">Ver todos os mercados</Link>.
         </Empty>
       )}
       {withDistance.length > 0 && (
@@ -231,13 +228,13 @@ export function MapPage() {
               </div>
               <div className="card-actions">
                 <button className="outline-button" type="button" onClick={() => chooseMarket(market.id)}>Ver trajeto</button>
-                <a className="primary-button small" href={navigationUrl(market)} target="_blank" rel="noreferrer">Abrir no Google Maps ↗</a>
+                <a className="primary-button small" href={navigationUrl(market)} target="_blank" rel="noreferrer">Ir pelo Google Maps ↗</a>
               </div>
             </li>
           ))}
         </ul>
       )}
-      <p className="form-hint">Mapa: © OpenStreetMap. Trajeto e tempo estimados pelo serviço público de roteamento OSRM, sujeito a disponibilidade. A distância em linha reta é exibida separadamente.</p>
+      <details className="app-help"><summary>Sobre o mapa</summary><p>Mapa: © OpenStreetMap. Trajeto azul e tempo estimados pelo OSRM, sujeitos à disponibilidade. A distância em linha reta aparece separadamente.</p></details>
     </section>
   );
 }

@@ -32,7 +32,6 @@ export function MyContributions() {
   return (
     <section>
       <h1>Minhas contribuições</h1>
-      <p>Consulte os preços que você compartilhou com a comunidade.</p>
       <CommunityNav />
       <div className="button-row"><Link className="primary-button" to="/contribuir">Informar preço</Link><Link className="outline-button" to="/ofertas?minhas=1">Minhas promoções</Link></div>
       {loading && <Loading />}
