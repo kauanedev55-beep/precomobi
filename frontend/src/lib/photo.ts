@@ -16,7 +16,3 @@ export async function preparePhoto(file: File, maxEdge=640):Promise<string> {
     return canvas.toDataURL("image/jpeg",maxEdge>640?.9:.8);
   }finally{URL.revokeObjectURL(url);}
 }
-export function isInstalledApple(navigatorInfo: Pick<Navigator,"userAgent"|"maxTouchPoints"> & {standalone?:boolean}, standalone:boolean):boolean {
-  const apple=/iPhone|iPad|iPod/.test(navigatorInfo.userAgent)||(/Macintosh/.test(navigatorInfo.userAgent)&&navigatorInfo.maxTouchPoints>1);
-  return apple&&(standalone||navigatorInfo.standalone===true);
-}
