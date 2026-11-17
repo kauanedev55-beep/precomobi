@@ -1,0 +1,25 @@
+.community-filters{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:12px;margin:20px 0 8px}
+.community-filters .field{margin:0;min-width:0}
+.community-filters input,.community-filters select{width:100%;min-width:0;min-height:48px;font-size:16px}
+.community-store{grid-column:1/-1}
+.community-feed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+.community-feed .community-price-card{display:flex;flex-direction:column;min-width:0;margin:0;padding:18px;background:#fffdf9;border:1px solid #d8d1c6;border-radius:16px;overflow-wrap:anywhere}
+.community-product{display:flex;align-items:center;gap:12px}
+.community-product>div{min-width:0}
+.community-product .product-art{flex-shrink:0;object-fit:contain;border-radius:10px}
+.community-product p{font-size:.88rem;margin:6px 0;color:#52647b}
+.community-feed .community-card-price{font-size:1.55rem;font-weight:750;margin:16px 0 6px}
+.community-card-price small{font-size:.9rem;font-weight:400}
+.community-observed{font-size:.85rem;margin:0 0 8px}
+.community-notes{margin-top:12px;font-size:.9rem}
+.community-notes summary{cursor:pointer;padding:8px 0}
+.community-actions{display:flex;align-items:center;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-top:auto;padding-top:16px}
+.community-actions a{display:inline-flex;align-items:center;min-height:44px}
+.community-actions .confirm-button{min-height:44px}
+.community-load-more{display:block;margin:24px auto}
+.contribute-product-options{display:grid;gap:8px;margin:12px 0}
+.contribute-product-option{display:flex;gap:12px;align-items:center;text-align:left;padding:12px;border:1px solid #d8d1c6;border-radius:12px;background:#fffdf9;color:inherit;cursor:pointer}
+.contribute-product-option small{display:block;margin-top:4px}
+.contribute-product-option .product-art{flex-shrink:0;object-fit:contain}
+@media(max-width:640px){.community-feed{grid-template-columns:1fr}.community-filters{gap:8px}.community-filters .primary-button{min-height:48px;padding-inline:14px}}
+.admin-price-fields{border:0;padding:0;margin:0;min-width:0}.admin-price-fields input,.admin-price-fields select,.admin-price-fields textarea{min-width:0;max-width:100%;font-size:16px}.admin-price-fields .product-search-inline{align-items:end}.admin-price-fields .product-search-inline .field{flex:1;min-width:0}

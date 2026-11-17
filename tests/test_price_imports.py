@@ -87,3 +87,28 @@ def test_prepare_manifest_resolves_actual_catalog_and_explicit_preview(client,im
     with SessionLocal() as db:assert db.scalar(select(func.count()).select_from(PriceReport).where(PriceReport.product_id==ids[0]))==0
     source["market_prefix"]=[]
     assert client.post("/api/admin/price-import/prepare",headers=headers,json={"entries":[source]}).status_code==422
+
+@pytest.mark.parametrize('url,network',[
+ ('https://www.redecasagrande.com.br/','Casagrande'),
+ ('https://www.superperim.com.br/','Perim'),
+ ('https://www.assai.com.br/ofertas','Assaí'),
+ ('https://www.atacadao.com.br/loja/serra','Atacadão'),
+])
+def test_manual_admin_sources_recognize_registered_networks(url,network):
+    from app.api.price_imports import chain_for,ImportEntry
+    assert ImportEntry.source(url)==url
+    assert chain_for(url)==network
+
+def test_admin_revision_replaces_offer_card_but_keeps_observation_history(client,import_setup):
+    headers,entry,ids=import_setup
+    assert client.post('/api/admin/price-import/publish',headers=headers,json={'entries':[entry],'reviewed':True}).status_code==200
+    revised={**entry,'regular_price':'8.49','club_price':'7.99'}
+    assert client.post('/api/admin/price-import/publish',headers=headers,json={'entries':[revised],'reviewed':True}).status_code==200
+    with SessionLocal() as db:
+        history=list(db.scalars(select(PriceReport).where(PriceReport.product_id==ids[0]).order_by(PriceReport.id)))
+        offers=list(db.scalars(select(Offer).where(Offer.product_id==ids[0]).order_by(Offer.id)))
+        assert [r.price for r in history]==[Decimal('7.49'),Decimal('8.49')]
+        assert offers[0].ended_at and offers[1].ended_at is None
+        assert offers[1].price==Decimal('7.99')
+    detail=client.get(f'/api/products/{ids[0]}?city=Serra').json()
+    assert next(r['price'] for r in detail['prices'] if r['market_id']==ids[1])=='8.49'

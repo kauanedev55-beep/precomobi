@@ -70,7 +70,6 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
   if (error || !comparison) return <ErrorBox message={error || "Comparação indisponível."} onRetry={load} />;
 
   const priced = comparison.results.filter(r => r.found_items > 0);
-  const withoutPrices = comparison.results.filter(r => r.found_items === 0);
   const displayed = showAll ? priced : priced.slice(0,3);
   const hasDemoPrices = comparison.results.some((market) => market.items.some((item) => item.source_type === "development"));
   const complete = comparison.results.filter((result) => result.complete && result.total !== null);
@@ -92,8 +91,9 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
       <p className="breadcrumb"><Link to="/lista">← Lista de compras</Link></p>
       <div className="comparison-heading"><h1>Comparação: {comparison.list_name}</h1><button type="button" className="outline-button" disabled={loading} onClick={() => void load()}>{loading ? "Atualizando..." : "Atualizar preços"}</button></div>
       {preview && <div className="preview-actions"><p>Você está comparando sem salvar. Para usar esta lista em outra compra ou dispositivo, escolha Salvar lista.</p><div className="button-row"><button className="outline-button" type="button" onClick={() => void saveDraft()} disabled={isSaving}>{isSaving ? "Salvando..." : "Salvar lista"}</button><button className="primary-button" type="button" disabled={isSaving} onClick={() => {cart.clear();navigate("/lista",{replace:true});}}>Concluir sem salvar</button></div>{saveError && <p className="error-message" role="alert">{saveError}</p>}</div>}
-      {comparison.results.length === 0 && <div className="notice">Não há mercados cadastrados na cidade escolhida. Você pode mudar a cidade acima.</div>}
-      <p className="form-hint">Comparando {comparison.results.length} mercados {city === "*" ? "nas cidades cadastradas no ES" : `em ${city}`}. Listas completas são ordenadas pelo total. Nas incompletas, mostramos primeiro os mercados com mais itens com preço.</p>
+      {priced.length === 0 && <div className="notice">Nenhum mercado tem preço registrado e vigente para os produtos desta lista. Escolha produtos com preço ou use a lista sem comparação.</div>}
+      <p className="form-hint">Comparando {priced.length} mercados com preços {city === "*" ? "nas cidades cadastradas no ES" : `em ${city}`}. Listas completas são ordenadas pelo total. Nas incompletas, mostramos primeiro os mercados com mais itens com preço.</p>
+      {Boolean(comparison.excluded_markets_count)&&<p className="form-hint">Mercados sem preço para os itens escolhidos ficaram fora desta comparação. <Link to="/produtos">Ver produtos com preço</Link>.</p>}
       {complete.length === 1 && <p className="notice">Só um mercado tem a lista completa. Não há outro total completo para medir a economia.</p>}
 
       {hasDemoPrices && (
@@ -154,7 +154,7 @@ export function ComparisonPage({preview=false}: {preview?: boolean}) {
       {decisionMarkets.length >= 2 && <details className="comparison-trip-details"><summary>Considerar deslocamento na escolha</summary><PurchaseDecision markets={decisionMarkets} partial={partialDecision} commonCount={comparison.common_items_count} /></details>}
 
       {priced.length > 3 && <button className="outline-button" type="button" onClick={() => setShowAll(!showAll)}>{showAll ? "Mostrar apenas os 3 primeiros" : `Ver mais ${priced.length - 3} mercados com preços`}</button>}
-      {withoutPrices.length > 0 && <details className="unpriced-markets"><summary>{withoutPrices.length} {withoutPrices.length === 1 ? "mercado ainda sem preço" : "mercados ainda sem preços"} para estes produtos</summary><p>Sem preços cadastrados, não é possível calcular o total. Isso não significa que o produto esteja em falta.</p><ul>{withoutPrices.map(m => <li key={m.market_id}><span>{m.market_name}</span><Link to="/contribuir">Informar preço</Link></li>)}</ul></details>}
+
       {anyMissing && <p className="form-hint">Viu algum desses preços? <Link to="/contribuir">Contribua informando o valor</Link> (é preciso estar logado).</p>}
       <p className="form-hint">Vale o preço mais recente de cada produto em cada mercado. <Link to="/mercados">Ver mercados</Link> · <Link to="/mapa">Ver no mapa</Link></p>
     </section>

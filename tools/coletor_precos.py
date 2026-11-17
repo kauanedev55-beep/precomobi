@@ -14,10 +14,15 @@ from urllib.error import URLError, HTTPError
 SOURCES = [
     {"name":"Carone", "prefix":"Carone", "url":"https://linktr.ee/caroneonline", "publisher":"carone"},
     {"name":"Sempretem", "prefix":"Sempretem", "url":"https://superatacadosempretem.com.br/", "publisher":"sempretem"},
-    {"name":"Extrabom Serra Centro", "prefix":"Extrabom", "city":"Serra", "store_name":"Extrabom Serra Centro", "url":"https://www.extrabom.com.br/lojas/46-serra-centro/folheto/"},
+    {"name":"Extrabom Colina de Laranjeiras", "prefix":"Extrabom", "city":"Serra", "store_name":"Extrabom Colina de Laranjeiras", "url":"https://www.extrabom.com.br/lojas/66-colina-de-laranjeiras/folheto/"},
     {"name":"Supermercados BH", "prefix":"Supermercados BH", "url":"https://www.supermercadosbh.com.br/folhetos"},
+    {"name":"Casagrande", "prefix":"Casagrande", "url":"https://www.redecasagrande.com.br/"},
+    {"name":"Perim", "prefix":"Perim", "url":"https://www.superperim.com.br/"},
+    {"name":"Atacadão", "prefix":"Atacadão", "url":"https://www.atacadao.com.br/institucional/nossas-lojas"},
+    {"name":"Assaí", "prefix":"Assaí", "url":"https://www.assai.com.br/ofertas"},
 ]
 ALLOWED = {"linktr.ee","www.flipsnack.com","flipsnack.com","superatacadosempretem.com.br","www.superatacadosempretem.com.br","www.extrabom.com.br","extrabom.com.br","www.supermercadosbh.com.br","supermercadosbh.com.br","precomobi.onrender.com","precomobi-1.onrender.com"}
+ALLOWED.update({"www.redecasagrande.com.br","redecasagrande.com.br","www.superperim.com.br","superperim.com.br","www.atacadao.com.br","atacadao.com.br","www.assai.com.br","assai.com.br"})
 MAX_BYTES=4_000_000
 
 def safe_url(url):

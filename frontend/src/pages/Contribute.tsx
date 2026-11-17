@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { BarcodeScanner } from "../components/BarcodeScanner";
@@ -9,6 +9,8 @@ import { formatPrice } from "../lib/format";
 import { createOffer, createPriceReport, getProductByEan, getProduct, getMarkets, getProducts, type Market, type PriceReport, type Product, type Offer } from "../services/api";
 import { useOffers } from "../offers/OffersContext";
 import { useRegion, inCity } from "../region/RegionContext";
+import {ProductArt} from "../components/ProductArt";
+import "../styles/community.css";
 import { Icon } from "../components/Icon";
 
 function todayIso(): string {
@@ -27,6 +29,7 @@ export function Contribute() {
   const [conditions, setConditions] = useState("");
   const [createdOffer, setCreatedOffer] = useState<Offer | null>(null);
   const [search, setSearch] = useState("");
+  const searchSequence=useRef(0);
   const [searching, setSearching] = useState(false);
   const [filteredIds, setFilteredIds] = useState<number[] | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -34,7 +37,7 @@ export function Contribute() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [productId, setProductId] = useState(params.get("produto") ?? "");
-  const [marketId, setMarketId] = useState("");
+  const [marketId, setMarketId] = useState(params.get("mercado") ?? "");
   const [price, setPrice] = useState("");
   const [date, setDate] = useState("");
   const [notes, setNotes] = useState("");
@@ -43,9 +46,9 @@ export function Contribute() {
   const [created, setCreated] = useState<PriceReport | null>(null);
 
   useEffect(() => {
-    Promise.all([getProducts(), getMarkets(), params.get("produto") ? getProduct(Number(params.get("produto"))) : Promise.resolve(null)])
-      .then(([productList, marketList, chosen]) => {
-        setProducts(chosen && !productList.some(p => p.id === chosen.id) ? [chosen, ...productList] : productList);
+    Promise.all([getMarkets(), params.get("produto") ? getProduct(Number(params.get("produto"))) : Promise.resolve(null)])
+      .then(([marketList, chosen]) => {
+        setProducts(chosen ? [chosen] : []);
         setMarkets(marketList);
       })
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Não foi possível carregar os dados."))
@@ -54,7 +57,9 @@ export function Contribute() {
 
   const selectedProduct = products.find(p=>p.id===Number(productId));
   const cityMarkets = markets.filter(m => inCity(m,city));
-  useEffect(() => {setMarketId("");}, [city]);
+  const previousCity=useRef(city);
+  useEffect(() => {if(previousCity.current!==city){previousCity.current=city;setMarketId("");}}, [city]);
+  useEffect(()=>{if(markets.length&&marketId&&!cityMarkets.some(m=>m.id===Number(marketId)))setMarketId("");},[markets,city,marketId]);
 
   async function scanProduct(code: string) {
     setScanning(false); setError("");
@@ -68,15 +73,17 @@ export function Contribute() {
 
   async function searchProduct() {
     if (!search.trim()) return;
+    const request=++searchSequence.current;
     setSearching(true); setError(""); setProductId(""); setFilteredIds([]);
     try {
-      const rows = await getProducts(search);
+      const rows = await getProducts(search,undefined,undefined,false);
+      if(request!==searchSequence.current)return;
       if(!rows.length) {setError("Não encontramos esse produto. Tente outro nome ou leia o código de barras."); return;}
       setProducts(current => [...new Map([...current,...rows].map(p => [p.id,p])).values()]);
       setFilteredIds(rows.map(p => p.id));
       if(rows.length===1) setProductId(String(rows[0].id));
-    } catch(err) {setError(err instanceof Error ? err.message : "Não foi possível buscar o produto.");}
-    finally {setSearching(false);}
+    } catch(err) {if(request===searchSequence.current)setError(err instanceof Error ? err.message : "Não foi possível buscar o produto.");}
+    finally {if(request===searchSequence.current)setSearching(false);}
   }
 
   async function submit(event: FormEvent) {
@@ -85,7 +92,7 @@ export function Contribute() {
     setCreatedOffer(null);
     const normalized = price.trim().replace(",", ".");
     if (!productId) return setError("Escolha o produto.");
-    if (!marketId) return setError("Escolha o mercado.");
+    if (!cityMarkets.some(m=>m.id===Number(marketId))) return setError("Escolha um mercado da cidade selecionada.");
     if (!/^\d+(\.\d{1,2})?$/.test(normalized) || Number(normalized) <= 0) return setError("Informe um preço válido, maior que zero (ex.: 24,90).");
     if(kind==="offer" && !expires) return setError("Informe até quando a promoção é válida.");
     if(kind==="offer" && (!conditionType || (conditionType==="other" && conditions.trim().length<5))) return setError("Informe as condições da promoção.");
@@ -143,12 +150,9 @@ export function Contribute() {
       <details className="search-options"><summary>Outras formas de encontrar o produto</summary><div className="search-options-content"><button className="outline-button" type="button" onClick={() => setScanning(true)}>Ler código de barras ou QR do produto</button><Link className="outline-button" to={`/produtos/novo?${new URLSearchParams({origem:"contribuir",nome:search})}`}>Não encontrei: cadastrar produto</Link></div></details>
       {cityMarkets.length === 0 && <p className="notice">{!city ? "Escolha a cidade acima para selecionar o mercado." : "Não há mercados cadastrados nesta cidade."}</p>}
       <form className="form-card" onSubmit={submit} noValidate>
-        <label className="field"><span>Produto</span>
-          <select value={productId} onChange={(event) => setProductId(event.target.value)}>
-            <option value="">Busque ou leia o código do produto acima</option>
-            {products.filter(p => filteredIds ? filteredIds.includes(p.id) : p.id===Number(productId)).map((product) => <option key={product.id} value={product.id}>{product.name} · {productSubtitle(product)}</option>)}
-          </select>
-        </label>
+        <div className="contribute-product-options" aria-label="Produto escolhido">
+          {selectedProduct ? <div className="contribute-product-option"><ProductArt category={selectedProduct.category} imageUrl={selectedProduct.image_url} name={selectedProduct.name} size={64}/><div><strong>{selectedProduct.name}</strong><small>{productSubtitle(selectedProduct)}</small></div><button className="text-button" type="button" onClick={()=>{setProductId("");setFilteredIds(null);}}>Trocar</button></div> : <><p className="form-hint">{filteredIds?.length?"Toque no produto que você encontrou:":"Busque o produto acima para começar."}</p>{products.filter(p=>filteredIds?.includes(p.id)).slice(0,20).map(p=><button key={p.id} className="contribute-product-option" type="button" onClick={()=>setProductId(String(p.id))}><ProductArt category={p.category} imageUrl={p.image_url} name={p.name} size={48}/><span><strong>{p.name}</strong><small>{productSubtitle(p)}</small></span></button>)}{filteredIds&&filteredIds.length>20&&<p className="form-hint">Há mais opções. Inclua a marca ou o tamanho na busca.</p>}</>}
+        </div>
         <label className="field"><span>Mercado</span>
           <select value={marketId} onChange={(event) => setMarketId(event.target.value)}>
             <option value="">Selecione...</option>
@@ -157,7 +161,7 @@ export function Contribute() {
         </label>
         <p className="notice">{selectedProduct ? <><strong>{selectedProduct.name}</strong> · {productSubtitle(selectedProduct)}<br/>Informe o preço de <strong>{selectedProduct.sale_unit==="kg" ? "1 kg, não o total da sacola pesada" : "uma embalagem / unidade"}</strong>.</> : "Escolha o produto para ver como informar o preço."}</p>
         <label className="field"><span>Preço (R$) {selectedProduct ? `por ${saleLabel(selectedProduct.sale_unit)}` : ""}</span><input inputMode="decimal" placeholder="24,90" value={price} onChange={(event) => setPrice(event.target.value)} /></label>
-        <label className="field"><span>Data da observação (opcional — padrão: agora)</span><input type="date" max={todayIso()} value={date} onChange={(event) => setDate(event.target.value)} /></label>
+        <details className="search-options"><summary>Vi esse preço em outro dia</summary><label className="field"><span>Data em que você viu o preço</span><input type="date" max={todayIso()} value={date} onChange={(event) => setDate(event.target.value)} /></label></details>
         {kind==="offer" ? <div className="offer-fields"><h2>Detalhes da promoção</h2><label className="field"><span>Válida até</span><input type="date" min={todayIso()} value={expires} onChange={e => setExpires(e.target.value)} required/></label><label className="field"><span>Quem pode aproveitar esse preço?</span><select value={conditionType} onChange={e => setConditionType(e.target.value)} required><option value="">Escolha uma opção</option><option value="all">Qualquer pessoa, sem clube ou quantidade mínima</option><option value="other">Exige clube, quantidade mínima ou outra condição</option></select></label>{conditionType==="other" && <label className="field"><span>Descreva a condição</span><textarea maxLength={500} minLength={5} placeholder="Ex.: exige cadastro no clube da loja e compra de 3 unidades" value={conditions} onChange={e => setConditions(e.target.value)} required/></label>}<p className="form-hint">Informe a validade que você verificou. Após esse prazo, a promoção sai das promoções ativas. Se acabar antes, você pode encerrá-la em Minhas promoções; outras pessoas podem avisar que acabou.</p></div> : <label className="field"><span>Observação pública (opcional)</span><input maxLength={500} placeholder="Ex.: preço na prateleira, válido sem clube" value={notes} onChange={(event) => setNotes(event.target.value)} /></label>}
         {error && <p className="error-message" role="alert">{error}</p>}
         <button className="primary-button" type="submit" disabled={saving || cityMarkets.length === 0}>{saving ? "Compartilhando..." : kind==="offer" ? "Compartilhar promoção" : "Registrar preço"}</button>

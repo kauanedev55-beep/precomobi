@@ -32,3 +32,9 @@ test('a selected map destination never expands to the other city stores',()=>{
  assert.deepEqual(cityMarkets(stores,'Serra').map(m=>m.id),[1,2,3,4]);
  assert.deepEqual(cityMarkets(stores,'Vitória').map(m=>m.id),[5]);
 });
+
+test('registered networks have official retailer entry points without guessed stores',async()=>{
+ const {marketWebsite}=await import('../.test-build/marketScope.js');
+ for(const network of ['Carone','Extrabom','Sempretem','Supermercados BH','Casagrande','Atacadão','Assaí','Perim'])assert.ok(marketWebsite(network)?.startsWith('https://'));
+ assert.equal(marketWebsite('Loja nova da comunidade'),null);
+});
