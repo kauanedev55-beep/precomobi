@@ -1,7 +1,6 @@
 import {useEffect,useRef,useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useCart} from "../cart/CartContext";
-import {useRegion} from "../region/RegionContext";
 import {useOffers} from "../offers/OffersContext";
 import {productDisplayName} from "../lib/produceGuides";
 import {productSubtitle} from "../lib/format";
@@ -17,7 +16,6 @@ function BasketThumbnail({url,name}:{url?:string|null;name:string}) {
 
 export function BasketDrawer() {
   const cart=useCart();
-  const {city}=useRegion();
   const {refresh}=useOffers();
   const navigate=useNavigate();
   const dialog=useRef<HTMLDialogElement>(null);
@@ -85,12 +83,13 @@ export function BasketDrawer() {
         })}</ul>}
       </div>
       <footer className="basket-footer">
-        {cart.items.length>0 && <><label className="field basket-name"><span>Nome da lista</span><input value={name} maxLength={160} onChange={event=>setName(event.target.value)}/></label>
-        <div className="basket-footer-actions"><button className="outline-button" type="button" disabled={saving || !valid || cart.isSaved} onClick={()=>void save()}>{saving ? "Salvando…" : cart.isSaved ? "Lista salva ✓" : "Salvar lista"}</button><button className="primary-button" type="button" disabled={!city || !valid || saving} onClick={()=>{close();navigate("/comparacao/atual",{state:{name:name.trim() || "Minha compra"}});}}>Comparar mercados</button></div>
+        {cart.items.length>0 && <><button className="primary-button basket-compare" type="button" disabled={!valid} onClick={()=>{close();navigate("/comparacao/atual",{state:{name:name.trim()||"Minha compra"}});}}>Comparar preços</button>
+        <details className="list-save-options"><summary>Salvar lista (opcional)</summary><label className="field basket-name"><span>Nome</span><input value={name} maxLength={160} onChange={event=>setName(event.target.value)}/></label><button className="outline-button" type="button" disabled={saving||!valid||cart.isSaved} onClick={()=>void save()}>{saving?"Salvando…":cart.isSaved?"Lista salva ✓":"Salvar lista"}</button></details>
+
         {!valid && <p className="error-message" role="alert">Confira o peso ou a quantidade antes de continuar.</p>}
         {saveError && <p className="error-message" role="alert">{saveError}</p>}
-        {cart.savedListId && <p className="basket-save-status" role="status">{cart.isSaved ? "Lista salva na sua conta. Você pode continuar comprando." : "Você alterou a lista. Salve novamente para guardar as mudanças."}</p>}
-        <p className="form-hint">{!city ? "Você pode usar e salvar a lista sem escolher mercado. Se quiser comparar, escolha sua cidade na pesquisa." : "Use só como lista ou compare os mercados quando quiser."}</p></>}
+        {cart.savedListId && <p className="basket-save-status" role="status">{cart.isSaved ? "Lista salva." : "Alterações ainda não salvas."}</p>}
+</>}
       </footer>
     </dialog>
   </>;

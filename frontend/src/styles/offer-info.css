@@ -11,3 +11,5 @@
 .offer-card .offer-info-panel .offer-conditions{margin-bottom:10px;font-size:.88rem}
 .offer-card .offer-info-panel .offer-observed{margin-bottom:8px}
 .offer-info-panel>a{display:inline-flex;align-items:center;min-height:44px;font-size:.85rem;font-weight:650}
+.offer-card .offer-info-toggle{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0;margin:0;min-width:44px;min-height:44px;max-width:44px;max-height:44px;flex:0 0 44px;line-height:1}
+.offer-card .offer-info-toggle svg{display:block;flex:none;width:20px;height:20px}

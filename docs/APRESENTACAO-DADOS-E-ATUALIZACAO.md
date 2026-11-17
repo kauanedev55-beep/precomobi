@@ -26,7 +26,7 @@ A importação por arquivo continua disponível em “Importar vários preços p
 - Cadastrar um produto ou uma loja não cria preços. A cobertura desta versão é parcial.
 - Os preços atuais revisados vêm de Carone, Sempretem, Extrabom e Supermercados BH, conforme validade e abrangência registradas. Uma rede pode ter lojas sem preço para os produtos escolhidos.
 - Ofertas vencidas saem da consulta ativa automaticamente. Isso não significa que o sistema foi ao site buscar um preço novo.
-- A opção “Mostrar somente produtos com preço na cidade” ajuda a construir uma compra comparável. Desmarcar permite usar o aplicativo apenas como lista.
+- Produtos abre o catálogo para montar a lista, inclusive com itens ainda sem preço. A comparação acontece depois, sem exigir salvar; os itens sem preço ficam explicitamente identificados.
 - Nenhum sistema de catálogos garante estoque ou que uma loja não tenha alterado o preço depois da conferência.
 
 ## Demonstração com uma comparação de fato disponível
