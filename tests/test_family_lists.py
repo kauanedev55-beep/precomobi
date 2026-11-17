@@ -103,3 +103,21 @@ def test_list_can_be_invited_during_preparation_and_after_completion(client):
     assert final['id']==row['id'] and final['status']=='completed'
     assert final['items'][0]['is_purchased'] is True
     assert client.patch(endpoint+'/items',headers=stranger,json={'revision':final['revision'],'product_id':p['id'],'action':'remove'}).status_code==409
+
+
+def test_creator_app_endpoints_show_recipient_checks_without_reopening_invite(client):
+    owner,member,_,p,row=setup_family(client)
+    lid=row['id'];endpoint=f'/api/family-lists/{lid}'
+    token=client.post(endpoint+'/invite',headers=owner).json()['token']
+    assert client.post(f'/api/family-lists/invites/{token}/accept',headers=member).status_code==200
+    marked=client.patch(endpoint+'/items',headers=member,json={'revision':row['revision'],'product_id':p['id'],'action':'check','is_purchased':True})
+    assert marked.status_code==200
+    # Normal app list/card reads show progress; the invitation URL is not read again.
+    card=next(r for r in client.get('/api/shopping-lists',headers=owner).json() if r['id']==lid)
+    current=client.get(endpoint,headers=owner).json()['list']
+    assert card['items'][0]['is_purchased'] is True
+    assert current['items'][0]['is_purchased'] is True
+    assert current['revision']==marked.json()['list']['revision']
+    cleared=client.patch(endpoint+'/items',headers=member,json={'revision':current['revision'],'product_id':p['id'],'action':'check','is_purchased':False})
+    assert cleared.status_code==200
+    assert client.get(endpoint,headers=owner).json()['list']['items'][0]['is_purchased'] is False
