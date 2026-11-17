@@ -1,4 +1,5 @@
 import "../styles/barcode-scanner.css";
+import {createPortal} from "react-dom";
 import type { BrowserMultiFormatReader } from "@zxing/browser";
 import {createProductCodeReader} from "../lib/barcodeReader";
 import {openCameraPreview,bindCameraLifecycle,type CameraPreviewState} from "../lib/cameraPreview";
@@ -22,6 +23,9 @@ export function BarcodeScanner({
   onDetected: (ean: string) => void;
   onClose: () => void;
 }) {
+  const closeRef=useRef<HTMLButtonElement|null>(null);
+  const [stage,setStage]=useState("capture");
+  const appleApp=/iPhone|iPad|iPod/.test(navigator.userAgent) && ((navigator as Navigator & {standalone?:boolean}).standalone || window.matchMedia("(display-mode: standalone)").matches);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const cleanupRef=useRef<()=>void>(()=>undefined);
   const resumeRef=useRef<()=>void>(()=>undefined);
@@ -35,9 +39,14 @@ export function BarcodeScanner({
   const [manualError, setManualError] = useState("");
 
   useEffect(() => {
+    const opener=document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const root=document.getElementById("root");const previousInert=root?.inert;
+    const previousOverflow=document.body.style.overflow;
+    document.body.style.overflow="hidden";if(root)root.inert=true;closeRef.current?.focus();
     const start=()=>{
     if(completed.current || document.visibilityState==="hidden")return;
     cleanupRef.current();
+    if(document.activeElement instanceof HTMLInputElement)document.activeElement.blur();
     setError("");
     const video = videoRef.current;
     if (!video || !navigator.mediaDevices?.getUserMedia) {
@@ -61,6 +70,7 @@ export function BarcodeScanner({
     const preview=openCameraPreview(video,navigator.mediaDevices,{
       onState(state,message){if(cancelled||delivered)return;setCameraState(state);setError(message||"");},
       onInterrupted:stopDecoder,
+      onStage:setStage,
       onReady(stream){
         if(cancelled||delivered)return;
         // Capability inspection is optional: a Safari implementation that throws
@@ -94,7 +104,7 @@ export function BarcodeScanner({
     const unbind=bindCameraLifecycle(document,window,pause);
     const key=(event:KeyboardEvent)=>{if(event.key==="Escape"){cleanupRef.current();onClose();}};
     window.addEventListener("keydown",key);
-    return ()=>{cleanupRef.current();startRef.current=()=>undefined;unbind();window.removeEventListener("keydown",key);};
+    return ()=>{cleanupRef.current();startRef.current=()=>undefined;document.body.style.overflow=previousOverflow;if(root)root.inert=previousInert??false;if(opener?.isConnected)opener.focus();unbind();window.removeEventListener("keydown",key);};
   },[]);
 
   function closeScanner(){completed.current=true;cleanupRef.current();onClose();}
@@ -111,10 +121,10 @@ export function BarcodeScanner({
     onDetected(code);
   }
 
-  return (
+  return createPortal(
     <div className="scanner-overlay" role="presentation" onClick={closeScanner}>
       <div className="scanner-box" role="dialog" aria-modal="true" aria-label="Ler código de barras ou QR Code" onClick={(event) => event.stopPropagation()}>
-        <button className="auth-close" type="button" aria-label="Fechar" onClick={closeScanner}>×</button>
+        <button ref={closeRef} className="auth-close" type="button" aria-label="Fechar" onClick={closeScanner}>×</button>
         <h2>Ler código de barras ou QR Code</h2>
         <div className="scanner-preview">
           <video ref={videoRef} className="scanner-video" muted playsInline autoPlay aria-label="Imagem da câmera" />
@@ -125,6 +135,10 @@ export function BarcodeScanner({
         {cameraState==="error"&&<button className="outline-button scanner-camera-action" type="button" onClick={()=>startRef.current()}>Tentar novamente</button>}
         {cameraState==="ready"&&<button className="outline-button scanner-camera-action" type="button" onClick={()=>startRef.current()}>Reiniciar câmera</button>}
         {error?<p className={cameraState==="blocked"?"form-hint":"error-message"} role="status">{error}</p>:cameraState==="ready"&&<p className="form-hint">Enquadre o código da embalagem.</p>}
+        {(cameraState==="error"||cameraState==="blocked")&&<>
+          {appleApp&&<a className="outline-button scanner-camera-action" href="/produtos?ler=1" target="_blank" rel="noopener noreferrer">Usar leitor no navegador ↗</a>}
+          <details className="scanner-diagnostics"><summary>Detalhes da câmera</summary><p>Etapa: {stage==="capture"?"acesso à câmera":stage==="playback"?"imagem do vídeo":"leitura"}. Modo: {appleApp?"app instalado":"navegador"}. Versão: mobile-11.</p></details>
+        </>}
         <form className="scanner-manual" onSubmit={submitManual}>
           <label htmlFor="ean-manual">Ou digite o código</label>
           <input
@@ -140,6 +154,6 @@ export function BarcodeScanner({
           <button className="primary-button" type="submit">Buscar produto</button>
         </form>
       </div>
-    </div>
+    </div>,document.body
   );
 }
