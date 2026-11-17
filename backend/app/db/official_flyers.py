@@ -56,3 +56,8 @@ def seed_official_flyers_nov16(engine,now=None):
             db.commit()
     entries=json.loads(Path(__file__).with_name('official_flyers_20261116.json').read_text())
     seed_official_flyers(engine,entries,now,migration_key='official-reviewed-leaflets-2026-11-16')
+
+
+def seed_official_market_refresh(engine,now=None):
+    entries=json.loads(Path(__file__).with_name('official_flyers_market_refresh.json').read_text())
+    seed_official_flyers(engine,entries,now,migration_key='official-reviewed-extra-bh-2026-11-17')

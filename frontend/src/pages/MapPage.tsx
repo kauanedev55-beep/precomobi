@@ -1,5 +1,6 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "../styles/offer-filters.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
@@ -7,6 +8,7 @@ import { useRegion, inCity } from "../region/RegionContext";
 import { Empty, ErrorBox, Loading } from "../components/StateViews";
 import { fetchRoadRoute, fullAddress, googleMapsUrl, hasCoordinates } from "../lib/navigation";
 import { distanceKm } from "../lib/format";
+import {cityMarkets,mapDestinations} from "../lib/marketScope";
 import { getMarkets, type Market } from "../services/api";
 
 // Centro aproximado da região de Laranjeiras em Serra/ES, onde ficam os 3 mercados
@@ -16,9 +18,10 @@ const SERRA_CENTER: [number, number] = [-20.1919, -40.265];
 type Position = { lat: number; lon: number };
 
 export function MapPage() {
-  const [params] = useSearchParams();
+  const [params,setParams] = useSearchParams();
   const {city} = useRegion();
-  const selectedId = Number(params.get("mercado")) || null;
+  const value=params.get("mercado") || "";
+  const selectedId = /^[1-9]\d*$/.test(value)&&Number.isSafeInteger(Number(value)) ? Number(value) : null;
   const routeRequested = params.get("rota") === "1";
   const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +30,18 @@ export function MapPage() {
   const [geoMessage, setGeoMessage] = useState("");
   const [manualOrigin, setManualOrigin] = useState("");
   const [selected, setSelected] = useState<number | null>(selectedId);
+  const previousCity=useRef(city);
+  useEffect(()=>{
+    if(previousCity.current===city)return;
+    previousCity.current=city;setSelected(null);
+    const next=new URLSearchParams(params);next.delete("mercado");next.delete("rota");setParams(next,{replace:true});
+  },[city,params,setParams]);
+  function chooseMarket(id:number|null){
+    setSelected(id);
+    const next=new URLSearchParams(params);
+    if(id!==null)next.set("mercado",String(id));else next.delete("mercado");
+    next.delete("rota");setParams(next);
+  }
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const layer = useRef<L.LayerGroup | null>(null);
@@ -51,7 +66,12 @@ export function MapPage() {
     void load();
   }, [load]);
 
-  const visibleMarkets = useMemo(() => markets.filter(m => inCity(m,city) || m.id===selectedId), [markets,city,selectedId]);
+  const cityStores=useMemo(()=>cityMarkets(markets,city),[markets,city]);
+  const visibleMarkets=useMemo(()=>selected!==null ? mapDestinations(markets,selected) : cityStores,[markets,selected,cityStores]);
+  const selectorStores=useMemo(()=>{
+    const linked=markets.find(m=>m.id===selected);
+    return linked&&!cityStores.some(m=>m.id===linked.id) ? [linked,...cityStores] : cityStores;
+  },[markets,selected,cityStores]);
   const located = useMemo(
     () => visibleMarkets.filter(hasCoordinates),
     [visibleMarkets],
@@ -67,7 +87,7 @@ export function MapPage() {
   const selectedMarket = markets.find((item) => item.id === selected) ?? null;
 
   useEffect(() => {
-    if (!position || !selectedMarket) {
+    if (!position || !selectedMarket || !hasCoordinates(selectedMarket)) {
       setRouteLoading(false);
       setRoadRoute(null);
       setRouteError("");
@@ -114,6 +134,7 @@ export function MapPage() {
   // redesenha os marcadores quando mercados, posição ou seleção mudam
   useEffect(() => {
     if (!map.current || !layer.current) return;
+    map.current.invalidateSize();
     layer.current.clearLayers();
     const bounds: L.LatLngExpression[] = [];
     located.forEach((market) => {
@@ -130,7 +151,7 @@ export function MapPage() {
         fillOpacity: 0.9,
       })
         .bindPopup(popup)
-        .on("click", () => setSelected(market.id))
+        .on("click", () => chooseMarket(market.id))
         .addTo(layer.current!);
     });
     if (position) {
@@ -159,12 +180,12 @@ export function MapPage() {
   }
 
   useEffect(() => {
-    if (routeRequested && selectedId && !position) locate();
+    if (routeRequested && selectedMarket && !position) locate();
     // Solicita localização uma vez ao abrir a rota; evita repetir se a permissão for negada.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeRequested, selectedId]);
+  }, [routeRequested, selectedMarket?.id]);
 
-  useEffect(() => { setSelected(selectedId); }, [selectedId,city]);
+  useEffect(() => { setSelected(selectedId); }, [selectedId]);
   function navigationUrl(market: Market): string {
     return googleMapsUrl(market, position ?? manualOrigin);
   }
@@ -173,6 +194,8 @@ export function MapPage() {
     <section>
       <p className="form-hint">Mercados carregados da base compartilhada do aplicativo. A rota abre no Google Maps pelo endereço ou pelas coordenadas cadastradas.</p>
       <h1>{selectedMarket ? `Como chegar: ${selectedMarket.name}` : "Mapa dos mercados"}</h1>
+      <label className="field map-market-filter"><span>Mercado / loja</span><select value={selected ?? ""} disabled={loading} onChange={event=>chooseMarket(event.target.value ? Number(event.target.value) : null)}><option value="">Todos os mercados da cidade</option>{selectorStores.map(m=><option key={m.id} value={m.id}>{m.name}{city==="*"||!inCity(m,city) ? ` · ${m.city}` : ""}</option>)}</select></label>
+      {selected!==null&&!loading&&!error&&!selectedMarket&&<Empty title="Unidade não encontrada">Escolha uma loja cadastrada no filtro acima.</Empty>}
       {selectedMarket && !inCity(selectedMarket,city) && <p className="notice">O link abriu uma unidade específica em {selectedMarket.city}, fora do filtro atual.</p>}
       {routeRequested && !position && <div className="notice">Para mostrar a distância e o trajeto a partir de onde você está, toque em <strong>Usar minha localização</strong>. A permissão é opcional.</div>}
       {selectedMarket && <div className="pm-route-panel"><div><strong>{selectedMarket.name}</strong><small>{fullAddress(selectedMarket)}</small>{roadRoute && <p><b>{roadRoute.km.toFixed(1).replace(".", ",")} km por ruas</b> · aproximadamente {Math.round(roadRoute.minutes)} min de carro</p>}{routeLoading && <p>Calculando caminho pelas ruas...</p>}{routeError && <p role="status">{routeError}</p>}{!position && <p>Ative sua localização para calcular a distância.</p>}{!hasCoordinates(selectedMarket) && <p>Sem coordenadas cadastradas. O Google Maps buscará o endereço; confira a loja antes de iniciar a rota.</p>}</div><a className="primary-button" target="_blank" rel="noreferrer" href={navigationUrl(selectedMarket)}>Abrir no Google Maps ↗</a></div>}
@@ -189,7 +212,7 @@ export function MapPage() {
 
       {loading && <Loading text="Carregando mercados..." />}
       {error && <ErrorBox message={error} onRetry={load} />}
-      {!loading && !error && located.length === 0 && (
+      {!loading && !error && visibleMarkets.length>0 && located.length === 0 && (
         <Empty title="Nenhum marcador disponível neste filtro">
           Os marcadores dependem de coordenadas cadastradas. As lojas com endereço continuam listadas abaixo e podem ser abertas no Google Maps. <Link to="/mercados">Ver todos os mercados</Link>.
         </Empty>
@@ -199,13 +222,13 @@ export function MapPage() {
           {withDistance.map(({ market, km }) => (
             <li className={`list-card ${market.id === selected ? "selected" : ""}`} key={market.id}>
               <div>
-                <button className="card-title link-button" type="button" onClick={() => setSelected(market.id)}>{market.name}</button>
+                <button className="card-title link-button" type="button" onClick={() => chooseMarket(market.id)}>{market.name}</button>
                 <small>{fullAddress(market)}</small>
                 {km !== null && <small><strong>{km.toFixed(1).replace(".", ",")} km</strong> em linha reta da sua localização</small>}
                 {market.id === selected && roadRoute && <small><strong>{roadRoute.km.toFixed(1).replace(".", ",")} km pelas ruas</strong> · {Math.round(roadRoute.minutes)} min estimados</small>}
               </div>
               <div className="card-actions">
-                <button className="outline-button" type="button" onClick={() => setSelected(market.id)}>Ver trajeto</button>
+                <button className="outline-button" type="button" onClick={() => chooseMarket(market.id)}>Ver trajeto</button>
                 <a className="primary-button small" href={navigationUrl(market)} target="_blank" rel="noreferrer">Abrir no Google Maps ↗</a>
               </div>
             </li>

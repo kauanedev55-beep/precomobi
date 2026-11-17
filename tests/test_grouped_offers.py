@@ -49,8 +49,24 @@ def test_official_offers_are_grouped_before_cutoff_and_keep_store_checks_separat
         allfresh=[s for row in fresh for s in [row,*row['related_offers']]]
         assert next(s for s in allfresh if s['id']==chosen['id'])['confirmations']==1
         assert next(s for s in allfresh if s['id']==carone['id'])['confirmations']==0
+        # Store filtering must happen before the 100-row cap and before grouping.
+        single=client.get('/api/offers',headers=viewer,params={'city':'Serra','grouped':True,'market_id':mids[0]})
+        assert single.status_code==200
+        assert len(single.json())==1 and single.json()[0]['market']['id']==mids[0]
+        assert single.json()[0]['related_offers']==[]
+        network=client.get('/api/offers',headers=viewer,params={'city':'Serra','grouped':True,'market_ids':','.join(map(str,mids[:2]))})
+        members=[m for group in network.json() for m in [group,*group['related_offers']]]
+        assert {m['market']['id'] for m in members}==set(mids[:2])
+        # A requested store never bypasses the city boundary.
+        assert client.get('/api/offers',headers=viewer,params={'city':'Serra','market_id':mids[-1]}).json()==[]
         mine=client.get('/api/offers',headers=owner,params={'mine':True,'grouped':True}).json()
         assert all(not row['related_offers'] for row in mine)
     finally:
         with SessionLocal() as db:
             db.execute(delete(OfferCheck).where(OfferCheck.offer_id.in_(oids)));db.execute(delete(Offer).where(Offer.id.in_(oids)));db.execute(delete(Market).where(Market.id.in_(mids)));db.commit()
+
+
+import pytest
+@pytest.mark.parametrize('bad',['0','1,,2','-2','x','١','999999999999999999999999'])
+def test_invalid_store_filters_are_rejected(client,demo_headers,bad):
+    assert client.get('/api/offers',headers=demo_headers,params={'market_ids':bad}).status_code==422
