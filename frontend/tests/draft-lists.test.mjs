@@ -8,3 +8,11 @@ test('draft recovery preserves names, fractions and checks but never cached pric
 test('broken or incompatible local drafts cannot crash the app or restore invalid quantities',()=>{
  for(const raw of [null,'not json','[]',JSON.stringify({...valid,items:[]}),JSON.stringify({...valid,items:[...valid.items,...valid.items]}),JSON.stringify({...valid,updatedAt:'bad'}),JSON.stringify({...valid,items:[{...valid.items[0],quantity:-1}]}),JSON.stringify({...valid,items:[{...valid.items[0],product:{id:1,name:'Arroz',sale_unit:'unit'}}]})])assert.equal(parseDraft(raw),null);
 });
+
+test('recovery preserves the linked list revision and baseline for ongoing synchronization',()=>{
+ const link={id:7,owner_id:2,revision:4,status:'shopping',name:valid.name,created_at:valid.updatedAt,updated_at:valid.updatedAt,items:[{id:80,product_id:1,product:valid.items[0].product,quantity:'0.750',is_purchased:true}]};
+ const parsed=parseDraft(JSON.stringify({...valid,linkedList:link,syncConflict:true}));assert.equal(parsed.linkedList.id,7);assert.equal(parsed.linkedList.revision,4);assert.equal(parsed.linkedList.items[0].is_purchased,true);assert.equal(parsed.linkedList.items[0].product.min_price,null);assert.equal(parsed.syncConflict,true);
+});
+test('malformed links do not attach a valid local draft to another list',()=>{
+ const parsed=parseDraft(JSON.stringify({...valid,linkedList:{id:4,revision:-1,owner_id:2,items:[]}}));assert.ok(parsed);assert.equal(parsed.linkedList,undefined);
+});

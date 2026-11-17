@@ -6,8 +6,8 @@ import {prepareListShare,listShareText,type PreparedListShare,type ShareableList
 import {Icon} from "./Icon";
 import "../styles/list-sharing.css";
 
-type Props={prepare:()=>Promise<ShareableList>;disabled?:boolean;onPrepared?:()=>void};
-export function ShareListButton({prepare,disabled=false,onPrepared}:Props){
+type Props={prepare:()=>Promise<ShareableList>;disabled?:boolean;onPrepared?:()=>void;iconOnly?:boolean;label?:string};
+export function ShareListButton({prepare,disabled=false,onPrepared,iconOnly=false,label="Compartilhar lista"}:Props){
  const headingId=useId();
  const [open,setOpen]=useState(false);const [busy,setBusy]=useState(false);const [shared,setShared]=useState<PreparedListShare|null>(null);const [error,setError]=useState("");const [copied,setCopied]=useState(false);
  const dialog=useRef<HTMLDialogElement>(null);const opener=useRef<HTMLButtonElement>(null);const generation=useRef(0);const lock=useRef(false);
@@ -22,7 +22,7 @@ export function ShareListButton({prepare,disabled=false,onPrepared}:Props){
  }
  async function send(){if(!shared)return;try{await navigator.share({title:shared.name,text:`Vamos fazer a lista “${shared.name}” juntos?`,url:shared.url});}catch(e){if(!(e instanceof DOMException&&e.name==="AbortError"))setError("Use o WhatsApp ou copie o link abaixo.");}}
  async function copy(){if(!shared)return;try{await navigator.clipboard.writeText(shared.url);setCopied(true);setError("");}catch{setError("Abra “Ver link e validade” para selecionar e copiar.");}}
- return <><button ref={opener} className="outline-button share-list-button" type="button" disabled={disabled||busy} onClick={()=>void start()}><Icon name="share" size={18}/>{busy?"Preparando…":"Compartilhar"}</button>{createPortal(<dialog ref={dialog} className="share-list-dialog" aria-labelledby={headingId} onCancel={e=>{e.preventDefault();close();}} onClose={()=>{if(open)close();}} onClick={e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}}>
+ return <><button ref={opener} className={`outline-button share-list-button${iconOnly?" icon-only":""}`} aria-label={label} title={iconOnly?label:undefined} type="button" disabled={disabled||busy} onClick={()=>void start()}><Icon name="share" size={18}/><span className="share-list-label">{busy?"Preparando…":"Compartilhar"}</span></button>{createPortal(<dialog ref={dialog} className="share-list-dialog" aria-labelledby={headingId} onCancel={e=>{e.preventDefault();close();}} onClose={()=>{if(open)close();}} onClick={e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}}>
  <header><h2 id={headingId}>Compartilhar lista</h2><button className="outline-button" type="button" aria-label="Fechar compartilhamento" onClick={close}>×</button></header>
  {busy&&<p role="status">Preparando sua lista…</p>}
  {error&&<p className="error-message" role="alert">{error}</p>}
